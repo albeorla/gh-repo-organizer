@@ -1,0 +1,10 @@
+langchain>=0.1.0
+langchain-anthropic>=0.0.9
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+httpx>=0.24.1
+gitpython>=3.1.40
+pyyaml>=6.0.0
+rich>=13.5.0
+pathspec>=0.11.2
+typing-extensions>=4.8.0 
