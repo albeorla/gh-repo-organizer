@@ -110,7 +110,7 @@ def get_llm() -> ChatAnthropic:
         sys.exit(1)
 
     return ChatAnthropic(
-        model="claude-3-opus-20240229",
+        model="claude-3-7-sonnet-latest",
         temperature=0.2,
         anthropic_api_key=ANTHROPIC_API_KEY,
     )
