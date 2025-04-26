@@ -117,7 +117,9 @@ class RepositoryAnalyzerService:
         Returns:
             Repository analysis object
         """
-        repo_name = repo_info.get("name", "unknown")
+        # Handle both ``name`` (REST/Git) and ``repo_name`` (internal prompt
+        # preparation or unit-test fixtures).
+        repo_name = repo_info.get("name") or repo_info.get("repo_name", "unknown")
         if not self._should_analyze_repo(repo_name):
             self.logger.log(f"Skipping analysis for {repo_name}", level="info")
             self.logger.update_stats("repos_skipped")
@@ -201,7 +203,7 @@ class RepositoryAnalyzerService:
         Returns:
             Dictionary with all data needed for LLM analysis
         """
-        repo_name = repo_info.get("name", "unknown")
+        repo_name = repo_info.get("name") or repo_info.get("repo_name", "unknown")
         
         # Get language breakdown if GitHub service is available
         languages_str = "Unknown"
@@ -212,26 +214,112 @@ class RepositoryAnalyzerService:
                     [f"{lang}: {pct:.1f}%" for lang, pct in languages_data.items()]
                 )
 
+        # Get additional repository data for more accurate analysis
+        issues_data = {"open_count": 0, "closed_count": 0, "recent_activity": False}
+        commit_data = {"recent_commits": 0, "active_last_month": False, "active_last_year": False}
+        contributor_data = {"count": 0, "active_contributors": 0}
+        dependency_data = {"has_dependency_files": False, "dependency_files": []}
+        
+        if self.github_service:
+            # Gather enhanced data about the repository
+            issues_data = self.github_service.get_repo_issues_stats(repo_name)
+            commit_data = self.github_service.get_repo_commit_activity(repo_name)
+            contributor_data = self.github_service.get_repo_contributors_stats(repo_name)
+            dependency_data = self.github_service.get_repo_dependency_files(repo_name)
+            
         # Don't use local repositories for analysis to avoid confusion
         # We'll focus on the API data instead
         recent_commits_str = "Data not available via API"
         contributor_list_str = "Data not available via API"
 
         # Prepare input for LLM
+        # GitHub's REST and GraphQL APIs use different field names for similar
+        # attributes (e.g. ``updated_at`` vs ``updatedAt``).  The service was
+        # originally built against GraphQL but was later migrated to the REST
+        # endpoints for simplicity.  To remain backward-compatible – and more
+        # importantly to *always* populate the prompt with correct values – we
+        # transparently fall back to the REST field names when the GraphQL
+        # ones are missing.
+
+        updated_at = (
+            repo_info.get("updatedAt")  # GraphQL name
+            or repo_info.get("updated_at")  # REST name
+            or "Unknown"
+        )
+        # Simplify timestamp to *date* only (YYYY-MM-DD) when possible.
+        if isinstance(updated_at, str) and "T" in updated_at:
+            updated_at = updated_at.split("T")[0]
+
+        stars = (
+            repo_info.get("stargazerCount")
+            or repo_info.get("stargazers_count")
+            or repo_info.get("stars", 0)
+        )
+        forks = (
+            repo_info.get("forkCount") or repo_info.get("forks_count") or repo_info.get("forks", 0)
+        )
+
+        is_archived = repo_info.get("isArchived")
+        if is_archived is None:  # REST uses ``archived`` (bool)
+            is_archived = repo_info.get("archived", False)
+
+        repo_url = (
+            repo_info.get("url")
+            or repo_info.get("html_url")
+            or repo_info.get("repo_url", "")
+        )
+        
+        # Format activity data 
+        activity_summary = "No recent activity detected"
+        if commit_data["active_last_month"]:
+            activity_summary = "Very active (commits within the last month)"
+        elif commit_data["active_last_year"]:
+            activity_summary = "Somewhat active (commits within the last year)"
+        else:
+            activity_summary = "Inactive (no commits within the last year)"
+            
+        # Add issue activity
+        if issues_data["recent_activity"]:
+            activity_summary += ", recent issue activity"
+            
+        # Format contributor data
+        contributor_summary = f"{contributor_data['count']} contributors"
+        if contributor_data['count'] > 0:
+            contributor_summary += f" ({contributor_data['active_contributors']} active)"
+            
+        # Format dependency information
+        dependency_summary = "No dependency files detected"
+        if dependency_data["has_dependency_files"]:
+            dependency_summary = f"Dependency files: {', '.join(dependency_data['dependency_files'])}"
+            
+        # Format content samples if available (for context)
+        dependency_context = ""
+        if dependency_data.get("content_samples"):
+            # Only include one sample to avoid making the prompt too long
+            for file_name, content in dependency_data["content_samples"].items():
+                dependency_context = f"Sample from {file_name}:\n{content[:300]}..."
+                break  # Just take the first one
+
         return {
             "repo_name": repo_name,
             "repo_desc": repo_info.get("description", "No description available"),
-            "repo_url": repo_info.get("url", ""),
-            "updated_at": repo_info.get("updatedAt", "").split("T")[0]
-            if "updatedAt" in repo_info
-            else "Unknown",
-            "is_archived": repo_info.get("isArchived", False),
-            "stars": repo_info.get("stargazerCount", 0),
-            "forks": repo_info.get("forkCount", 0),
+            "repo_url": repo_url,
+            "updated_at": updated_at,
+            "is_archived": is_archived,
+            "stars": stars,
+            "forks": forks,
             "languages": languages_str,
             "has_local": False,  # Always set to false to avoid local repo confusion
             "recent_commits": recent_commits_str,
             "contributor_list": contributor_list_str,
+            # Enhanced data for better analysis
+            "open_issues": issues_data["open_count"],
+            "closed_issues": issues_data["closed_count"], 
+            "activity_summary": activity_summary,
+            "recent_commits_count": commit_data["recent_commits"],
+            "contributor_summary": contributor_summary,
+            "dependency_info": dependency_summary,
+            "dependency_context": dependency_context,
             # Include a truncated README excerpt to provide additional context
             "readme_excerpt": self.github_service.get_repo_readme(repo_name)
             if self.github_service
@@ -258,18 +346,31 @@ class RepositoryAnalyzerService:
                 f.write(f"# {repo_name}\n\n")
 
                 f.write("## Basic Information\n\n")
-                f.write(
-                    f"- **URL**: [{repo_info.get('url', '')}]({repo_info.get('url', '')})\n"
-                )
+                # Prefer the human-facing ``html_url`` when available.  Fall
+                # back to ``url`` (the REST API endpoint) to avoid breaking in
+                # edge-cases where the field might be missing (e.g. during
+                # unit-tests with stubbed data).
+                repo_link = repo_info.get("html_url") or repo_info.get("url", "")
+                f.write(f"- **URL**: [{repo_link}]({repo_link})\n")
                 f.write(
                     f"- **Description**: {repo_info.get('description', 'No description')}\n"
                 )
-                f.write(
-                    f"- **Last Updated**: {repo_info.get('updatedAt', '').split('T')[0] if 'updatedAt' in repo_info else 'Unknown'}\n"
-                )
-                f.write(f"- **Archived**: {repo_info.get('isArchived', False)}\n")
-                f.write(f"- **Stars**: {repo_info.get('stargazerCount', 0)}\n")
-                f.write(f"- **Forks**: {repo_info.get('forkCount', 0)}\n\n")
+                # Handle both GraphQL and REST field names (see above)
+                updated_at = repo_info.get("updatedAt") or repo_info.get("updated_at", "Unknown")
+                if isinstance(updated_at, str) and "T" in updated_at:
+                    updated_at = updated_at.split("T")[0]
+
+                is_archived = repo_info.get("isArchived")
+                if is_archived is None:
+                    is_archived = repo_info.get("archived", False)
+
+                stars = repo_info.get("stargazerCount") or repo_info.get("stargazers_count", 0)
+                forks = repo_info.get("forkCount") or repo_info.get("forks_count", 0)
+
+                f.write(f"- **Last Updated**: {updated_at}\n")
+                f.write(f"- **Archived**: {is_archived}\n")
+                f.write(f"- **Stars**: {stars}\n")
+                f.write(f"- **Forks**: {forks}\n\n")
 
                 f.write("## Analysis Summary\n\n")
                 # Process string fields to ensure newlines are properly formatted

@@ -65,7 +65,7 @@ def main(
     """
     Analyze GitHub repositories using LangChain and Anthropic's Claude AI.
 
-    This tool provides insights, recommendations, and documentation for your repositories.
+    This tool provides insights, recommendations, and documentation for repositories that you own (not repositories you've starred or forked).
     """
     pass
 

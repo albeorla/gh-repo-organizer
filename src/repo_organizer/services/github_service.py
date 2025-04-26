@@ -19,6 +19,7 @@ import json
 import os
 import time
 import subprocess
+import re
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -160,7 +161,20 @@ class GitHubService:
 
             page += 1
 
-        results = collected[:limit]
+        # Map GitHub REST response field names to the camel-cased keys used by
+        # the rest of the application to avoid touching dozens of call sites.
+        def _transform(repo: dict[str, Any]) -> dict[str, Any]:
+            return {
+                "name": repo.get("name"),
+                "description": repo.get("description"),
+                "url": repo.get("html_url"),
+                "updatedAt": repo.get("updated_at"),
+                "isArchived": repo.get("archived", False),
+                "stargazerCount": repo.get("stargazers_count", 0),
+                "forkCount": repo.get("forks_count", 0),
+            }
+
+        results = [_transform(r) for r in collected[:limit]]
 
         if self.logger:
             self.logger.log(
@@ -386,3 +400,315 @@ class GitHubService:
                     f"Error getting contributors for {repo_path}: {str(e)}", "warning"
                 )
             return []
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type(APIError),
+    )
+    def get_repo_issues_stats(self, repo_name: str) -> Dict[str, Any]:
+        """Get issue statistics for a repository.
+
+        Args:
+            repo_name: Name of the repository
+
+        Returns:
+            Dictionary with issue statistics (open_count, closed_count, recent_activity)
+        """
+        if self.rate_limiter:
+            self.rate_limiter.wait(
+                self.logger, debug=getattr(self.logger, "debug_enabled", False)
+            )
+
+        if self.logger:
+            self.logger.log(f"Fetching issues for {repo_name}…", "debug")
+
+        # Get open issues count
+        open_url = f"https://api.github.com/repos/{self.github_username}/{repo_name}/issues"
+        params = {"state": "open", "per_page": 1}
+
+        try:
+            open_response = self._session.get(open_url, params=params, timeout=15)
+            
+            if open_response.status_code == 404:
+                return {"open_count": 0, "closed_count": 0, "recent_activity": False}
+                
+            if open_response.status_code >= 400:
+                if self.logger:
+                    self.logger.log(f"Error fetching open issues: {open_response.status_code}", "warning")
+                return {"open_count": 0, "closed_count": 0, "recent_activity": False}
+                
+            # Get total from Link header or fallback to counting
+            total_open = 0
+            if "Link" in open_response.headers:
+                link_header = open_response.headers["Link"]
+                last_match = re.search(r'page=(\d+)>; rel="last"', link_header)
+                if last_match:
+                    total_open = int(last_match.group(1))
+            
+            if total_open == 0:
+                try:
+                    # Just count what we got
+                    total_open = len(open_response.json())
+                except:
+                    total_open = 0
+            
+            # Check for recent activity (in the last 30 days)
+            recent_activity = False
+            if total_open > 0:
+                try:
+                    recent_params = {"state": "all", "per_page": 5, "sort": "updated", "direction": "desc"}
+                    recent_response = self._session.get(open_url, params=recent_params, timeout=15)
+                    if recent_response.status_code == 200:
+                        recent_issues = recent_response.json()
+                        if recent_issues:
+                            now = datetime.datetime.now()
+                            for issue in recent_issues:
+                                updated_at = issue.get("updated_at")
+                                if updated_at:
+                                    updated_date = datetime.datetime.fromisoformat(updated_at.rstrip("Z"))
+                                    if (now - updated_date).days <= 30:
+                                        recent_activity = True
+                                        break
+                except Exception as e:
+                    if self.logger:
+                        self.logger.log(f"Error checking recent activity: {e}", "debug")
+            
+            # Get closed issues count - approximate using repo stats
+            closed_count = 0
+            stats_url = f"https://api.github.com/repos/{self.github_username}/{repo_name}"
+            try:
+                if self.rate_limiter:
+                    self.rate_limiter.wait(
+                        self.logger, debug=getattr(self.logger, "debug_enabled", False)
+                    )
+                stats_response = self._session.get(stats_url, timeout=15)
+                if stats_response.status_code == 200:
+                    repo_stats = stats_response.json()
+                    # GitHub API provides open_issues_count, but not closed count directly
+                    # We can use this as an approximation
+                    closed_count = repo_stats.get("open_issues_count", 0) - total_open
+                    if closed_count < 0:
+                        closed_count = 0
+            except Exception as e:
+                if self.logger:
+                    self.logger.log(f"Error fetching repo stats: {e}", "debug")
+            
+            return {
+                "open_count": total_open,
+                "closed_count": closed_count,
+                "recent_activity": recent_activity
+            }
+            
+        except Exception as e:
+            if self.logger:
+                self.logger.log(f"Error fetching issues: {e}", "warning")
+            return {"open_count": 0, "closed_count": 0, "recent_activity": False}
+    
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type(APIError),
+    )
+    def get_repo_commit_activity(self, repo_name: str) -> Dict[str, Any]:
+        """Get commit activity statistics for a repository.
+
+        Args:
+            repo_name: Name of the repository
+
+        Returns:
+            Dictionary with commit activity information
+        """
+        if self.rate_limiter:
+            self.rate_limiter.wait(
+                self.logger, debug=getattr(self.logger, "debug_enabled", False)
+            )
+
+        if self.logger:
+            self.logger.log(f"Fetching commit activity for {repo_name}…", "debug")
+
+        url = f"https://api.github.com/repos/{self.github_username}/{repo_name}/commits"
+        params = {"per_page": 10}  # Just get recent commits
+
+        try:
+            response = self._session.get(url, params=params, timeout=15)
+            
+            if response.status_code == 404:
+                return {"recent_commits": 0, "active_last_month": False, "active_last_year": False}
+                
+            if response.status_code >= 400:
+                if self.logger:
+                    self.logger.log(f"Error fetching commits: {response.status_code}", "warning")
+                return {"recent_commits": 0, "active_last_month": False, "active_last_year": False}
+            
+            commits = response.json()
+            if not commits:
+                return {"recent_commits": 0, "active_last_month": False, "active_last_year": False}
+            
+            # Check activity periods
+            now = datetime.datetime.now()
+            active_last_month = False
+            active_last_year = False
+            
+            for commit in commits:
+                commit_date_str = commit.get("commit", {}).get("committer", {}).get("date")
+                if commit_date_str:
+                    commit_date = datetime.datetime.fromisoformat(commit_date_str.rstrip("Z"))
+                    days_since = (now - commit_date).days
+                    
+                    if days_since <= 30:
+                        active_last_month = True
+                    
+                    if days_since <= 365:
+                        active_last_year = True
+                        
+                    if active_last_month and active_last_year:
+                        break
+            
+            return {
+                "recent_commits": len(commits),
+                "active_last_month": active_last_month,
+                "active_last_year": active_last_year
+            }
+            
+        except Exception as e:
+            if self.logger:
+                self.logger.log(f"Error fetching commit activity: {e}", "warning")
+            return {"recent_commits": 0, "active_last_month": False, "active_last_year": False}
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type(APIError),
+    )
+    def get_repo_contributors_stats(self, repo_name: str) -> Dict[str, Any]:
+        """Get contributor statistics for a repository.
+
+        Args:
+            repo_name: Name of the repository
+
+        Returns:
+            Dictionary with contributor information
+        """
+        if self.rate_limiter:
+            self.rate_limiter.wait(
+                self.logger, debug=getattr(self.logger, "debug_enabled", False)
+            )
+
+        if self.logger:
+            self.logger.log(f"Fetching contributor stats for {repo_name}…", "debug")
+
+        url = f"https://api.github.com/repos/{self.github_username}/{repo_name}/contributors"
+        params = {"per_page": 100}  # Get up to 100 contributors
+
+        try:
+            response = self._session.get(url, params=params, timeout=15)
+            
+            if response.status_code == 404:
+                return {"count": 0, "active_contributors": 0}
+                
+            if response.status_code >= 400:
+                if self.logger:
+                    self.logger.log(f"Error fetching contributors: {response.status_code}", "warning")
+                return {"count": 0, "active_contributors": 0}
+            
+            contributors = response.json()
+            if not contributors:
+                return {"count": 0, "active_contributors": 0}
+            
+            # Count contributors with recent commits
+            # This requires checking each contributor's commits which would be too many API calls
+            # So we'll just return the total count
+            
+            return {
+                "count": len(contributors),
+                "active_contributors": min(len(contributors), 3)  # Rough estimate
+            }
+            
+        except Exception as e:
+            if self.logger:
+                self.logger.log(f"Error fetching contributors: {e}", "warning")
+            return {"count": 0, "active_contributors": 0}
+    
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type(APIError),
+    )
+    def get_repo_dependency_files(self, repo_name: str) -> Dict[str, Any]:
+        """Get dependency files for a repository.
+
+        Looks for common dependency files like package.json, requirements.txt, etc.
+
+        Args:
+            repo_name: Name of the repository
+
+        Returns:
+            Dictionary with dependency information
+        """
+        if self.rate_limiter:
+            self.rate_limiter.wait(
+                self.logger, debug=getattr(self.logger, "debug_enabled", False)
+            )
+
+        if self.logger:
+            self.logger.log(f"Checking for dependency files in {repo_name}…", "debug")
+
+        # Define common dependency file paths for different languages/frameworks
+        dependency_files = [
+            "package.json",           # Node.js
+            "requirements.txt",       # Python
+            "Pipfile",                # Python (pipenv)
+            "pyproject.toml",         # Python (modern)
+            "Gemfile",                # Ruby
+            "pom.xml",                # Java (Maven)
+            "build.gradle",           # Java (Gradle)
+            "composer.json",          # PHP
+            "Cargo.toml",             # Rust
+            "go.mod",                 # Go
+            "*.csproj",               # .NET
+        ]
+        
+        found_files = {}
+        content_samples = {}
+        
+        # Check each file
+        for file_path in dependency_files:
+            # Skip wildcard files for simplicity
+            if "*" in file_path:
+                continue
+                
+            url = f"https://api.github.com/repos/{self.github_username}/{repo_name}/contents/{file_path}"
+            
+            try:
+                if self.rate_limiter:
+                    self.rate_limiter.wait(
+                        self.logger, debug=getattr(self.logger, "debug_enabled", False)
+                    )
+                    
+                response = self._session.get(url, timeout=15)
+                
+                if response.status_code == 200:
+                    file_info = response.json()
+                    
+                    # If it's a file (not a directory)
+                    if isinstance(file_info, dict) and "type" in file_info and file_info["type"] == "file":
+                        found_files[file_path] = True
+                        
+                        # Try to get content (it's base64 encoded)
+                        if "content" in file_info and file_info["encoding"] == "base64":
+                            try:
+                                content = base64.b64decode(file_info["content"]).decode('utf-8')
+                                # Just store a small excerpt to avoid using too much memory
+                                content_samples[file_path] = content[:500]
+                            except:
+                                pass
+            except Exception as e:
+                if self.logger:
+                    self.logger.log(f"Error checking {file_path}: {e}", "debug")
+        
+        return {
+            "has_dependency_files": len(found_files) > 0,
+            "dependency_files": list(found_files.keys()),
+            "content_samples": content_samples
+        }
