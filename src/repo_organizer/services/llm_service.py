@@ -107,7 +107,7 @@ class LLMService:
             [
                 HumanMessage(
                     content="""
-            Analyze the GitHub repository based on the provided information. This is YOUR OWN personal repository, not a public library.
+            Analyze the GitHub repository based on the provided information.
 
             Repository Information:
             - Name: {repo_name}
@@ -120,12 +120,12 @@ class LLMService:
             - Programming Languages: {languages}
             
             Provide a comprehensive analysis covering:
-            1. A brief summary of the repository's purpose and function (focus on it being YOUR OWN personal project, not a public library).
+            1. A brief summary of the repository's purpose and function.
             2. Key strengths.
             3. Areas for improvement (weaknesses).
             4. Specific recommendations (each with a reason and priority: High, Medium, or Low).
             5. An assessment of the repository's activity level.
-            6. An estimated value/importance of the repository to YOU (High, Medium, or Low).
+            6. An estimated value/importance of the repository (High, Medium, or Low).
             7. Suggested tags/categories.
 
             Additional Context – README (truncated):

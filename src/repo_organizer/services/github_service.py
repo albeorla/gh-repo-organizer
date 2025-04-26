@@ -1,21 +1,14 @@
-"""
-GitHub service implementation for fetching repository information.
-
-This module contains the GitHubService class which implements the GitHubServiceProtocol,
-providing methods for interacting with GitHub data sources (API and local git repos).
-"""
-
 """GitHub service implementation that relies solely on the public REST API.
 
 The original implementation shell-ed out to the GitHub CLI (``gh``). That
 approach required the user to have the CLI installed and authenticated which
 is not ideal for portability or headless/server environments.  The service has
-been rewritten to use direct HTTPS calls via the official REST endpoints.
-
-Only the interfaces used by the rest of the application were re-implemented
-(``get_repos``, ``get_repo_languages`` and ``get_repo_readme``).  The remaining
-functions that operate on a *local* repository (e.g. ``get_repo_commits``) are
-left untouched as they never depended on the CLI.
+therefore been rewritten to use direct HTTPS calls via the official REST
+endpoints.  Only the interfaces used by the rest of the application were
+re-implemented (``get_repos``, ``get_repo_languages`` and ``get_repo_readme``).
+The remaining functions that operate on a *local* repository (e.g.
+``get_repo_commits``) never depended on the CLI and therefore remain
+unchanged.
 """
 
 from __future__ import annotations
@@ -25,6 +18,7 @@ import datetime
 import json
 import os
 import time
+import subprocess
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -69,22 +63,27 @@ class GitHubService:
         self.rate_limiter = rate_limiter
         self.logger = logger
 
-        # Validate that the GitHub CLI is available early so the user receives
-        # a clear, actionable error instead of a low-level FileNotFoundError
-        # later on.
-        import shutil
+        # ------------------------------------------------------------------
+        # Session set-up
+        # ------------------------------------------------------------------
+        # Use a *single* ``requests.Session`` instance for the lifetime of the
+        # service.  This drastically reduces the overhead of establishing TLS
+        # hand-shakes and negotiating HTTP/2 on every request.
 
-        if shutil.which("gh") is None:
-            message = (
-                "GitHub CLI ('gh') not found in PATH. Please install it "
-                "and authenticate with 'gh auth login' before running the "
-                "analyser."
-            )
-            if self.logger:
-                self.logger.log(message, level="error")
-            # Raise immediately – continuing without the CLI would break every
-            # call anyway.
-            raise FileNotFoundError(message)
+        self._session = requests.Session()
+
+        # Inject the *optional* GitHub token into every request.
+        if self.github_token:
+            self._session.headers.update({"Authorization": f"token {self.github_token}"})
+
+        # GitHub recommends explicitly setting an *application name* in the
+        # ``User-Agent`` header so they can reach out in case of issues.
+        self._session.headers.update(
+            {
+                "Accept": "application/vnd.github+json",
+                "User-Agent": "repo-organizer/1.0 (https://github.com/)",
+            }
+        )
 
     @retry(
         stop=stop_after_attempt(3),
@@ -92,70 +91,84 @@ class GitHubService:
         retry=retry_if_exception_type(APIError),
     )
     def get_repos(self, limit: int = 100) -> List[Dict[str, Any]]:
-        """Fetch repository information using GitHub CLI.
+        """Return public (non-fork) repositories for *github_username*.
+
+        The GitHub REST API limits the ``per_page`` parameter to 100 items.
+        Pagination is therefore required when *limit* exceeds that value.
 
         Args:
-            limit: Maximum number of repositories to fetch
-
-        Returns:
-            List of repository information dictionaries
+            limit: Maximum number of repositories to fetch (defaults to 100).
 
         Raises:
-            APIError: If GitHub CLI command fails
+            APIError: On network failures or unexpected status codes.
         """
-        # Apply rate limiting if available
-        if self.rate_limiter:
-            self.rate_limiter.wait(
-                self.logger, debug=getattr(self.logger, "debug_enabled", False)
-            )
 
-        try:
-            if self.logger:
-                self.logger.log(f"Fetching up to {limit} repositories for user {self.github_username}...")
+        collected: list[dict[str, Any]] = []
+        page = 1
 
-            # Explicitly specify the owner to ensure we only get the user's repositories
-            result = subprocess.run(
-                [
-                    "gh",
-                    "repo",
-                    "list",
-                    self.github_username,  # Explicitly specify the owner
-                    "--limit",
-                    str(limit),
-                    "--json",
-                    "name,description,url,updatedAt,isArchived,stargazerCount,forkCount",
-                ],
-                capture_output=True,
-                text=True,
-                timeout=30,
-            )
-
-            if result.returncode != 0:
-                if self.logger:
-                    self.logger.log(f"Error fetching repos: {result.stderr}", "error")
-                    self.logger.update_stats("retries")
-                raise APIError(f"Error fetching repos: {result.stderr}")
-
-            repos = json.loads(result.stdout)
-            if self.logger:
-                self.logger.log(
-                    f"Successfully fetched {len(repos)} repositories for {self.github_username}", "success"
+        while len(collected) < limit:
+            # ------------------------------------------------------------------
+            # Respect API rate limits *before* performing the request.
+            # ------------------------------------------------------------------
+            if self.rate_limiter:
+                self.rate_limiter.wait(
+                    self.logger, debug=getattr(self.logger, "debug_enabled", False)
                 )
-            return repos
-        except subprocess.TimeoutExpired:
-            if self.logger:
-                self.logger.log("Timeout while fetching repository list", "error")
-                self.logger.update_stats("retries")
-            raise APIError("Timeout while fetching repository list")
-        except json.JSONDecodeError:
-            if self.logger:
-                self.logger.log("Invalid JSON response from GitHub API", "error")
-                self.logger.update_stats("retries")
-            raise APIError("Invalid JSON response from GitHub API")
-        except Exception as e:
-            if self.logger:
-                self.logger.log(f"Error fetching repository list: {str(e)}", "error")
-            raise APIError(f"Error fetching repository list: {str(e)}")
+
+            params: dict[str, Any] = {
+                "per_page": min(100, limit - len(collected)),
+                "page": page,
+                "type": "owner",  # Only repos the user owns (exclude forks)
+                "sort": "updated",
+            }
+
+            url = f"https://api.github.com/users/{self.github_username}/repos"
+
+            try:
+                response = self._session.get(url, params=params, timeout=30)
+            except Exception as exc:  # pragma: no cover – network errors
+                if self.logger:
+                    self.logger.log(f"Network error fetching repos: {exc}", "error")
+                raise APIError(str(exc)) from exc
+
+            if response.status_code >= 400:
+                if self.logger:
+                    self.logger.log(
+                        f"GitHub API error ({response.status_code}) while fetching repos: {response.text}",
+                        "error",
+                    )
+                    # Count *all* 4xx/5xx responses as retries – they are
+                    # potentially transient (e.g. 502/503) or can be retried
+                    # after back-off (e.g. 403 rate limited without token).
+                    self.logger.update_stats("retries")
+                raise APIError(f"GitHub API responded with {response.status_code}")
+
+            try:
+                data = response.json()
+            except json.JSONDecodeError as exc:  # pragma: no cover
+                if self.logger:
+                    self.logger.log("Invalid JSON when fetching repos", "error")
+                    self.logger.update_stats("retries")
+                raise APIError("Invalid JSON when fetching repos") from exc
+
+            # ``type: owner`` already filters forks, but be defensive in case
+            # that behaviour changes.
+            collected.extend([repo for repo in data if not repo.get("fork", False)])
+
+            if len(data) < params["per_page"]:  # No more pages
+                break
+
+            page += 1
+
+        results = collected[:limit]
+
+        if self.logger:
+            self.logger.log(
+                f"Successfully fetched {len(results)} repositories for {self.github_username}",
+                "success",
+            )
+
+        return results
 
     @retry(
         stop=stop_after_attempt(3),
@@ -177,58 +190,48 @@ class GitHubService:
                 self.logger, debug=getattr(self.logger, "debug_enabled", False)
             )
 
+        if self.logger:
+            self.logger.log(f"Fetching languages for {repo_name}…", "debug")
+
+        url = f"https://api.github.com/repos/{self.github_username}/{repo_name}/languages"
+
         try:
-            if self.logger:
-                self.logger.log(f"Fetching languages for {repo_name}...", "debug")
-
-            # Construct the API path - properly handle repository paths
-            api_path = f"repos/{self.github_username}/{repo_name}/languages"
-            
-            result = subprocess.run(
-                ["gh", "api", api_path],
-                capture_output=True,
-                text=True,
-                timeout=15,
-            )
-
-            if result.returncode != 0:
-                if self.logger:
-                    self.logger.log(
-                        f"Error fetching languages for {repo_name}: {result.stderr}",
-                        "warning",
-                    )
-                    self.logger.update_stats("retries")
-                raise APIError(f"Error fetching languages: {result.stderr}")
-
-            if not result.stdout or result.stdout.strip() == "":
-                return {}
-
-            try:
-                languages = json.loads(result.stdout)
-                if languages:
-                    # Convert bytes to percentages
-                    total = sum(languages.values())
-                    return {
-                        lang: (value / total) * 100 for lang, value in languages.items()
-                    }
-            except json.JSONDecodeError:
-                if self.logger:
-                    self.logger.log(
-                        f"Invalid JSON response for languages: {result.stdout[:50]}...",
-                        "warning",
-                    )
-                    self.logger.update_stats("retries")
-                raise APIError("Invalid JSON response for languages")
-
-            return {}
-        except APIError:
-            raise  # Re-raise for retry
-        except Exception as e:
+            response = self._session.get(url, timeout=15)
+        except Exception as exc:  # pragma: no cover
             if self.logger:
                 self.logger.log(
-                    f"Error fetching languages for {repo_name}: {str(e)}", "warning"
+                    f"Network error fetching languages for {repo_name}: {exc}",
+                    "warning",
                 )
+            raise APIError(str(exc)) from exc
+
+        if response.status_code == 404:
+            # Repository deleted or made private – treat as empty
             return {}
+
+        if response.status_code >= 400:
+            if self.logger:
+                self.logger.log(
+                    f"GitHub API error ({response.status_code}) fetching languages for {repo_name}",
+                    "warning",
+                )
+                self.logger.update_stats("retries")
+            raise APIError("Error fetching languages")
+
+        try:
+            languages_bytes = response.json()
+        except json.JSONDecodeError as exc:  # pragma: no cover
+            if self.logger:
+                self.logger.log("Invalid JSON response for languages", "warning")
+            raise APIError("Invalid JSON response for languages") from exc
+
+        if not languages_bytes:
+            return {}
+
+        total_bytes = sum(languages_bytes.values()) or 1  # avoid ZeroDivision
+        return {
+            lang: (cnt / total_bytes) * 100 for lang, cnt in languages_bytes.items()
+        }
 
     # ------------------------------------------------------------------
     # README extraction helpers
@@ -242,10 +245,11 @@ class GitHubService:
     def get_repo_readme(self, repo_name: str, max_bytes: int = 5000) -> str:  # noqa: D401
         """Return the raw README contents for *repo_name*.
 
-        The GitHub CLI is used to fetch the README in *raw* format which
-        avoids the additional step of base-64 decoding the content that the
-        REST API normally returns.  The output is truncated to *max_bytes* to
-        ensure the prompt does not exceed the model's context window.
+        The GitHub REST API is queried with an ``Accept: application/vnd.github.raw``
+        header so the server returns the file content *directly* without the
+        base-64 encoding used by the default representation.  The response is
+        truncated to *max_bytes* characters to ensure we stay within the
+        language-model's context window.
 
         Args:
             repo_name: Name of the repository.
@@ -261,70 +265,48 @@ class GitHubService:
                 self.logger, debug=getattr(self.logger, "debug_enabled", False)
             )
 
+        if self.logger:
+            self.logger.log(f"Fetching README for {repo_name}…", "debug")
+
+        url = f"https://api.github.com/repos/{self.github_username}/{repo_name}/readme"
+
+        headers = {"Accept": "application/vnd.github.raw"}
+
         try:
-            if self.logger:
-                self.logger.log(f"Fetching README for {repo_name}…", "debug")
-
-            api_path = f"repos/{self.github_username}/{repo_name}/readme"
-
-            # ``Accept: application/vnd.github.raw`` instructs the API to
-            # return the raw file instead of base-64 encoded JSON.
-            result = subprocess.run(
-                [
-                    "gh",
-                    "api",
-                    "-H",
-                    "Accept: application/vnd.github.raw",
-                    api_path,
-                ],
-                capture_output=True,
-                text=True,
-                timeout=20,
-            )
-
-            if result.returncode != 0:
-                # README may legitimately be missing – treat 404 as empty.
-                if "Not Found" in result.stderr:
-                    if self.logger:
-                        self.logger.log(
-                            f"No README found for {repo_name}", "debug"
-                        )
-                    return ""
-
-                if self.logger:
-                    self.logger.log(
-                        f"Error fetching README for {repo_name}: {result.stderr}",
-                        "warning",
-                    )
-                    self.logger.update_stats("retries")
-                raise APIError(result.stderr.strip())
-
-            # Truncate to *max_bytes* characters to stay within context limits
-            readme_content = (result.stdout or "")[:max_bytes]
-
-            # Collapse excessive whitespace that does not add much signal to
-            # the model while still preserving separate paragraphs.
-            readme_content = "\n".join(
-                [line.rstrip() for line in readme_content.splitlines()]
-            )
-
-            return readme_content
-
-        except APIError:
-            raise
-        except subprocess.TimeoutExpired:
+            response = self._session.get(url, headers=headers, timeout=20)
+        except Exception as exc:  # pragma: no cover
             if self.logger:
                 self.logger.log(
-                    f"Timeout while fetching README for {repo_name}", "warning"
-                )
-            raise APIError("Timeout while fetching README")
-        except Exception as e:
-            if self.logger:
-                self.logger.log(
-                    f"Unexpected error fetching README for {repo_name}: {str(e)}",
+                    f"Network error fetching README for {repo_name}: {exc}",
                     "warning",
                 )
+            raise APIError(str(exc)) from exc
+
+        if response.status_code == 404:
+            # README may legitimately be missing – treat 404 as empty.
+            if self.logger:
+                self.logger.log(f"No README found for {repo_name}", "debug")
             return ""
+
+        if response.status_code >= 400:
+            if self.logger:
+                self.logger.log(
+                    f"GitHub API error ({response.status_code}) fetching README for {repo_name}",
+                    "warning",
+                )
+                self.logger.update_stats("retries")
+            raise APIError("Error fetching README")
+
+        # Truncate to *max_bytes* characters to stay within context limits.
+        readme_content = (response.text or "")[:max_bytes]
+
+        # Collapse excessive whitespace that does not add much signal to the
+        # language model while still preserving separate paragraphs.
+        readme_content = "\n".join(line.rstrip() for line in readme_content.splitlines())
+
+        return readme_content
+
+        # ``@retry`` will handle the re-execution in case of APIError.
 
     def get_repo_commits(self, repo_path: str, limit: int = 10) -> List[Commit]:
         """Get recent commits for a repository.
