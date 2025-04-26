@@ -163,8 +163,9 @@ This project follows Domain-Driven Design (DDD) principles with a hexagonal arch
 For more details on the architecture and design decisions:
 
 - See [CLAUDE.md](CLAUDE.md) for design principles and implementation patterns
-- Check [ROADMAP.md](ROADMAP.md) for prioritized development tasks
+- Check [docs/roadmap.md](docs/roadmap.md) for prioritized development tasks
 - Review Architecture Decision Records in [docs/adr](docs/adr)
+- Explore the full [documentation](docs/README.md)
 
 ## License
 

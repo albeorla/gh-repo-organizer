@@ -90,7 +90,7 @@ When implementing these features, follow these guidelines:
 1. Maintain backward compatibility when possible
 2. Add tests for new functionality
 3. Update documentation alongside code changes
-4. Follow the DDD principles outlined in CLAUDE.md
+4. Follow the DDD principles outlined in the architecture documentation
 5. Run `poetry run ruff check .` and `poetry run ruff format .` before committing
 
 ## Task Tracking
