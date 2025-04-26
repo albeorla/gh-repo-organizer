@@ -1,0 +1,115 @@
+"""
+Settings management module implementing Repository pattern for configuration.
+
+This module provides a centralized configuration management system using
+the Repository pattern, allowing access to configuration values from
+multiple sources (environment variables, config files, etc).
+"""
+
+import os
+from pathlib import Path
+from typing import Optional, Dict, Any
+
+from pydantic import BaseModel, Field, field_validator
+from dotenv import load_dotenv
+
+
+class Settings(BaseModel):
+    """Application settings using Pydantic for validation.
+
+    This class follows the Repository pattern for configuration management,
+    providing a clean interface to access configuration values.
+    """
+
+    # API keys
+    anthropic_api_key: str = Field(..., description="Anthropic API key")
+    github_token: Optional[str] = Field(None, description="GitHub token for API access")
+
+    # GitHub configuration
+    github_username: str = Field(..., description="GitHub username")
+
+    # Repository organizer settings
+    output_dir: str = Field(
+        ".out/repos", description="Directory for output files"
+    )
+    logs_dir: str = Field(
+        ".logs", description="Directory for log files"
+    )
+    max_repos: int = Field(100, description="Maximum number of repositories to analyze")
+
+    # Concurrency and rate limiting
+    max_workers: int = Field(5, description="Number of parallel workers")
+    github_rate_limit: int = Field(30, description="GitHub API calls per minute")
+    llm_rate_limit: int = Field(10, description="LLM API calls per minute")
+
+    # Debug settings
+    debug_logging: bool = Field(False, description="Enable debug logging")
+    quiet_mode: bool = Field(False, description="Minimize console output")
+
+    @field_validator("output_dir", "logs_dir")
+    def create_directory(cls, v: str) -> str:  # noqa: D401
+        """Return a fully-qualified path and guarantee the directory exists.
+
+        The path supplied by the user may contain *nix style home
+        shortcuts (``~``) or environment variables (e.g. ``$HOME``) which
+        need to be resolved before the directory can be created.  We
+        therefore expand them first and then convert the result to an
+        absolute path so the rest of the application can rely on a
+        canonical representation.
+        """
+
+        # Expand ``~`` to the user home and any *nix environment
+        # variables that may be present in the supplied string.
+        expanded = os.path.expanduser(os.path.expandvars(v))
+
+        # Convert to an absolute path so there is only ever a single,
+        # fully-qualified representation of the directory in the rest of
+        # the codebase.
+        abs_path = os.path.abspath(expanded)
+
+        # Finally, ensure the directory exists.  ``exist_ok=True`` makes
+        # the call idempotent so the validator can run multiple times
+        # safely during the lifetime of the application.
+        os.makedirs(abs_path, exist_ok=True)
+
+        return abs_path
+
+
+def load_settings(env_file: Optional[str] = None) -> Settings:
+    """Load settings from environment or .env file.
+
+    This function implements the Factory pattern to create a validated
+    Settings object.
+
+    Args:
+        env_file: Optional path to .env file
+
+    Returns:
+        Validated Settings object
+    """
+    # Load environment variables from .env file if specified
+    if env_file:
+        load_dotenv(env_file)
+    else:
+        load_dotenv()
+
+    # Extract settings from environment
+    # Allow users to override the default paths via environment variables as
+    # documented in the README.  Fallback to the previous defaults if the
+    # variables are not provided so existing behaviour is preserved.
+    settings_dict = {
+        "anthropic_api_key": os.getenv("ANTHROPIC_API_KEY", ""),
+        "github_token": os.getenv("GITHUB_TOKEN"),
+        "github_username": os.getenv("GITHUB_USERNAME", ""),
+        "output_dir": os.getenv("OUTPUT_DIR", ".out/repos"),
+        "logs_dir": os.getenv("LOGS_DIR", ".logs"),
+        "max_repos": int(os.getenv("MAX_REPOS", "100")),
+        "max_workers": int(os.getenv("MAX_WORKERS", "5")),
+        "github_rate_limit": int(os.getenv("GITHUB_RATE_LIMIT", "30")),
+        "llm_rate_limit": int(os.getenv("LLM_RATE_LIMIT", "10")),
+        "debug_logging": os.getenv("DEBUG_LOGGING", "false").lower() == "true",
+        "quiet_mode": os.getenv("QUIET_MODE", "false").lower() == "true",
+    }
+
+    # Create and validate settings
+    return Settings(**settings_dict)

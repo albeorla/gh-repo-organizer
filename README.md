@@ -4,10 +4,10 @@ A powerful tool that uses Langchain and Anthropic's Claude AI to analyze GitHub 
 
 ## Setup
 
-1. Install dependencies:
+1. Install dependencies using Poetry:
 
    ```bash
-   pip install -r requirements.txt
+   poetry install
    ```
 
 2. Create a `.env` file with your configuration:
@@ -23,11 +23,37 @@ A powerful tool that uses Langchain and Anthropic's Claude AI to analyze GitHub 
    # Repository Organizer Settings
    OUTPUT_DIR=~/dev/github/repo-info-docs
    MAX_REPOS=100
+   
+   # Concurrency and Rate Limiting Settings
+   MAX_WORKERS=5          # Number of parallel workers
+   GITHUB_RATE_LIMIT=30   # GitHub API calls per minute
+   LLM_RATE_LIMIT=10      # LLM API calls per minute
    ```
 
 3. Run the analyzer:
    ```bash
-   python repo_analyzer.py
+   poetry run repo-analyzer analyze
+   ```
+   
+   Or with additional options:
+   ```bash
+   # Show all available commands
+   poetry run repo-analyzer --help
+   
+   # Force re-analysis of all repositories
+   poetry run repo-analyzer analyze --force
+   
+   # Enable debug logging
+   poetry run repo-analyzer analyze --debug
+   
+   # Specify output directory
+   poetry run repo-analyzer analyze --output-dir ~/my-reports
+   
+   # Limit number of repositories
+   poetry run repo-analyzer analyze --max-repos 20
+   
+   # Clean up analysis files
+   poetry run repo-analyzer cleanup
    ```
 
 ## Output
@@ -46,6 +72,8 @@ A main summary report will also be generated that categorizes repositories by va
 ## Features
 
 - Automatically analyzes all GitHub repositories for a user
+- Parallel processing with customizable number of workers for faster analysis
+- Smart rate limiting for GitHub and LLM API calls to prevent throttling
 - Generates detailed reports for each repository with:
   - Basic repository information
   - Local information (size, path)
@@ -60,7 +88,8 @@ A main summary report will also be generated that categorizes repositories by va
 
 ## Prerequisites
 
-- Python 3.10+
+- Python 3.12+
+- Poetry (https://python-poetry.org/docs/#installation)
 - GitHub CLI (`gh`) installed and authenticated
 - Anthropic API key
 
@@ -73,6 +102,9 @@ The following environment variables can be configured in your `.env` file:
 - `GITHUB_USERNAME`: Your GitHub username
 - `OUTPUT_DIR`: Directory where reports will be generated
 - `MAX_REPOS`: Maximum number of repositories to analyze
+- `MAX_WORKERS`: Number of parallel workers for concurrent analysis (default: 5)
+- `GITHUB_RATE_LIMIT`: Maximum GitHub API calls per minute (default: 30)
+- `LLM_RATE_LIMIT`: Maximum LLM API calls per minute (default: 10)
 
 ## Example Output
 
