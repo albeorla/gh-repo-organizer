@@ -322,7 +322,9 @@ class ApplicationRunner:
             def update(self, n=1):
                 self.completed += n
                 if self.callback:
-                    self.callback(self.completed, self.total, f"Analyzed: {self.completed}, Total: {self.total}")
+                    # Set a maximum width for status text to prevent line wrapping
+                    status_text = f"Analyzed: {self.completed}, Total: {self.total}"
+                    self.callback(self.completed, self.total, status_text)
                 
             def set_description(self, desc):
                 if self.callback:
