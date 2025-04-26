@@ -1,8 +1,14 @@
 """
-Domain models for GitHub repository information.
+Legacy models package for backward compatibility.
+
+This package re-exports the models from the infrastructure layer to maintain
+backward compatibility with code that imports from the old location.
+
+DEPRECATED: New code should import directly from infrastructure.analysis.pydantic_models.
 """
 
-from repo_organizer.models.repo_models import (
+# Re-export models for backward compatibility
+from repo_organizer.infrastructure.analysis.pydantic_models import (
     LanguageBreakdown,
     RepoRecommendation,
     RepoAnalysis,

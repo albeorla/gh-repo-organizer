@@ -5,18 +5,23 @@ no notion of persistence at the domain level.  Therefore, simple immutable
 dataclasses are more than enough and do not require the heavier runtime cost
 of Pydantic validation.  However, the existing LangChain prompt & parser
 implementation relies on **Pydantic** models for JSON schema enforcement.  To
-avoid a large rewrite in this phase we *wrap* the existing Pydantic
-``RepoAnalysis`` while still providing an idiomatic dataclass façade for the
+avoid a large rewrite in this phase we *wrap* the Pydantic models from the
+infrastructure layer while still providing an idiomatic dataclass façade for the
 application & domain layers.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Sequence
 
-from repo_organizer.models.repo_models import RepoAnalysis as _RepoAnalysisPydantic
-from repo_organizer.models.repo_models import RepoRecommendation as _RecommendationPydantic
+# Import Pydantic models from the infrastructure layer
+from repo_organizer.infrastructure.analysis.pydantic_models import (
+    RepoAnalysis as _RepoAnalysisPydantic,
+)
+from repo_organizer.infrastructure.analysis.pydantic_models import (
+    RepoRecommendation as _RecommendationPydantic,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -75,7 +80,9 @@ class RepoAnalysis:
             summary=pyd_obj.summary,
             strengths=list(pyd_obj.strengths),
             weaknesses=list(pyd_obj.weaknesses),
-            recommendations=[Recommendation.from_pydantic(r) for r in pyd_obj.recommendations],
+            recommendations=[
+                Recommendation.from_pydantic(r) for r in pyd_obj.recommendations
+            ],
             activity_assessment=pyd_obj.activity_assessment,
             estimated_value=pyd_obj.estimated_value,
             tags=list(pyd_obj.tags),
@@ -91,4 +98,8 @@ class RepoAnalysis:
             activity_assessment=self.activity_assessment,
             estimated_value=self.estimated_value,
             tags=list(self.tags),
+            recommended_action=getattr(self, "recommended_action", "KEEP"),
+            action_reasoning=getattr(
+                self, "action_reasoning", "No specific reasoning provided"
+            ),
         )

@@ -1,11 +1,10 @@
 """
-Legacy module for backward compatibility.
+Infrastructure layer for the analysis bounded context.
 
-DEPRECATED: This module is kept for backward compatibility only.
-New code should import directly from infrastructure.analysis.pydantic_models.
+This package provides implementations of the domain ports defined in the analysis
+bounded context.
 """
 
-# Re-export all models from the new location
 from repo_organizer.infrastructure.analysis.pydantic_models import (
     LanguageBreakdown,
     RepoRecommendation,
