@@ -2,6 +2,89 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Meta Instructions
+
+### Planning Strategy
+
+When working on this codebase, follow these planning steps:
+
+1. **Understand the Request**
+   - Identify if it's a feature addition, bug fix, refactoring, or other task
+   - Map the request to the DDD bounded contexts (analysis, source_control)
+   - Check ROADMAP.md to see if the task is already prioritized
+
+2. **File Location Strategy**
+   - New domain models go in `domain/{bounded_context}/models.py`
+   - Domain interfaces go in `domain/{bounded_context}/protocols.py`
+   - Domain services go in `domain/{bounded_context}/services.py` 
+   - Technical adapters go in `infrastructure/{bounded_context}/{technology}_adapter.py`
+   - Use cases go in `application/use_cases/`
+   - CLI commands go in `cli/commands.py`
+
+3. **Implementation Approach**
+   - Apply DDD principles as described in the Appendix
+   - Focus on domain model correctness first
+   - Ensure proper separation between domain, application, and infrastructure
+   - Maintain backward compatibility when possible, using adapter pattern
+   - Add proper tests for new functionality
+
+4. **Code Review**
+   - Run `poetry run ruff check .` and `poetry run ruff format .` before submitting
+   - Check for proper error handling with specific exceptions
+   - Verify all imports follow the standard library -> third-party -> local pattern
+   - Ensure docstrings follow Google style format
+
+### Working with Files
+
+- **Domain Layer**
+  - These files should NEVER import from infrastructure or application layers
+  - Use Python's typing.Protocol for interfaces
+  - Keep domain models as simple dataclasses, preferably immutable (frozen=True)
+  - Domain services should only depend on domain models and interfaces
+
+- **Application Layer**
+  - Should only import from domain layer, never infrastructure
+  - Use dependency injection for infrastructure dependencies
+  - Handle orchestration between domain services
+  - Implement use cases that correspond to user operations
+
+- **Infrastructure Layer**
+  - Implement domain interfaces with specific technologies
+  - Keep external dependencies isolated here
+  - Use proper error handling to translate infrastructure errors to domain concepts
+  - Factory methods should create properly configured instances
+
+- **Interfaces Layer (CLI)**
+  - Focus on user interaction and input validation
+  - Delegate business logic to application layer
+  - Provide clear, useful feedback to users
+  - Properly format output for console
+
+### Implementation Patterns
+
+- **Composition over Inheritance**
+  - Prefer composition over inheritance for adapter implementations
+  - Use delegation to existing services when transitioning
+  - Example: `LangChainClaudeAdapter` uses `_llm_service` as a component
+
+- **Backward Compatibility**
+  - When refactoring, maintain backward compatibility through:
+    1. Re-export of moved models through original module path
+    2. Adapter classes that expose the old interface but use new implementation
+    3. Deprecation notices in docstrings for future migration
+  - Example: The models package re-exports from infrastructure/analysis
+
+- **Progressive Enhancement**
+  - Implement changes incrementally, following the ROADMAP.md priorities
+  - First get core domain models correct, then refactor infrastructure
+  - Add new features at the domain level first, then expose via application and interfaces
+
+- **Testing Strategy**
+  - Unit test core domain logic independently
+  - Use mocks for infrastructure dependencies
+  - Add integration tests for complete use cases
+  - Update tests as you refactor code
+
 ## Commands
 - Install dependencies: `poetry install`
 - Run the repo analyzer: `poetry run repo-analyzer analyze`
