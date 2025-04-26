@@ -7,8 +7,7 @@ multiple sources (environment variables, config files, etc).
 """
 
 import os
-from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 from dotenv import load_dotenv
@@ -29,13 +28,17 @@ class Settings(BaseModel):
     github_username: str = Field(..., description="GitHub username")
 
     # Repository organizer settings
-    output_dir: str = Field(
-        ".out/repos", description="Directory for output files"
-    )
-    logs_dir: str = Field(
-        ".logs", description="Directory for log files"
-    )
+    output_dir: str = Field(".out/repos", description="Directory for output files")
+    logs_dir: str = Field(".logs", description="Directory for log files")
     max_repos: int = Field(100, description="Maximum number of repositories to analyze")
+
+    # LLM settings
+    llm_model: str = Field("claude-3-7-sonnet-latest", description="LLM model to use")
+    llm_temperature: float = Field(0.2, description="LLM temperature (0.0-1.0)")
+    llm_thinking_enabled: bool = Field(
+        True, description="Enable extended thinking for LLM"
+    )
+    llm_thinking_budget: int = Field(16000, description="Token budget for LLM thinking")
 
     # Concurrency and rate limiting
     max_workers: int = Field(5, description="Number of parallel workers")
@@ -109,6 +112,12 @@ def load_settings(env_file: Optional[str] = None) -> Settings:
         "llm_rate_limit": int(os.getenv("LLM_RATE_LIMIT", "10")),
         "debug_logging": os.getenv("DEBUG_LOGGING", "false").lower() == "true",
         "quiet_mode": os.getenv("QUIET_MODE", "false").lower() == "true",
+        # LLM settings
+        "llm_model": os.getenv("LLM_MODEL", "claude-3-7-sonnet-latest"),
+        "llm_temperature": float(os.getenv("LLM_TEMPERATURE", "0.2")),
+        "llm_thinking_enabled": os.getenv("LLM_THINKING_ENABLED", "true").lower()
+        == "true",
+        "llm_thinking_budget": int(os.getenv("LLM_THINKING_BUDGET", "16000")),
     }
 
     # Create and validate settings

@@ -27,7 +27,9 @@ class GitHubRestAdapter(GitHubService, SourceControlPort):
     # SourceControlPort implementation
     # ------------------------------------------------------------------
 
-    def list_repositories(self, owner: str, *, limit: int | None = None) -> Sequence[Repository]:
+    def list_repositories(
+        self, owner: str, *, limit: int | None = None
+    ) -> Sequence[Repository]:
         # ``GitHubService`` is initialised with a username already -> validate
         if owner != self.github_username:
             raise ValueError(
@@ -62,7 +64,11 @@ class GitHubRestAdapter(GitHubService, SourceControlPort):
         # Reuse existing implementation that operates on local path
         # NOTE: For remote-only mode we would need extra API calls – out of scope
         # for the MVP.  We therefore raise *NotImplementedError* to be explicit.
-        raise NotImplementedError("Fetching commits not yet implemented in REST adapter")
+        raise NotImplementedError(
+            "Fetching commits not yet implemented in REST adapter"
+        )
 
     def contributors(self, repo: Repository) -> Sequence[Contributor]:
-        raise NotImplementedError("Fetching contributors not yet implemented in REST adapter")
+        raise NotImplementedError(
+            "Fetching contributors not yet implemented in REST adapter"
+        )

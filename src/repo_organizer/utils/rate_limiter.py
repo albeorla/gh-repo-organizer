@@ -5,7 +5,6 @@ Rate limiter for API calls to respect service limits.
 import time
 from threading import Lock
 from statistics import mean
-from typing import Optional, Any
 
 
 class RateLimiter:

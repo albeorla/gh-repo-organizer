@@ -85,6 +85,25 @@ When working on this codebase, follow these planning steps:
   - Add integration tests for complete use cases
   - Update tests as you refactor code
 
+### Architecture Decision Records
+
+All significant architectural decisions should be documented in Architecture Decision Records (ADRs) located in `docs/adr/`. When making substantial changes:
+
+1. Check if an existing ADR covers the decision area
+2. If not, create a new ADR following the template in `docs/adr/README.md`
+3. Document:
+   - The context and problem being addressed
+   - The decision made and alternatives considered
+   - Consequences (both positive and negative)
+   - Implementation strategy
+   - Technical debt created or addressed
+
+This ensures transparency in the development process and provides context for future contributors.
+
+Current ADRs:
+- [ADR 0001: Domain-Driven Design Architecture](docs/adr/0001-ddd-architecture.md)
+- [ADR 0002: Repository Action Decisions](docs/adr/0002-repository-action-decisions.md)
+
 ## Commands
 - Install dependencies: `poetry install`
 - Run the repo analyzer: `poetry run repo-analyzer analyze`

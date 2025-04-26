@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Sequence
 
-import pytest
 
 from repo_organizer.application import analyze_repositories
 from repo_organizer.domain.analysis.models import RepoAnalysis

@@ -16,15 +16,11 @@ implementations into this package without breaking imports.
 
 from repo_organizer.utils.logger import Logger as Logger  # noqa: F401
 from repo_organizer.utils.rate_limiter import RateLimiter as RateLimiter  # noqa: F401
-from repo_organizer.utils.exceptions import (  # noqa: F401
-    APIError,
-    RepoAnalyzerError,
-)
+from repo_organizer.utils.exceptions import APIError  # noqa: F401
 
 
 __all__ = [
     "Logger",
     "RateLimiter",
     "APIError",
-    "RepoAnalyzerError",
 ]

@@ -7,7 +7,7 @@ stay independent of external libraries.  Where possible we use
 helps maintain referential transparency.
 
 For the initial refactor sprint we simply *delegate* to the already existing
-Pydantic models under ``repo_organizer.models.repo_models`` to avoid code
+Pydantic models under ``repo_organizer.infrastructure.analysis.pydantic_models`` to avoid code
 duplication.  In a later stage we may gradually migrate towards lightweight
 ``dataclasses``.
 """

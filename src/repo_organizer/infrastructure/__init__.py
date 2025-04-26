@@ -8,4 +8,3 @@ __all__ = ["GitHubRestAdapter"]
 from .langchain_claude import LangChainClaudeAdapter  # noqa: E402 F401
 
 __all__.append("LangChainClaudeAdapter")
-

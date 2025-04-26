@@ -5,7 +5,6 @@ This module provides a modern CLI using Typer with rich integration for
 an enhanced user experience.
 """
 
-import sys
 import time
 from typing import Optional
 from pathlib import Path
@@ -21,13 +20,11 @@ from rich.progress import (
     TaskProgressColumn,
 )
 from rich.panel import Panel
-from rich.style import Style
 from rich.table import Table
 from rich.syntax import Syntax
-import shellingham
 
 from repo_organizer.app.application_factory import ApplicationFactory
-from repo_organizer.config.settings import Settings, load_settings
+from repo_organizer.config.settings import load_settings
 
 # Create Typer app with rich integration
 app = typer.Typer(
@@ -35,6 +32,37 @@ app = typer.Typer(
     help="Analyze GitHub repositories and provide insights using AI.",
     add_completion=True,
 )
+
+# ---------------------------------------------------------------------------
+# New *DDD* command using the refactored architecture (bounded contexts).
+# ---------------------------------------------------------------------------
+
+
+@app.command("analyze-ddd", hidden=True)
+def analyze_ddd(
+    owner: str = typer.Option(None, "--owner", help="GitHub owner/user to analyze"),
+    limit: int = typer.Option(None, "--limit", help="Max repositories"),
+    output_dir: Path = typer.Option(
+        Path(".out/repos"), "--output-dir", help="Directory for markdown reports"
+    ),
+):
+    """Legacy command maintained for backwards compatibility.
+
+    This command is now hidden and redirects to the main analyze command
+    which has been updated to use the DDD architecture by default.
+    """
+
+    # Redirect to the main analyze command which now uses the DDD architecture by default
+    output_dir_str = str(output_dir) if output_dir else None
+    return analyze(
+        owner=owner,
+        limit=limit,
+        output_dir=output_dir_str,
+        force=False,
+        debug=False,
+        quiet=False,
+    )
+
 
 # Create console for rich output
 console = Console()
@@ -79,44 +107,100 @@ def analyze(
         help="Force re-analysis of all repositories, ignoring cached results.",
     ),
     output_dir: str = typer.Option(
-        None, "--output-dir", "-o", help="Directory to output analysis results (default: .out/repos)."
+        None,
+        "--output-dir",
+        "-o",
+        help="Directory to output analysis results (default: .out/repos).",
+    ),
+    limit: int = typer.Option(
+        None, "--limit", "-l", help="Maximum number of repositories to analyze."
     ),
     max_repos: Optional[int] = typer.Option(
-        None, "--max-repos", "-m", help="Maximum number of repositories to analyze."
+        None,
+        "--max-repos",
+        "-m",
+        help="Maximum number of repositories to analyze (deprecated, use --limit).",
     ),
+    owner: str = typer.Option(None, "--owner", help="GitHub owner/user to analyze."),
     debug: bool = typer.Option(False, "--debug", "-d", help="Enable debug logging."),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize console output."),
 ):
     """
-    Analyze GitHub repositories and generate detailed reports.
+    Analyze GitHub repositories and generate detailed reports using domain-driven design.
+
+    This command uses the DDD architecture to provide more accurate repository analysis
+    with improved error handling and fewer issues with invalid repository information.
     """
+    # For backwards compatibility
+    if max_repos is not None and limit is None:
+        limit = max_repos
+
+    # Use the DDD approach
+    from repo_organizer.config.settings import load_settings
+    from repo_organizer.infrastructure import GitHubRestAdapter, LangChainClaudeAdapter
+    from repo_organizer.application import analyze_repositories
+    from repo_organizer.shared import Logger, RateLimiter
+    from pathlib import Path
+
+    settings = load_settings()
+
+    # Resolve owner
+    if owner is None:
+        if settings.github_username:
+            owner = settings.github_username
+        else:
+            console.print(
+                "[red]Owner not specified and GITHUB_USERNAME missing in env[/]"
+            )
+            raise typer.Exit(1)
+
+    # Resolve output directory
+    if output_dir is None:
+        output_path = Path(settings.output_dir)
+    else:
+        import os
+
+        expanded_output = os.path.abspath(
+            os.path.expanduser(os.path.expandvars(output_dir))
+        )
+        output_path = Path(expanded_output)
+
     if not quiet:
         console.print("")  # Add a blank line for better output formatting
-    
+
     with console.status(
         "[bold green]Starting repository analysis...[/]", spinner="dots"
     ):
-        try:
-            # Create application runner with CLI options
-            runner = ApplicationFactory.create_application(
-                force_analysis=force,
-                output_dir=output_dir,
-                max_repos=max_repos,
-                debug_logging=debug,
-                quiet_mode=quiet,
-            )
+        # Create the output directory
+        output_path.mkdir(parents=True, exist_ok=True)
 
-            # Get number of repositories to analyze
-            total_repos = runner.get_total_repos()
+        # Setup logger
+        log_path = output_path / "analysis.log"
+        logger = Logger(str(log_path), console, debug_enabled=debug, quiet_mode=quiet)
 
-        except Exception as e:
-            console.print(f"[bold red]Error initializing:[/] {e}")
-            raise typer.Exit(code=1)
+        # Setup rate limiters
+        github_lim = RateLimiter(settings.github_rate_limit, name="GitHub")
+        llm_lim = RateLimiter(settings.llm_rate_limit, name="LLM")
 
-    if not quiet:
-        console.print("")  # Add another blank line before progress display
-    
-    # Use rich progress display
+        # Create adapters using DDD approach
+        github = GitHubRestAdapter(
+            github_username=owner,
+            github_token=settings.github_token,
+            rate_limiter=github_lim,
+            logger=logger,
+        )
+
+        llm = LangChainClaudeAdapter(
+            api_key=settings.anthropic_api_key,
+            model_name=settings.llm_model,
+            temperature=settings.llm_temperature,
+            thinking_enabled=settings.llm_thinking_enabled,
+            thinking_budget=settings.llm_thinking_budget,
+            rate_limiter=llm_lim,
+            logger=logger,
+        )
+
+    # Start the repository analysis
     with Progress(
         SpinnerColumn(),
         TextColumn("[bold blue]{task.description}"),
@@ -126,51 +210,126 @@ def analyze(
         TextColumn("[dim]{task.fields[details]}"),
         console=console,
         expand=True,
-        transient=False,  # Don't leave the progress bar after completion
-        refresh_per_second=5,  # Limit refresh rate to avoid flickering
-        get_time=None  # Prevent interference with output
+        transient=False,
+        refresh_per_second=5,
+        get_time=None,
     ) as progress:
-        # Create task for tracking progress
-        task = progress.add_task(
-            "[green]Analyzing repositories", 
-            total=total_repos, 
-            status="Starting...", 
-            details=""
+        fetch_task = progress.add_task(
+            "[cyan]Fetching repositories", total=1, status="Starting...", details=""
         )
 
-        # Run analysis with progress updates
-        def update_progress(completed, total, status=None):
-            details = ""
-            # Format the status display to avoid line wrapping
-            if status and len(status) > 25:  # Keep status concise
-                details = status  # Move longer text to details
-                status = f"{completed}/{total}"
-            
-            # Ensure we never exceed the width of the terminal
-            try:
-                term_width = os.get_terminal_size().columns - 20  # Leave some margin
-                if details and len(details) > term_width:
-                    details = details[:term_width] + "..."
-            except (OSError, AttributeError):
-                pass
-                
+        try:
+            if not quiet:
+                console.print(f"[cyan]Fetching repositories for [bold]{owner}[/]...")
+
+            analyses = analyze_repositories(owner, github, llm, limit=limit)
             progress.update(
-                task,
-                completed=completed,
-                status=status or f"{completed}/{total}",
-                details=details
+                fetch_task,
+                completed=1,
+                status="Done",
+                details=f"Found {len(analyses)} repositories",
             )
 
-        # Run the analysis with progress callback
-        try:
-            result = runner.run(progress_callback=update_progress)
+            # Create a new task for analyzing repositories
+            task = progress.add_task(
+                "[green]Analyzing repositories",
+                total=len(analyses),
+                status="Starting...",
+                details="",
+            )
+
+            # Write markdown files for each repository analysis
+            success_count = 0
+            fail_count = 0
+
+            for i, a in enumerate(analyses):
+                path = output_path / f"{a.repo_name}.md"
+
+                # Update progress
+                details = f"Processing {a.repo_name}"
+                progress.update(
+                    task,
+                    completed=i + 1,
+                    status=f"{i + 1}/{len(analyses)}",
+                    details=details,
+                )
+
+                try:
+                    with open(path, "w") as f:
+                        f.write(f"# {a.repo_name}\n\n")
+                        f.write("## Summary\n\n")
+                        f.write(f"{a.summary}\n\n")
+
+                        if "error" not in a.tags and "analysis-failed" not in a.tags:
+                            # Only write these sections for successful analyses
+                            f.write("## Strengths\n\n")
+                            for strength in a.strengths:
+                                f.write(f"- {strength}\n")
+                            f.write("\n")
+
+                            f.write("## Weaknesses\n\n")
+                            for weakness in a.weaknesses:
+                                f.write(f"- {weakness}\n")
+                            f.write("\n")
+
+                            if a.recommendations:
+                                f.write("## Recommendations\n\n")
+                                for rec in a.recommendations:
+                                    f.write(
+                                        f"- **{rec.recommendation}** ({rec.priority} Priority)  \n"
+                                    )
+                                    f.write(f"  *Reason: {rec.reason}*\n")
+                                f.write("\n")
+
+                            f.write("## Assessment\n\n")
+                            f.write(f"- **Activity**: {a.activity_assessment}\n")
+                            f.write(f"- **Value**: {a.estimated_value}\n")
+                            f.write(f"- **Tags**: {', '.join(a.tags)}\n")
+                            success_count += 1
+                        else:
+                            f.write(f"**Analysis failed**: {a.summary}\n")
+                            fail_count += 1
+                except Exception as e:
+                    console.print(f"[red]Error writing report for {a.repo_name}: {e}")
+                    fail_count += 1
+
+            # Create summary report
+            summary_path = output_path / "repositories_report.md"
+            with open(summary_path, "w") as f:
+                f.write("# Repository Analysis Summary\n\n")
+                f.write("## Overview\n\n")
+                f.write(f"- **Total Repositories**: {len(analyses)}\n")
+                f.write(f"- **Successfully Analyzed**: {success_count}\n")
+                f.write(f"- **Failed Analyses**: {fail_count}\n\n")
+
+                f.write("## Repositories\n\n")
+
+                for a in analyses:
+                    value_icon = (
+                        "🔴"
+                        if a.estimated_value == "Low"
+                        else "🟡"
+                        if a.estimated_value == "Medium"
+                        else "🟢"
+                    )
+                    status = (
+                        "✅"
+                        if "error" not in a.tags and "analysis-failed" not in a.tags
+                        else "❌"
+                    )
+
+                    f.write(f"### {a.repo_name} {value_icon} {status}\n\n")
+                    f.write(f"_{a.summary}_\n\n")
+                    f.write(f"- **Activity**: {a.activity_assessment}\n")
+                    f.write(f"- **Value**: {a.estimated_value}\n")
+                    f.write(f"- **Tags**: {', '.join(a.tags)}\n\n")
 
             # Show final results
             if not quiet:
                 console.print("\n[bold green]Analysis complete![/]")
                 console.print(
                     Panel(
-                        runner.get_summary(),
+                        f"Total Repositories: {len(analyses)}\nSuccessfully Analyzed: {success_count}\nFailed Analyses: {fail_count}",
                         title="Repository Analysis Summary",
                         border_style="green",
                         expand=False,
@@ -178,14 +337,12 @@ def analyze(
                 )
 
                 # Show output location
-                if result.get("output_dir"):
-                    console.print(
-                        f"\nReports generated in: [bold]{result['output_dir']}[/]"
-                    )
+                console.print(
+                    f"\nReports generated in: [bold]{output_path.absolute()}[/]"
+                )
             else:
                 # Just print the output path in quiet mode
-                if result.get("output_dir"):
-                    console.print(f"{result['output_dir']}")
+                console.print(f"{output_path.absolute()}")
 
         except KeyboardInterrupt:
             console.print("\n[bold yellow]Operation cancelled by user.[/]")
@@ -284,22 +441,21 @@ def logs(
     # Get logs directory from settings
     settings = load_settings()
     logs_dir = settings.logs_dir
-    
+
     # Ensure logs directory exists
     if not os.path.exists(logs_dir):
         console.print(f"[yellow]Logs directory not found: {logs_dir}[/]")
         return
-        
+
     # Get all log files
     log_files = sorted(
-        [f for f in os.listdir(logs_dir) if f.startswith("analysis_log_")],
-        reverse=True
+        [f for f in os.listdir(logs_dir) if f.startswith("analysis_log_")], reverse=True
     )
-    
+
     if not log_files:
         console.print("[yellow]No log files found.[/]")
         return
-        
+
     # Show list of all log files
     if all_logs:
         table = Table(title="Available Log Files")
@@ -307,7 +463,7 @@ def logs(
         table.add_column("Date", style="green")
         table.add_column("Time", style="green")
         table.add_column("Size", style="blue", justify="right")
-        
+
         for file in log_files:
             # Extract date and time from filename
             try:
@@ -318,19 +474,19 @@ def logs(
                 else:
                     date = "Unknown"
                     time = "Unknown"
-            except:
+            except Exception:  # Be specific about the exception
                 date = "Unknown"
                 time = "Unknown"
-                
+
             # Get file size
             size = os.path.getsize(os.path.join(logs_dir, file))
-            size_str = f"{size/1024:.1f} KB" if size > 1024 else f"{size} bytes"
-            
+            size_str = f"{size / 1024:.1f} KB" if size > 1024 else f"{size} bytes"
+
             table.add_row(file, date, time, size_str)
-            
+
         console.print(table)
         return
-        
+
     # Determine which log file to show
     file_to_show = None
     if log_file:
@@ -342,7 +498,9 @@ def logs(
             if len(matches) == 1:
                 file_to_show = matches[0]
             elif len(matches) > 1:
-                console.print(f"[yellow]Multiple log files match '{log_file}'. Please be more specific:[/]")
+                console.print(
+                    f"[yellow]Multiple log files match '{log_file}'. Please be more specific:[/]"
+                )
                 for match in matches[:5]:  # Show at most 5 matches
                     console.print(f"  {match}")
                 if len(matches) > 5:
@@ -353,26 +511,28 @@ def logs(
                 return
     elif latest:
         file_to_show = log_files[0] if log_files else None
-    
+
     if not file_to_show:
         console.print("[yellow]No log file specified or found.[/]")
         return
-        
+
     # Display the log file
     log_path = os.path.join(logs_dir, file_to_show)
     try:
         with open(log_path, "r") as f:
             content = f.read()
-        
+
         # Create syntax highlighted content
         syntax = Syntax(content, "text", theme="monokai", line_numbers=True)
-        
-        console.print(Panel(
-            syntax,
-            title=f"Log File: {file_to_show}",
-            subtitle=f"Path: {log_path}",
-            expand=False
-        ))
+
+        console.print(
+            Panel(
+                syntax,
+                title=f"Log File: {file_to_show}",
+                subtitle=f"Path: {log_path}",
+                expand=False,
+            )
+        )
     except Exception as e:
         console.print(f"[red]Error reading log file: {e}[/]")
 
@@ -395,48 +555,48 @@ def reports(
     # Get output directory from settings
     settings = load_settings()
     output_dir = settings.output_dir
-    
+
     # Ensure output directory exists
     if not os.path.exists(output_dir):
         console.print(f"[yellow]Reports directory not found: {output_dir}[/]")
         return
-        
+
     # Get all report files
     report_files = [f for f in os.listdir(output_dir) if f.endswith(".md")]
-    
+
     if not report_files:
         console.print("[yellow]No report files found.[/]")
         return
-        
+
     # List all report files
     if list_reports:
         table = Table(title="Available Repository Reports")
         table.add_column("Repository", style="cyan")
         table.add_column("Size", style="green", justify="right")
         table.add_column("Last Modified", style="blue")
-        
+
         for file in sorted(report_files):
             # Skip the main summary report
             if file == "repositories_report.md":
                 continue
-                
+
             # Get repo name from filename
             repo_name = file.replace(".md", "")
-            
+
             # Get file details
             file_path = os.path.join(output_dir, file)
             size = os.path.getsize(file_path)
-            size_str = f"{size/1024:.1f} KB" if size > 1024 else f"{size} bytes"
-            
+            size_str = f"{size / 1024:.1f} KB" if size > 1024 else f"{size} bytes"
+
             # Get last modified time
             mod_time = os.path.getmtime(file_path)
             mod_time_str = time.strftime("%Y-%m-%d %H:%M", time.localtime(mod_time))
-            
+
             table.add_row(repo_name, size_str, mod_time_str)
-            
+
         console.print(table)
         return
-        
+
     # Show report for a specific repository
     if repository:
         # Check if report exists directly
@@ -447,7 +607,9 @@ def reports(
             if len(matches) == 1:
                 report_file = matches[0]
             elif len(matches) > 1:
-                console.print(f"[yellow]Multiple reports match '{repository}'. Please be more specific:[/]")
+                console.print(
+                    f"[yellow]Multiple reports match '{repository}'. Please be more specific:[/]"
+                )
                 for match in matches[:10]:  # Show at most 10 matches
                     console.print(f"  {match.replace('.md', '')}")
                 if len(matches) > 10:
@@ -456,46 +618,50 @@ def reports(
             else:
                 console.print(f"[red]No report found for repository: {repository}[/]")
                 return
-                
+
         # Display the repository report
         report_path = os.path.join(output_dir, report_file)
         try:
             with open(report_path, "r") as f:
                 content = f.read()
-            
+
             # Create syntax highlighted content
             syntax = Syntax(content, "markdown", theme="monokai")
-            
-            console.print(Panel(
-                syntax,
-                title=f"Repository Report: {report_file.replace('.md', '')}",
-                subtitle=f"Path: {report_path}",
-                expand=False
-            ))
+
+            console.print(
+                Panel(
+                    syntax,
+                    title=f"Repository Report: {report_file.replace('.md', '')}",
+                    subtitle=f"Path: {report_path}",
+                    expand=False,
+                )
+            )
         except Exception as e:
             console.print(f"[red]Error reading report file: {e}[/]")
         return
-        
+
     # Show summary report
     if summary:
         summary_path = os.path.join(output_dir, "repositories_report.md")
         if not os.path.exists(summary_path):
             console.print("[yellow]Summary report not found. Run analysis first.[/]")
             return
-            
+
         try:
             with open(summary_path, "r") as f:
                 content = f.read()
-            
+
             # Create syntax highlighted content
             syntax = Syntax(content, "markdown", theme="monokai")
-            
-            console.print(Panel(
-                syntax,
-                title="Repository Analysis Summary",
-                subtitle=f"Path: {summary_path}",
-                expand=False
-            ))
+
+            console.print(
+                Panel(
+                    syntax,
+                    title="Repository Analysis Summary",
+                    subtitle=f"Path: {summary_path}",
+                    expand=False,
+                )
+            )
         except Exception as e:
             console.print(f"[red]Error reading summary report: {e}[/]")
 
@@ -517,7 +683,7 @@ def reset(
 
     # Get the user's GitHub username
     github_username = temp_app.settings.github_username
-    
+
     if not quiet:
         console.print(f"[bold blue]GitHub Username:[/] {github_username}")
 
@@ -532,14 +698,14 @@ def reset(
         if not quiet:
             console.print(f"[yellow]No analysis files found in {output_path}[/]")
         raise typer.Exit(code=0)
-        
+
     # Fetch the user's actual repositories
     try:
         # Respect the user's MAX_REPOS configuration to avoid unnecessary API
         # calls during the reset operation.
         repos = temp_app.github_service.get_repos(limit=temp_app.settings.max_repos)
         repo_names = set(repo["name"] for repo in repos)
-        
+
         # Identify reports that don't belong to the user's repositories
         invalid_reports = []
         for file_path in report_files:
@@ -547,23 +713,25 @@ def reset(
             # Skip the main report file
             if repo_name == "repositories_report":
                 continue
-                
+
             if repo_name not in repo_names:
                 invalid_reports.append(file_path)
-                
+
         if not invalid_reports:
             if not quiet:
                 console.print("[green]No invalid repository reports found.[/]")
             raise typer.Exit(code=0)
-            
+
         # Show what will be deleted
         if not quiet:
-            console.print(f"[yellow]Found {len(invalid_reports)} repository reports that don't match your GitHub repositories:[/]")
+            console.print(
+                f"[yellow]Found {len(invalid_reports)} repository reports that don't match your GitHub repositories:[/]"
+            )
             for file_path in invalid_reports[:10]:
                 console.print(f"  • {file_path.name}")
             if len(invalid_reports) > 10:
                 console.print(f"  • ... and {len(invalid_reports) - 10} more")
-                
+
         # Ask for confirmation
         if not force and not quiet:
             delete_confirmed = typer.confirm(
@@ -572,7 +740,7 @@ def reset(
             if not delete_confirmed:
                 console.print("[yellow]Operation cancelled.[/]")
                 raise typer.Exit(code=0)
-                
+
         # Delete the invalid files
         with Progress(
             SpinnerColumn(),
@@ -583,14 +751,14 @@ def reset(
             disable=quiet,
         ) as progress:
             task = progress.add_task("[red]Deleting files", total=len(invalid_reports))
-            
+
             for file_path in invalid_reports:
                 try:
                     file_path.unlink()
                     progress.advance(task)
                 except Exception as e:
                     console.print(f"[red]Error deleting {file_path.name}: {e}[/]")
-                    
+
         # Also remove the summary report so it will be regenerated
         summary_path = output_path / "repositories_report.md"
         if summary_path.exists():
@@ -600,14 +768,17 @@ def reset(
                     console.print("[green]Removed summary report for regeneration.[/]")
             except Exception as e:
                 console.print(f"[red]Error removing summary report: {e}[/]")
-                
+
         if not quiet:
-            console.print(f"[bold green]Successfully removed {len(invalid_reports)} invalid repository reports![/]")
-            
+            console.print(
+                f"[bold green]Successfully removed {len(invalid_reports)} invalid repository reports![/]"
+            )
+
     except Exception as e:
         console.print(f"[bold red]Error resetting repository files: {e}[/]")
         if getattr(temp_app.logger, "debug_enabled", False):
             import traceback
+
             console.print(traceback.format_exc())
         raise typer.Exit(code=1)
 

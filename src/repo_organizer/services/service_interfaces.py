@@ -7,7 +7,11 @@ Dependency Inversion principles from SOLID.
 """
 
 from typing import Protocol, List, Dict, Any, Optional
-from repo_organizer.models.repo_models import Commit, Contributor, RepoAnalysis
+from repo_organizer.infrastructure.analysis.pydantic_models import (
+    Commit,
+    Contributor,
+    RepoAnalysis,
+)
 
 
 class LoggerProtocol(Protocol):

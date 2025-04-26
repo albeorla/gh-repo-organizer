@@ -19,6 +19,7 @@ from typing import Any, Optional
 try:
     from langchain_anthropic import ChatAnthropic  # type: ignore
 except ModuleNotFoundError:  # pragma: no cover – executed in test env only
+
     class _StubChatAnthropic:  # noqa: D401,E302
         """Very small stub that fulfils the interface used in tests."""
 
@@ -41,7 +42,7 @@ from langchain.output_parsers import OutputFixingParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 
-from repo_organizer.models.repo_models import RepoAnalysis
+from repo_organizer.infrastructure.analysis.pydantic_models import RepoAnalysis
 from repo_organizer.utils.logger import Logger
 from repo_organizer.utils.rate_limiter import RateLimiter
 
@@ -57,6 +58,9 @@ class LLMService:
         self,
         api_key: str,
         model_name: str = "claude-3-7-sonnet-latest",
+        temperature: float = 0.2,
+        thinking_enabled: bool = True,
+        thinking_budget: int = 16000,
         rate_limiter: Optional[RateLimiter] = None,
         logger: Optional[Logger] = None,
     ):
@@ -65,19 +69,40 @@ class LLMService:
         Args:
             api_key: API key for the language model provider
             model_name: Model name to use
+            temperature: Temperature for LLM outputs (0.0-1.0)
+            thinking_enabled: Whether to enable extended thinking
+            thinking_budget: Token budget for extended thinking
             rate_limiter: Optional rate limiter for API calls
             logger: Optional logger for service operations
         """
         self.api_key = api_key
         self.model_name = model_name
+        self.temperature = temperature
+        self.thinking_enabled = thinking_enabled
+        self.thinking_budget = thinking_budget
         self.rate_limiter = rate_limiter
         self.logger = logger
-        self.llm = ChatAnthropic(
-            model=model_name,
-            temperature=0.2,
-            anthropic_api_key=api_key,
-            max_retries=3,  # Built-in retries for LangChain
-        )
+
+        # Initialize ChatAnthropic with extended thinking
+        kwargs = {
+            "model": model_name,
+            "temperature": temperature,
+            "anthropic_api_key": api_key,
+            "max_retries": 3,  # Built-in retries for LangChain
+        }
+
+        # Add extended thinking if enabled
+        if thinking_enabled:
+            kwargs["extra_body"] = {
+                "thinking": {"type": "enabled", "budget_tokens": thinking_budget}
+            }
+            if logger and logger.debug_enabled:
+                logger.log(
+                    f"Enabling extended thinking with budget: {thinking_budget} tokens",
+                    "debug",
+                )
+
+        self.llm = ChatAnthropic(**kwargs)
 
         # Lazily-built analysis chain – constructed on first use and then
         # cached for subsequent repository analyses.  Creating the chain can be
@@ -134,7 +159,9 @@ class LLMService:
             [
                 HumanMessage(
                     content="""
-            Analyze the GitHub repository based on the provided information.
+            You are an AI assistant specialized in analyzing GitHub repositories and generating detailed reports. Your task is to evaluate a repository based on its README content and provide valuable insights, recommendations, and a decision on the repository's future.
+
+            First, carefully read and analyze the following repository information:
 
             Repository Information:
             - Name: {repo_name}
@@ -157,6 +184,37 @@ class LLMService:
             - {dependency_info}
             - {dependency_context}
             
+            README Content:
+            {readme_excerpt}
+
+            Based on this information, you will generate a detailed analysis. Before writing the final report, conduct a thorough evaluation inside your thinking block:
+
+            1. Summarize the key points from the README:
+               - Quote relevant sections that describe the main purpose of the repository
+               - List and count the key features or functionalities (e.g., 1. Feature A, 2. Feature B, etc.)
+               - Identify the target audience or use cases
+
+            2. Evaluate the repository's strengths:
+               - Consider code quality, documentation, uniqueness, and potential usefulness
+               - Quote specific sections that highlight these strengths
+
+            3. Identify areas for improvement:
+               - Look for gaps in documentation, features, or development practices
+               - Quote or reference specific sections that could be improved
+
+            4. Assess the repository's overall value and activity level:
+               - Consider factors such as last update, stars, forks, and community engagement
+               - Quote any relevant statistics or information from the README
+
+            5. Based on your analysis, consider arguments for each possible action:
+               - DELETE: [Arguments for deletion]
+               - ARCHIVE: [Arguments for archiving]
+               - EXTRACT: [Arguments for extracting valuable parts]
+               - KEEP: [Arguments for keeping as is]
+               - PIN: [Arguments for pinning/featuring]
+
+            6. Determine the most appropriate action and explain your reasoning.
+
             Provide a comprehensive analysis covering:
             1. A brief summary of the repository's purpose and function.
             2. Key strengths.
@@ -165,10 +223,8 @@ class LLMService:
             5. An assessment of the repository's activity level.
             6. An estimated value/importance of the repository (High, Medium, or Low).
             7. Suggested tags/categories.
+            8. Recommended action (DELETE/ARCHIVE/EXTRACT/KEEP/PIN) with reasoning.
 
-            Additional Context – README (truncated):
-            {readme_excerpt}
-            
             CRITICAL INSTRUCTIONS FOR OUTPUT FORMATTING:
             - Your output MUST be ONLY a valid JSON object. No introductory text, no markdown, no trailing characters.
             - The JSON object MUST strictly adhere to the following schema:
@@ -196,10 +252,16 @@ class LLMService:
             "languages": lambda x: x["languages"],
             "open_issues": lambda x: x.get("open_issues", 0),
             "closed_issues": lambda x: x.get("closed_issues", 0),
-            "activity_summary": lambda x: x.get("activity_summary", "No activity data available"),
+            "activity_summary": lambda x: x.get(
+                "activity_summary", "No activity data available"
+            ),
             "recent_commits_count": lambda x: x.get("recent_commits_count", 0),
-            "contributor_summary": lambda x: x.get("contributor_summary", "No contributor data available"),
-            "dependency_info": lambda x: x.get("dependency_info", "No dependency information available"),
+            "contributor_summary": lambda x: x.get(
+                "contributor_summary", "No contributor data available"
+            ),
+            "dependency_info": lambda x: x.get(
+                "dependency_info", "No dependency information available"
+            ),
             "dependency_context": lambda x: x.get("dependency_context", ""),
             "readme_excerpt": lambda x: x.get("readme_excerpt", ""),
             "format_instructions": lambda _: pydantic_parser.get_format_instructions(),  # Use base parser instructions
@@ -260,12 +322,57 @@ class LLMService:
 
             if hasattr(self.llm, "invoke"):
                 try:
+                    # Try the direct LLM route as fallback
                     raw = self.llm.invoke(repo_data)
                     content = getattr(raw, "content", raw)
+
+                    # Log the raw content for debugging
+                    if self.logger and getattr(self.logger, "debug_enabled", False):
+                        self.logger.log(
+                            f"Attempting direct parsing. Raw content: {content[:500]}...",
+                            level="debug",
+                        )
+
                     if isinstance(content, str):
-                        return RepoAnalysis.model_validate_json(content)
-                except Exception:  # noqa: BLE001 – best-effort fallback
-                    pass  # Fall through to placeholder below
+                        # Check if it's valid JSON and extract the actual JSON part
+                        import json
+                        import re
+
+                        # Try to extract JSON object from text if needed
+                        json_match = re.search(r"(\{.*\})", content, re.DOTALL)
+                        if json_match:
+                            json_str = json_match.group(1)
+                            if self.logger and getattr(
+                                self.logger, "debug_enabled", False
+                            ):
+                                self.logger.log(
+                                    f"Extracted JSON: {json_str[:500]}...",
+                                    level="debug",
+                                )
+
+                            try:
+                                data = json.loads(json_str)
+                                return RepoAnalysis.model_validate(data)
+                            except json.JSONDecodeError as jde:
+                                if self.logger:
+                                    self.logger.log(
+                                        f"JSON decode error: {jde}", level="error"
+                                    )
+
+                        # Try direct parsing as last resort
+                        try:
+                            return RepoAnalysis.model_validate_json(content)
+                        except Exception as parse_err:
+                            if self.logger:
+                                self.logger.log(
+                                    f"Validation error: {parse_err}", level="error"
+                                )
+
+                except Exception as fallback_err:
+                    if self.logger:
+                        self.logger.log(
+                            f"Fallback parsing failed: {fallback_err}", level="error"
+                        )
 
             if self.logger:
                 self.logger.log(f"Error analyzing repo: {str(e)}", level="error")

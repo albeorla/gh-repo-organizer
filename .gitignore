@@ -48,3 +48,5 @@ poetry.lock
 
 # Output directories
 .out/
+
+**/CLAUDE.local.md

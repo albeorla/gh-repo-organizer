@@ -5,7 +5,7 @@ This module implements the Observer pattern to report progress of
 long-running repository analysis operations.
 """
 
-from typing import Protocol, Callable, Optional, Dict, Any
+from typing import Protocol, Callable, Optional
 from dataclasses import dataclass
 
 

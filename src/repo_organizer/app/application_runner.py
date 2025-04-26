@@ -8,23 +8,13 @@ to provide a simple interface to the complex subsystem of services.
 
 import os
 import time
-import datetime
 import concurrent.futures
 import sys
-from threading import Lock, BoundedSemaphore
-from typing import Optional, Any, List, Dict
-from pathlib import Path
-import io
+from threading import Lock
+from typing import Any, Dict
 
-from tqdm.auto import tqdm
 from rich.console import Console
-from dotenv import load_dotenv
 
-from repo_organizer.models.repo_models import RepoAnalysis
-from repo_organizer.utils.logger import Logger
-from repo_organizer.utils.rate_limiter import RateLimiter
-from repo_organizer.services.github_service import GitHubService
-from repo_organizer.services.llm_service import LLMService
 from repo_organizer.services.repository_analyzer_service import (
     RepositoryAnalyzerService,
 )
@@ -119,7 +109,9 @@ class ApplicationRunner:
         repo_file_path = os.path.join(self.output_dir, f"{repo_name}.md")
         if os.path.exists(repo_file_path):
             try:
-                updated_at_str = repo_info.get("updatedAt") or repo_info.get("updated_at")
+                updated_at_str = repo_info.get("updatedAt") or repo_info.get(
+                    "updated_at"
+                )
                 if updated_at_str:
                     import datetime as _dt
 
@@ -160,20 +152,16 @@ class ApplicationRunner:
         repo_name = repo.get("name", "unknown_repo")
         analysis = None
         success = False
-        
-        self.logger.log(
-            f"Analyzing repository: {repo_name}", level="info"
-        )
-        
+
+        self.logger.log(f"Analyzing repository: {repo_name}", level="info")
+
         try:
             # Analyze the repository - rate limiting is handled inside the service
             analysis = repository_analyzer.analyze_repository(repo)
             if (
                 analysis and "error" not in analysis.tags
             ):  # Check if analysis didn't return placeholder
-                self.logger.log(
-                    f"Successfully analyzed: {repo_name}", level="debug"
-                )
+                self.logger.log(f"Successfully analyzed: {repo_name}", level="debug")
                 success = True
             else:
                 self.logger.log(
@@ -199,7 +187,7 @@ class ApplicationRunner:
                     self.completed += 1
                 else:
                     self.errors += 1
-                
+
                 # Update progress
                 if pbar:
                     pbar.update(1)
@@ -303,9 +291,7 @@ class ApplicationRunner:
             sys.exit(1)  # Exit if we can't fetch repos
 
         # Analyze repositories
-        self.logger.log(
-            f"Analyzing or checking cache for {len(repos)} repositories..."
-        )
+        self.logger.log(f"Analyzing or checking cache for {len(repos)} repositories...")
         analyses = []
 
         # Reset progress counters for this run
@@ -319,14 +305,14 @@ class ApplicationRunner:
                 self.total = total
                 self.callback = callback
                 self.completed = 0
-                
+
             def update(self, n=1):
                 self.completed += n
                 if self.callback:
                     # Keep status text short to prevent wrapping
                     status_text = f"{self.completed}/{self.total} completed"
                     self.callback(self.completed, self.total, status_text)
-                
+
             def set_description(self, desc):
                 if self.callback:
                     # Truncate long descriptions to prevent line wrapping
@@ -334,19 +320,23 @@ class ApplicationRunner:
                     if len(desc) > max_desc_len:
                         desc = desc[:max_desc_len] + "..."
                     self.callback(self.completed, self.total, desc)
-                    
+
             def refresh(self):
                 if self.callback:
                     self.callback(self.completed, self.total, None)
-        
+
         with concurrent.futures.ThreadPoolExecutor(
             max_workers=self.max_workers
         ) as executor:
             future_to_repo = {}
             skipped_count = 0
-            
+
             # Create progress tracker if callback provided, otherwise None
-            pbar = ProgressTracker(len(repos), progress_callback) if progress_callback else None
+            pbar = (
+                ProgressTracker(len(repos), progress_callback)
+                if progress_callback
+                else None
+            )
 
             for repo in repos:
                 repo_name = repo.get("name")

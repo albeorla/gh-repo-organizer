@@ -14,7 +14,6 @@ from typing import Any, List, Optional
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
-from rich import get_console
 
 from repo_organizer.utils.rate_limiter import RateLimiter
 
@@ -64,6 +63,7 @@ class Logger:
         # the log file and console. Multiple worker threads share the same Logger
         # instance when the application is executed with a ThreadPoolExecutor.
         from threading import Lock
+
         self._file_lock = Lock()
         self._console_lock = Lock()
 
@@ -77,9 +77,10 @@ class Logger:
         # Only print to console if:
         # 1. Not in quiet mode, or level is error/warning
         # 2. Level is not debug or debug is enabled
-        should_print_to_console = (not self.quiet_mode or level in ["error", "warning"]) and \
-                                 (level != "debug" or self.debug_enabled)
-        
+        should_print_to_console = (
+            not self.quiet_mode or level in ["error", "warning"]
+        ) and (level != "debug" or self.debug_enabled)
+
         # Special handling for API rate limit debug messages - don't print these
         # to console unless they're over a certain threshold to reduce clutter
         if level == "debug" and "Rate limit: Waiting" in message:
@@ -89,7 +90,7 @@ class Logger:
                 wait_time = float(message.split("Waiting ")[1].split("s")[0])
             except (IndexError, ValueError):
                 pass
-                
+
             # Only print rate limit messages that exceed threshold
             if wait_time < 2.0:
                 should_print_to_console = False
@@ -137,7 +138,7 @@ class Logger:
                 # Add a newline before log message to separate from progress bar if present
                 self.console.print(formatted_log_message)
                 # Ensure a newline is printed after to avoid interference with progress bars
-                if not formatted_log_message.endswith('\n'):
+                if not formatted_log_message.endswith("\n"):
                     self.console.print("", end="\n")
 
         # Strip Rich markup for plain text log file
@@ -187,7 +188,9 @@ class Logger:
 
             # Rate limiting statistics
             if rate_limiters:
-                rate_table = Table(title="API Rate Limiting Statistics", show_header=True)
+                rate_table = Table(
+                    title="API Rate Limiting Statistics", show_header=True
+                )
                 rate_table.add_column("API", style="cyan")
                 rate_table.add_column("Calls", justify="right")
                 rate_table.add_column("Times Limited", justify="right")

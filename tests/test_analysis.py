@@ -8,9 +8,14 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch, MagicMock
 
-from repo_organizer.models.repo_models import RepoAnalysis, RepoRecommendation
+from repo_organizer.infrastructure.analysis.pydantic_models import (
+    RepoAnalysis,
+    RepoRecommendation,
+)
 from repo_organizer.services.llm_service import LLMService
-from repo_organizer.services.repository_analyzer_service import RepositoryAnalyzerService
+from repo_organizer.services.repository_analyzer_service import (
+    RepositoryAnalyzerService,
+)
 
 
 class TestRepositoryAnalysis(unittest.TestCase):
@@ -20,7 +25,7 @@ class TestRepositoryAnalysis(unittest.TestCase):
         """Set up test fixtures."""
         self.fixtures_dir = Path(__file__).parent / "fixtures"
         self.sample_repo_data = self._load_json_fixture("sample_repo_data.json")
-        
+
         # Create a temporary output directory for test files
         self.test_output_dir = Path(__file__).parent / "test_output"
         os.makedirs(self.test_output_dir, exist_ok=True)
@@ -28,6 +33,7 @@ class TestRepositoryAnalysis(unittest.TestCase):
     def tearDown(self):
         """Clean up test artifacts."""
         import shutil
+
         if self.test_output_dir.exists():
             shutil.rmtree(self.test_output_dir)
 
@@ -41,29 +47,33 @@ class TestRepositoryAnalysis(unittest.TestCase):
         """Test LLM service produces valid analysis."""
         # Setup mock LLM response
         mock_message = MagicMock()
-        mock_message.content = json.dumps({
-            "repo_name": "youtube_playlist_organizer",
-            "summary": "This repository contains a tool for organizing and managing YouTube playlists.",
-            "strengths": ["Provides a comprehensive set of playlist management features"],
-            "weaknesses": ["Limited community engagement"],
-            "recommendations": [
-                {
-                    "recommendation": "Add comprehensive test suite",
-                    "reason": "Ensuring reliability and preventing regressions",
-                    "priority": "High"
-                }
-            ],
-            "activity_assessment": "Moderate",
-            "estimated_value": "Medium",
-            "tags": ["youtube-api", "playlist-management"]
-        })
-        
+        mock_message.content = json.dumps(
+            {
+                "repo_name": "youtube_playlist_organizer",
+                "summary": "This repository contains a tool for organizing and managing YouTube playlists.",
+                "strengths": [
+                    "Provides a comprehensive set of playlist management features"
+                ],
+                "weaknesses": ["Limited community engagement"],
+                "recommendations": [
+                    {
+                        "recommendation": "Add comprehensive test suite",
+                        "reason": "Ensuring reliability and preventing regressions",
+                        "priority": "High",
+                    }
+                ],
+                "activity_assessment": "Moderate",
+                "estimated_value": "Medium",
+                "tags": ["youtube-api", "playlist-management"],
+            }
+        )
+
         mock_anthropic.return_value.invoke.return_value = mock_message
-        
+
         # Initialize LLM service and test analysis
         llm_service = LLMService("dummy_api_key")
         result = llm_service.analyze_repository(self.sample_repo_data)
-        
+
         # Verify result
         self.assertIsInstance(result, RepoAnalysis)
         self.assertEqual(result.repo_name, "youtube_playlist_organizer")
@@ -84,39 +94,39 @@ class TestRepositoryAnalysis(unittest.TestCase):
                 RepoRecommendation(
                     recommendation="Add comprehensive test suite",
                     reason="Ensuring reliability and preventing regressions",
-                    priority="High"
+                    priority="High",
                 )
             ],
             activity_assessment="Moderate",
             estimated_value="Medium",
-            tags=["youtube-api", "playlist-management"]
+            tags=["youtube-api", "playlist-management"],
         )
-        
+
         mock_llm_instance = MagicMock()
         mock_llm_instance.analyze_repository.return_value = mock_analysis
         mock_llm_service.return_value = mock_llm_instance
-        
+
         # Initialize repository analyzer service
         service = RepositoryAnalyzerService(
             output_dir=str(self.test_output_dir),
             api_key="dummy_api_key",
-            llm_service=mock_llm_instance
+            llm_service=mock_llm_instance,
         )
-        
+
         # Test analysis
         result = service.analyze_repository(self.sample_repo_data)
-        
+
         # Verify result
         self.assertEqual(result.repo_name, "youtube_playlist_organizer")
         self.assertEqual(result.estimated_value, "Medium")
-        
+
         # Test report generation
         service._write_single_report(result, self.sample_repo_data)
-        
+
         # Verify report file was created
         report_path = self.test_output_dir / "youtube_playlist_organizer.md"
         self.assertTrue(report_path.exists())
-        
+
         # Verify report content
         with open(report_path, "r") as f:
             content = f.read()

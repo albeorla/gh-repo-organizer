@@ -18,7 +18,9 @@ class SourceControlPort(Protocol):
     # Repository metadata
     # ---------------------------------------------------------------------
 
-    def list_repositories(self, owner: str, *, limit: int | None = None) -> Sequence[Repository]:
+    def list_repositories(
+        self, owner: str, *, limit: int | None = None
+    ) -> Sequence[Repository]:
         """Return public repositories owned by *owner*.
 
         Args:
