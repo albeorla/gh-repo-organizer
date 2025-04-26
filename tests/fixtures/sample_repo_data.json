@@ -1,0 +1,14 @@
+{
+  "repo_name": "youtube_playlist_organizer",
+  "repo_desc": "A tool for organizing and managing YouTube playlists",
+  "repo_url": "https://github.com/username/youtube_playlist_organizer",
+  "updated_at": "2025-04-06",
+  "is_archived": false,
+  "stars": 12,
+  "forks": 3,
+  "languages": "Python: 85.2%, JavaScript: 10.5%, HTML: 4.3%",
+  "has_local": false,
+  "recent_commits": "Data not available via API",
+  "contributor_list": "Data not available via API",
+  "readme_excerpt": "# YouTube Playlist Organizer\n\nThis tool helps you manage and organize your YouTube playlists. It allows you to:\n\n- Combine multiple playlists into one\n- Remove duplicate videos from playlists\n- Sort videos by various criteria (date added, title, channel, etc.)\n- Export playlist data to CSV or JSON\n- Create smart playlists based on criteria\n\n## Installation\n\n```bash\npip install youtube-playlist-organizer\n```\n\n## Usage\n\n```python\nfrom youtube_playlist_organizer import YouTubePlaylistManager\n\n# Initialize with your API key\nmanager = YouTubePlaylistManager('your_api_key')\n\n# Load a playlist\nplaylist = manager.get_playlist('playlist_id')\n\n# Sort videos by title\nplaylist.sort(by='title')\n\n# Remove duplicates\nplaylist.remove_duplicates()\n\n# Save changes\nplaylist.save()\n```"
+}

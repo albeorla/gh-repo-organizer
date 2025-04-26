@@ -1,123 +1,108 @@
-# GitHub Repository Analyzer
+# GitHub Repository Organizer
 
-A powerful tool that uses Langchain and Anthropic's Claude AI to analyze GitHub repositories, providing insights, recommendations, and documentation.
-
-## Setup
-
-1. Install dependencies using Poetry:
-
-   ```bash
-   poetry install
-   ```
-
-2. Create a `.env` file with your configuration:
-
-   ```
-   # API Keys
-   ANTHROPIC_API_KEY=your_anthropic_api_key_here
-   GITHUB_TOKEN=your_github_token_here  # If needed for higher API rate limits
-
-   # GitHub Configuration
-   GITHUB_USERNAME=albeorla
-
-   # Repository Organizer Settings
-   OUTPUT_DIR=~/dev/github/repo-info-docs
-   MAX_REPOS=100
-   
-   # Concurrency and Rate Limiting Settings
-   MAX_WORKERS=5          # Number of parallel workers
-   GITHUB_RATE_LIMIT=30   # GitHub API calls per minute
-   LLM_RATE_LIMIT=10      # LLM API calls per minute
-   ```
-
-3. Run the analyzer:
-   ```bash
-   poetry run repo-analyzer analyze
-   ```
-   
-   Or with additional options:
-   ```bash
-   # Show all available commands
-   poetry run repo-analyzer --help
-   
-   # Force re-analysis of all repositories
-   poetry run repo-analyzer analyze --force
-   
-   # Enable debug logging
-   poetry run repo-analyzer analyze --debug
-   
-   # Specify output directory
-   poetry run repo-analyzer analyze --output-dir ~/my-reports
-   
-   # Limit number of repositories
-   poetry run repo-analyzer analyze --max-repos 20
-   
-   # Clean up analysis files
-   poetry run repo-analyzer cleanup
-   ```
-
-## Output
-
-The analyzer will generate detailed markdown files for each repository in the OUTPUT_DIR. These files include:
-
-- Repository summary and purpose
-- Strengths and weaknesses analysis
-- Prioritized recommendations
-- Activity assessment
-- Value classification (High/Medium/Low)
-- Tags/categories for organization
-
-A main summary report will also be generated that categorizes repositories by value.
+A tool for analyzing and organizing GitHub repositories using AI-powered analysis.
 
 ## Features
 
-- Automatically analyzes all GitHub repositories for a user
-- Parallel processing with customizable number of workers for faster analysis
-- Smart rate limiting for GitHub and LLM API calls to prevent throttling
-- Generates detailed reports for each repository with:
-  - Basic repository information
-  - Local information (size, path)
-  - Strengths and weaknesses analysis
-  - Prioritized recommendations
-  - Activity assessment
-  - Value estimation
-  - Tagged categories
-  - Action items
-- Creates a comprehensive summary report categorizing repositories by value
-- Provides intelligent pruning recommendations
+- Analyzes GitHub repositories to determine their purpose, value, and potential improvements
+- Generates detailed markdown reports for each repository
+- Creates summary reports categorizing repositories by value
+- Integrates with Claude AI for intelligent repository analysis
+- Handles rate limiting and error recovery
 
-## Prerequisites
+## Installation
 
-- Python 3.12+
-- Poetry (https://python-poetry.org/docs/#installation)
-- GitHub CLI (`gh`) installed and authenticated
-- Anthropic API key
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/gh-repo-organizer.git
+cd gh-repo-organizer
+
+# Install dependencies
+poetry install
+```
+
+## Usage
+
+```bash
+# Analyze your GitHub repositories
+poetry run repo-analyzer analyze
+
+# Force re-analysis of repositories
+poetry run repo-analyzer analyze --force
+
+# Enable debug mode for verbose logging
+poetry run repo-analyzer analyze --debug
+
+# Clean up report files
+poetry run repo-analyzer cleanup
+```
 
 ## Configuration
 
-The following environment variables can be configured in your `.env` file:
+The tool can be configured via environment variables:
 
-- `ANTHROPIC_API_KEY`: Your Anthropic API key (required)
-- `GITHUB_TOKEN`: GitHub token for API access (optional)
 - `GITHUB_USERNAME`: Your GitHub username
-- `OUTPUT_DIR`: Directory where reports will be generated
-- `MAX_REPOS`: Maximum number of repositories to analyze
-- `MAX_WORKERS`: Number of parallel workers for concurrent analysis (default: 5)
-- `GITHUB_RATE_LIMIT`: Maximum GitHub API calls per minute (default: 30)
-- `LLM_RATE_LIMIT`: Maximum LLM API calls per minute (default: 10)
+- `GITHUB_TOKEN`: GitHub Personal Access Token
+- `ANTHROPIC_API_KEY`: API key for Claude AI
 
 ## Example Output
 
-The analyzer generates detailed reports for each repository, including:
+For each repository, the tool generates a detailed analysis like this:
 
-- Repository summary and purpose
-- Technical strengths and weaknesses
-- Prioritized improvement recommendations
-- Activity level assessment
-- Value classification (High/Medium/Low)
-- Relevant tags and categories
-- Recommended actions
+```markdown
+# youtube_playlist_organizer
+
+## Basic Information
+
+- **URL**: [https://github.com/username/youtube_playlist_organizer](https://github.com/username/youtube_playlist_organizer)
+- **Description**: A tool for organizing and managing YouTube playlists
+- **Last Updated**: 2025-04-06
+- **Archived**: False
+- **Stars**: 12
+- **Forks**: 3
+
+## Analysis Summary
+
+This repository contains a tool for organizing and managing YouTube playlists. It provides functionality to combine playlists, remove duplicate videos, sort videos by various criteria, export playlist data, and create smart playlists based on specific criteria.
+
+### Strengths
+
+- Provides a comprehensive set of playlist management features
+- Well-documented with clear installation and usage instructions
+- Implements both command-line and programmatic interfaces
+
+### Areas for Improvement
+
+- Limited community engagement based on the relatively low number of stars and forks
+- No mention of testing infrastructure or test coverage
+
+### Recommendations
+
+- **Add comprehensive test suite** (High Priority)  
+  *Reason: Ensuring reliability and preventing regressions is critical*
+- **Implement GitHub Actions for CI/CD** (Medium Priority)  
+  *Reason: Automating testing and deployment would improve code quality*
+
+### Assessment
+
+- **Activity Level**: Moderate
+- **Estimated Value**: Medium
+- **Tags**: youtube-api, playlist-management, python, data-organization
+```
+
+## Development
+
+```bash
+# Run tests
+poetry run pytest
+
+# Format code
+poetry run ruff format .
+
+# Lint code
+poetry run ruff check .
+```
 
 ## License
 
-MIT
+MIT License
