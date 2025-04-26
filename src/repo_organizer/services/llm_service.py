@@ -29,7 +29,7 @@ class LLMService:
     def __init__(
         self,
         api_key: str,
-        model_name: str = "claude-3-opus-20240229",
+        model_name: str = "claude-3-7-sonnet-latest",
         rate_limiter: Optional[RateLimiter] = None,
         logger: Optional[Logger] = None,
     ):
@@ -127,6 +127,9 @@ class LLMService:
             5. An assessment of the repository's activity level.
             6. An estimated value/importance of the repository to YOU (High, Medium, or Low).
             7. Suggested tags/categories.
+
+            Additional Context – README (truncated):
+            {readme_excerpt}
             
             CRITICAL INSTRUCTIONS FOR OUTPUT FORMATTING:
             - Your output MUST be ONLY a valid JSON object. No introductory text, no markdown, no trailing characters.
@@ -153,6 +156,7 @@ class LLMService:
             "stars": lambda x: x["stars"],
             "forks": lambda x: x["forks"],
             "languages": lambda x: x["languages"],
+            "readme_excerpt": lambda x: x.get("readme_excerpt", ""),
             "format_instructions": lambda _: pydantic_parser.get_format_instructions(),  # Use base parser instructions
         }
 

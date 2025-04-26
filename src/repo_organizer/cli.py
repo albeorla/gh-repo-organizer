@@ -127,7 +127,8 @@ def analyze(
         console=console,
         expand=True,
         transient=False,  # Don't leave the progress bar after completion
-        refresh_per_second=5  # Limit refresh rate to avoid flickering
+        refresh_per_second=5,  # Limit refresh rate to avoid flickering
+        get_time=None  # Prevent interference with output
     ) as progress:
         # Create task for tracking progress
         task = progress.add_task(
@@ -140,15 +141,23 @@ def analyze(
         # Run analysis with progress updates
         def update_progress(completed, total, status=None):
             details = ""
-            # Extract repo count info from status if available
-            if status and "Analyzed:" in status:
-                details = status
-                status = f"{completed}/{total} completed"
+            # Format the status display to avoid line wrapping
+            if status and len(status) > 25:  # Keep status concise
+                details = status  # Move longer text to details
+                status = f"{completed}/{total}"
             
+            # Ensure we never exceed the width of the terminal
+            try:
+                term_width = os.get_terminal_size().columns - 20  # Leave some margin
+                if details and len(details) > term_width:
+                    details = details[:term_width] + "..."
+            except (OSError, AttributeError):
+                pass
+                
             progress.update(
                 task,
                 completed=completed,
-                status=status or f"{completed}/{total} completed",
+                status=status or f"{completed}/{total}",
                 details=details
             )
 

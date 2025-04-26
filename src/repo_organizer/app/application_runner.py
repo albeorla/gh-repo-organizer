@@ -287,6 +287,7 @@ class ApplicationRunner:
             self.debug_logging,
             None,
             self.force_analysis,
+            logger=self.logger,  # Pass the logger to avoid creating a new one
         )
 
         # Get repositories
@@ -322,12 +323,16 @@ class ApplicationRunner:
             def update(self, n=1):
                 self.completed += n
                 if self.callback:
-                    # Set a maximum width for status text to prevent line wrapping
-                    status_text = f"Analyzed: {self.completed}, Total: {self.total}"
+                    # Keep status text short to prevent wrapping
+                    status_text = f"{self.completed}/{self.total} completed"
                     self.callback(self.completed, self.total, status_text)
                 
             def set_description(self, desc):
                 if self.callback:
+                    # Truncate long descriptions to prevent line wrapping
+                    max_desc_len = 50
+                    if len(desc) > max_desc_len:
+                        desc = desc[:max_desc_len] + "..."
                     self.callback(self.completed, self.total, desc)
                     
             def refresh(self):

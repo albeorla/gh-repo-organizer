@@ -14,6 +14,7 @@ from typing import Any, List, Optional
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
+from rich import get_console
 
 from repo_organizer.utils.rate_limiter import RateLimiter
 
@@ -59,13 +60,12 @@ class Logger:
             "retries": 0,
         }
 
-        # Use an instance-level lock to guarantee thread-safe writes to the log
-        # file.  Multiple worker threads share the same Logger instance when
-        # the application is executed with a ThreadPoolExecutor, so writes to
-        # the file must be serialised to avoid interleaved / corrupted lines.
+        # Use an instance-level lock to guarantee thread-safe writes to both
+        # the log file and console. Multiple worker threads share the same Logger
+        # instance when the application is executed with a ThreadPoolExecutor.
         from threading import Lock
-
-        self._file_lock: Lock = Lock()
+        self._file_lock = Lock()
+        self._console_lock = Lock()
 
     def log(self, message: str, level: str = "info") -> None:
         """Log a message to both console and log file.
@@ -110,14 +110,35 @@ class Logger:
 
         formatted_log_message = f"[{timestamp}] {log_message}"
 
+        # Get terminal width to truncate long messages if needed
+        try:
+            term_width = os.get_terminal_size().columns
+            # Leave some room for potential progress bar characters
+            max_log_width = max(40, term_width - 20)
+            if len(message) > max_log_width:
+                # Truncate very long messages to prevent line wrapping issues
+                message_ellipsis = message[:max_log_width] + "..."
+                if level == "warning":
+                    log_message = f"[yellow]{message_ellipsis}[/yellow]"
+                elif level == "error":
+                    log_message = f"[red]{message_ellipsis}[/red]"
+                elif level == "success":
+                    log_message = f"[green]{message_ellipsis}[/green]"
+                elif level == "debug":
+                    log_message = f"[blue]DEBUG: {message_ellipsis}[/blue]"
+                formatted_log_message = f"[{timestamp}] {log_message}"
+        except (OSError, AttributeError):
+            # Terminal size might not be available in all environments
+            pass
+
+        # Ensure synchronization for console output to prevent interleaving with progress bars
         if should_print_to_console:
-            # Don't replace newlines, but ensure the message ends with a newline
-            # to prevent interference with tqdm progress bars
-            if not formatted_log_message.endswith('\n'):
+            with self._console_lock:
+                # Add a newline before log message to separate from progress bar if present
                 self.console.print(formatted_log_message)
-            else:
-                # If message already has a newline, don't add another
-                self.console.print(formatted_log_message, end="")
+                # Ensure a newline is printed after to avoid interference with progress bars
+                if not formatted_log_message.endswith('\n'):
+                    self.console.print("", end="\n")
 
         # Strip Rich markup for plain text log file
         plain_message = f"[{timestamp}] [{level.upper()}] {message}"
@@ -161,25 +182,26 @@ class Logger:
         summary.add_row("Repositories Skipped", str(self.stats.get("repos_skipped", 0)))
         summary.add_row("API Retries", str(self.stats.get("retries", 0)))
 
-        self.console.print(Panel(summary))
+        with self._console_lock:
+            self.console.print(Panel(summary))
 
-        # Rate limiting statistics
-        if rate_limiters:
-            rate_table = Table(title="API Rate Limiting Statistics", show_header=True)
-            rate_table.add_column("API", style="cyan")
-            rate_table.add_column("Calls", justify="right")
-            rate_table.add_column("Times Limited", justify="right")
-            rate_table.add_column("Total Wait", justify="right")
-            rate_table.add_column("% Limited", justify="right")
+            # Rate limiting statistics
+            if rate_limiters:
+                rate_table = Table(title="API Rate Limiting Statistics", show_header=True)
+                rate_table.add_column("API", style="cyan")
+                rate_table.add_column("Calls", justify="right")
+                rate_table.add_column("Times Limited", justify="right")
+                rate_table.add_column("Total Wait", justify="right")
+                rate_table.add_column("% Limited", justify="right")
 
-            for limiter in rate_limiters:
-                stats = limiter.get_stats()
-                rate_table.add_row(
-                    stats["name"],
-                    str(stats["total_calls"]),
-                    str(stats["total_waits"]),
-                    f"{stats['total_wait_time']:.2f}s",
-                    f"{stats['pct_rate_limited']:.1f}%",
-                )
+                for limiter in rate_limiters:
+                    stats = limiter.get_stats()
+                    rate_table.add_row(
+                        stats["name"],
+                        str(stats["total_calls"]),
+                        str(stats["total_waits"]),
+                        f"{stats['total_wait_time']:.2f}s",
+                        f"{stats['pct_rate_limited']:.1f}%",
+                    )
 
-            self.console.print(Panel(rate_table))
+                self.console.print(Panel(rate_table))

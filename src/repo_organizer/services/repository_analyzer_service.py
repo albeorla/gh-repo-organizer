@@ -232,6 +232,10 @@ class RepositoryAnalyzerService:
             "has_local": False,  # Always set to false to avoid local repo confusion
             "recent_commits": recent_commits_str,
             "contributor_list": contributor_list_str,
+            # Include a truncated README excerpt to provide additional context
+            "readme_excerpt": self.github_service.get_repo_readme(repo_name)
+            if self.github_service
+            else "",
         }
 
     def _write_single_report(

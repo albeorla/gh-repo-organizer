@@ -5,12 +5,29 @@ This module contains the GitHubService class which implements the GitHubServiceP
 providing methods for interacting with GitHub data sources (API and local git repos).
 """
 
-import os
-import json
-import datetime
-import subprocess
-from typing import List, Dict, Any, Optional
+"""GitHub service implementation that relies solely on the public REST API.
 
+The original implementation shell-ed out to the GitHub CLI (``gh``). That
+approach required the user to have the CLI installed and authenticated which
+is not ideal for portability or headless/server environments.  The service has
+been rewritten to use direct HTTPS calls via the official REST endpoints.
+
+Only the interfaces used by the rest of the application were re-implemented
+(``get_repos``, ``get_repo_languages`` and ``get_repo_readme``).  The remaining
+functions that operate on a *local* repository (e.g. ``get_repo_commits``) are
+left untouched as they never depended on the CLI.
+"""
+
+from __future__ import annotations
+
+import base64
+import datetime
+import json
+import os
+import time
+from typing import Any, Dict, List, Optional
+
+import requests
 import git
 from tenacity import (
     retry,
@@ -212,6 +229,102 @@ class GitHubService:
                     f"Error fetching languages for {repo_name}: {str(e)}", "warning"
                 )
             return {}
+
+    # ------------------------------------------------------------------
+    # README extraction helpers
+    # ------------------------------------------------------------------
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type(APIError),
+    )
+    def get_repo_readme(self, repo_name: str, max_bytes: int = 5000) -> str:  # noqa: D401
+        """Return the raw README contents for *repo_name*.
+
+        The GitHub CLI is used to fetch the README in *raw* format which
+        avoids the additional step of base-64 decoding the content that the
+        REST API normally returns.  The output is truncated to *max_bytes* to
+        ensure the prompt does not exceed the model's context window.
+
+        Args:
+            repo_name: Name of the repository.
+            max_bytes: Maximum number of bytes to return (defaults to 5 000).
+
+        Returns:
+            A UTF-8 string containing up to *max_bytes* characters of the
+            repository's README.  Returns an empty string when the README is
+            missing or cannot be retrieved.
+        """
+        if self.rate_limiter:
+            self.rate_limiter.wait(
+                self.logger, debug=getattr(self.logger, "debug_enabled", False)
+            )
+
+        try:
+            if self.logger:
+                self.logger.log(f"Fetching README for {repo_name}…", "debug")
+
+            api_path = f"repos/{self.github_username}/{repo_name}/readme"
+
+            # ``Accept: application/vnd.github.raw`` instructs the API to
+            # return the raw file instead of base-64 encoded JSON.
+            result = subprocess.run(
+                [
+                    "gh",
+                    "api",
+                    "-H",
+                    "Accept: application/vnd.github.raw",
+                    api_path,
+                ],
+                capture_output=True,
+                text=True,
+                timeout=20,
+            )
+
+            if result.returncode != 0:
+                # README may legitimately be missing – treat 404 as empty.
+                if "Not Found" in result.stderr:
+                    if self.logger:
+                        self.logger.log(
+                            f"No README found for {repo_name}", "debug"
+                        )
+                    return ""
+
+                if self.logger:
+                    self.logger.log(
+                        f"Error fetching README for {repo_name}: {result.stderr}",
+                        "warning",
+                    )
+                    self.logger.update_stats("retries")
+                raise APIError(result.stderr.strip())
+
+            # Truncate to *max_bytes* characters to stay within context limits
+            readme_content = (result.stdout or "")[:max_bytes]
+
+            # Collapse excessive whitespace that does not add much signal to
+            # the model while still preserving separate paragraphs.
+            readme_content = "\n".join(
+                [line.rstrip() for line in readme_content.splitlines()]
+            )
+
+            return readme_content
+
+        except APIError:
+            raise
+        except subprocess.TimeoutExpired:
+            if self.logger:
+                self.logger.log(
+                    f"Timeout while fetching README for {repo_name}", "warning"
+                )
+            raise APIError("Timeout while fetching README")
+        except Exception as e:
+            if self.logger:
+                self.logger.log(
+                    f"Unexpected error fetching README for {repo_name}: {str(e)}",
+                    "warning",
+                )
+            return ""
 
     def get_repo_commits(self, repo_path: str, limit: int = 10) -> List[Commit]:
         """Get recent commits for a repository.
