@@ -13,9 +13,10 @@ These tasks are critical for core functionality and should be addressed immediat
 - [x] Fix bare except blocks in exception handling
 - [x] Make DDD approach the only implementation (integrate analyze-ddd)
 - [x] Update repo models to support repository actions (DELETE/ARCHIVE/EXTRACT/KEEP/PIN)
+- [x] Complete implementation of SourceControlPort in GitHubRestAdapter
+- [x] Remove direct dependency on old LLMService in application layer
+- [x] Update CLI to support repository actions based on analysis results
 - [ ] Create comprehensive test suite for new adapter implementations
-- [ ] Remove direct dependency on old LLMService in application layer
-- [ ] Update CLI to support repository actions based on analysis results
 - [ ] Fix any regressions in the main analysis flow
 
 ### Quadrant 2: Important but Not Urgent
