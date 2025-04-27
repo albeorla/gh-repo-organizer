@@ -33,37 +33,6 @@ app = typer.Typer(
     add_completion=True,
 )
 
-# ---------------------------------------------------------------------------
-# New *DDD* command using the refactored architecture (bounded contexts).
-# ---------------------------------------------------------------------------
-
-
-@app.command("analyze-ddd", hidden=True)
-def analyze_ddd(
-    owner: str = typer.Option(None, "--owner", help="GitHub owner/user to analyze"),
-    limit: int = typer.Option(None, "--limit", help="Max repositories"),
-    output_dir: Path = typer.Option(
-        Path(".out/repos"), "--output-dir", help="Directory for markdown reports"
-    ),
-):
-    """Legacy command maintained for backwards compatibility.
-
-    This command is now hidden and redirects to the main analyze command
-    which has been updated to use the DDD architecture by default.
-    """
-
-    # Redirect to the main analyze command which now uses the DDD architecture by default
-    output_dir_str = str(output_dir) if output_dir else None
-    return analyze(
-        owner=owner,
-        limit=limit,
-        output_dir=output_dir_str,
-        force=False,
-        debug=False,
-        quiet=False,
-    )
-
-
 # Create console for rich output
 console = Console()
 
@@ -126,10 +95,11 @@ def analyze(
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize console output."),
 ):
     """
-    Analyze GitHub repositories and generate detailed reports using domain-driven design.
-
-    This command uses the DDD architecture to provide more accurate repository analysis
-    with improved error handling and fewer issues with invalid repository information.
+    Analyze GitHub repositories and generate detailed reports.
+    
+    This command uses Domain-Driven Design (DDD) architecture to provide accurate
+    repository analysis with proper separation of concerns, improved error handling,
+    and better maintainability.
     """
     # For backwards compatibility
     if max_repos is not None and limit is None:
@@ -137,9 +107,12 @@ def analyze(
 
     # Use the DDD approach
     from repo_organizer.config.settings import load_settings
-    from repo_organizer.infrastructure import GitHubRestAdapter, LangChainClaudeAdapter
-    from repo_organizer.application import analyze_repositories
-    from repo_organizer.shared import Logger, RateLimiter
+    # Import directly from bounded context modules to avoid circular imports
+    from repo_organizer.infrastructure.github_rest import GitHubRestAdapter
+    from repo_organizer.infrastructure.analysis.langchain_claude_adapter import LangChainClaudeAdapter
+    from repo_organizer.application.analyze_repositories import analyze_repositories
+    from repo_organizer.utils.logger import Logger
+    from repo_organizer.utils.rate_limiter import RateLimiter
     from pathlib import Path
 
     settings = load_settings()
@@ -372,9 +345,9 @@ def cleanup(
     """
     Clean up generated repository analysis files.
     """
-    # Create temporary application to get default output dir
-    temp_app = ApplicationFactory.create_application(quiet_mode=quiet)
-    output_dir = output_dir or temp_app.get_output_dir()
+    # Get settings directly from the config module
+    settings = load_settings()
+    output_dir = output_dir or settings.output_dir
     output_path = Path(output_dir)
 
     if not output_path.exists():
@@ -676,13 +649,13 @@ def reset(
     """
     Reset and clean up all analysis files, removing reports that don't match your GitHub repositories.
     """
-    # Create temporary application to get services
-    temp_app = ApplicationFactory.create_application(quiet_mode=quiet)
-    output_dir = temp_app.get_output_dir()
+    # Get settings directly from the config module
+    settings = load_settings()
+    output_dir = settings.output_dir
     output_path = Path(output_dir)
 
     # Get the user's GitHub username
-    github_username = temp_app.settings.github_username
+    github_username = settings.github_username
 
     if not quiet:
         console.print(f"[bold blue]GitHub Username:[/] {github_username}")
@@ -701,10 +674,21 @@ def reset(
 
     # Fetch the user's actual repositories
     try:
-        # Respect the user's MAX_REPOS configuration to avoid unnecessary API
-        # calls during the reset operation.
-        repos = temp_app.github_service.get_repos(limit=temp_app.settings.max_repos)
-        repo_names = set(repo["name"] for repo in repos)
+        # Create rate limiter and logger for the GitHub adapter
+        logger = Logger(str(output_path / "analysis.log"), console, debug_enabled=False, quiet_mode=quiet)
+        github_lim = RateLimiter(settings.github_rate_limit, name="GitHub")
+        
+        # Create the GitHub adapter
+        github = GitHubRestAdapter(
+            github_username=github_username,
+            github_token=settings.github_token,
+            rate_limiter=github_lim,
+            logger=logger,
+        )
+        
+        # Use the adapter to get repositories
+        repos = github.get_repositories(limit=settings.max_repos)
+        repo_names = set(repo.name for repo in repos)
 
         # Identify reports that don't belong to the user's repositories
         invalid_reports = []
@@ -776,7 +760,7 @@ def reset(
 
     except Exception as e:
         console.print(f"[bold red]Error resetting repository files: {e}[/]")
-        if getattr(temp_app.logger, "debug_enabled", False):
+        if logger and getattr(logger, "debug_enabled", False):
             import traceback
 
             console.print(traceback.format_exc())
