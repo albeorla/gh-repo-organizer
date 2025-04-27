@@ -1,10 +1,12 @@
-"""Infrastructure-level adapters (outbound)."""
+"""Infrastructure-level adapters (outbound).
 
-from .github_rest import GitHubRestAdapter  # noqa: F401
+The Infrastructure layer contains concrete implementations of the interfaces
+defined in the Domain layer. Instead of importing through this file, import
+directly from the specific adapter modules to avoid circular dependencies.
 
-__all__ = ["GitHubRestAdapter"]
+Examples:
+    from repo_organizer.infrastructure.github_rest import GitHubRestAdapter
+    from repo_organizer.infrastructure.langchain_claude import LangChainClaudeAdapter
+"""
 
-# Export analysis adapter for convenience
-from .langchain_claude import LangChainClaudeAdapter  # noqa: E402 F401
-
-__all__.append("LangChainClaudeAdapter")
+__all__ = []
