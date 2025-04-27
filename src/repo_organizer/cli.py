@@ -9,6 +9,7 @@ import time
 from typing import Optional
 from pathlib import Path
 import os
+from enum import Enum
 
 import typer
 from rich.console import Console
@@ -26,6 +27,17 @@ from rich.syntax import Syntax
 # Import needed for running the CLI without accessing it through the entry points
 # This prevents relative import errors when running the CLI directly
 from repo_organizer.config.settings import load_settings
+from repo_organizer.cli.commands import execute_actions
+
+# Define Enum for action types
+class ActionType(str, Enum):
+    """Repository action types."""
+    DELETE = "delete"
+    ARCHIVE = "archive"
+    EXTRACT = "extract"
+    KEEP = "keep"
+    PIN = "pin"
+    ALL = "all"
 
 # Create Typer app with rich integration
 app = typer.Typer(
@@ -770,6 +782,48 @@ def reset(
             import traceback
 
             console.print(traceback.format_exc())
+        raise typer.Exit(code=1)
+
+
+@app.command()
+def actions(
+    action_type: ActionType = typer.Option(
+        ActionType.ALL, "--type", "-t", help="Type of action to execute."
+    ),
+    dry_run: bool = typer.Option(
+        True, "--dry-run", "-d", help="Perform a dry run without making changes."
+    ),
+    force: bool = typer.Option(
+        False, "--force", "-f", help="Skip confirmation prompts."
+    ),
+    output_dir: Optional[str] = typer.Option(
+        None, "--output-dir", "-o", help="Override the output directory."
+    ),
+):
+    """
+    Execute repository actions based on analysis results.
+    
+    This command uses the recommended actions from repository analyses to perform
+    operations like archiving, deleting, extracting valuable parts, or pinning
+    repositories. By default, it runs in dry-run mode to show what would happen.
+    """
+    try:
+        # Pass the action type as string or None for ALL
+        action = None if action_type == ActionType.ALL else action_type.value.upper()
+        
+        # Execute actions
+        execute_actions(
+            dry_run=dry_run,
+            force=force,
+            output_dir=output_dir,
+            action_type=action,
+        )
+    except Exception as e:
+        console.print(f"[bold red]Error executing actions: {e}[/]")
+        if getattr(e, "__cause__", None):
+            console.print(f"[red]Caused by: {e.__cause__}[/]")
+        import traceback
+        console.print(traceback.format_exc(), style="red")
         raise typer.Exit(code=1)
 
 

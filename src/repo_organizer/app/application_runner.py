@@ -32,7 +32,7 @@ class ApplicationRunner:
         settings,
         logger,
         github_service,
-        llm_service,
+        analyzer,  # Changed parameter from llm_service to analyzer
         progress_reporter,
         github_limiter,
         llm_limiter,
@@ -47,7 +47,7 @@ class ApplicationRunner:
             settings: Application settings
             logger: Logger instance
             github_service: GitHub service instance
-            llm_service: LLM service instance
+            analyzer: AnalyzerPort implementation for repository analysis
             progress_reporter: Progress reporter instance
             github_limiter: GitHub rate limiter
             llm_limiter: LLM rate limiter
@@ -57,7 +57,7 @@ class ApplicationRunner:
         self.settings = settings
         self.logger = logger
         self.github_service = github_service
-        self.llm_service = llm_service
+        self.analyzer = analyzer  # Using analyzer (AnalyzerPort) instead of llm_service
         self.progress_reporter = progress_reporter
         self.github_limiter = github_limiter
         self.llm_limiter = llm_limiter
@@ -265,16 +265,16 @@ class ApplicationRunner:
             f"LLM API rate limit: {self.llm_limiter.calls_per_minute} calls/min"
         )
 
-        # Create the analyzer service instance
+        # Create the analyzer service instance using our analyzer that implements AnalyzerPort
         repository_analyzer = RepositoryAnalyzerService(
             self.output_dir,
             self.settings.anthropic_api_key,
             self.github_service,
-            self.llm_service,
-            self.max_repos,
-            self.debug_logging,
-            None,
-            self.force_analysis,
+            analyzer=self.analyzer,  # Pass the analyzer instead of llm_service
+            max_repos=self.max_repos,
+            debug=self.debug_logging,
+            repo_filter=None,
+            force_reanalyze=self.force_analysis,
             logger=self.logger,  # Pass the logger to avoid creating a new one
         )
 

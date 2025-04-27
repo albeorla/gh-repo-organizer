@@ -11,11 +11,13 @@ from rich.console import Console
 
 from repo_organizer.app.application_runner import ApplicationRunner
 from repo_organizer.services.github_service import GitHubService
-from repo_organizer.services.llm_service import LLMService
 from repo_organizer.services.progress_reporter import ProgressReporter
 from repo_organizer.utils.logger import Logger
 from repo_organizer.utils.rate_limiter import RateLimiter
 from repo_organizer.config.settings import load_settings
+
+# Import adapter implementation for AnalyzerPort
+from repo_organizer.infrastructure.analysis.langchain_claude_adapter import LangChainClaudeAdapter
 
 
 class ApplicationFactory:
@@ -116,8 +118,15 @@ class ApplicationFactory:
             logger=logger,
         )
 
-        llm_service = LLMService(
-            settings.anthropic_api_key, rate_limiter=llm_limiter, logger=logger
+        # Create analyzer using the LangChainClaudeAdapter (implements AnalyzerPort)
+        analyzer = LangChainClaudeAdapter(
+            api_key=settings.anthropic_api_key,
+            model_name=settings.llm_model,
+            temperature=settings.llm_temperature,
+            thinking_enabled=settings.llm_thinking_enabled,
+            thinking_budget=settings.llm_thinking_budget,
+            rate_limiter=llm_limiter,
+            logger=logger,
         )
 
         # Create application runner
@@ -125,7 +134,7 @@ class ApplicationFactory:
             settings=settings,
             logger=logger,
             github_service=github_service,
-            llm_service=llm_service,
+            analyzer=analyzer,  # Pass the analyzer instead of llm_service
             progress_reporter=progress_reporter,
             github_limiter=github_limiter,
             llm_limiter=llm_limiter,
