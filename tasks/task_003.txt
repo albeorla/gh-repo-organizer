@@ -1,0 +1,37 @@
+# Task ID: 3
+# Title: Complete Domain Models Implementation
+# Status: pending
+# Dependencies: 1
+# Priority: high
+# Description: Implement all required domain models in their respective bounded contexts
+# Details:
+Create or update domain models for repository actions (DELETE/ARCHIVE/EXTRACT/KEEP/PIN) in `domain/analysis/models.py`. Ensure models are immutable where appropriate using frozen dataclasses or similar patterns. Implement value objects for all domain concepts. Add domain validation logic within models. Implement entity equality based on identity.
+
+# Test Strategy:
+Write unit tests for all domain models, testing immutability, validation rules, and equality comparisons.
+
+# Subtasks:
+## 1. Create base immutable domain models for repository actions [pending]
+### Dependencies: None
+### Description: Implement the foundational domain models for repository actions (DELETE/ARCHIVE/EXTRACT/KEEP/PIN) using immutable patterns
+### Details:
+Create the core domain models in `domain/analysis/models.py` using frozen dataclasses or similar immutable patterns. Define the base classes/interfaces for repository actions with proper type hints. Include attributes needed for each action type (DELETE/ARCHIVE/EXTRACT/KEEP/PIN) and ensure they're properly encapsulated. Implement proper constructor logic that enforces immutability. Each model should represent a specific repository action with its relevant properties.
+
+## 2. Implement value objects for domain concepts [pending]
+### Dependencies: 3.1
+### Description: Create value objects for all domain concepts related to repository actions
+### Details:
+Identify and implement value objects for domain concepts such as repository identifiers, action timestamps, user references, and any other primitives that should be encapsulated as value objects. Ensure these value objects are immutable and include appropriate validation in their constructors. Value objects should override __eq__ and __hash__ methods for proper equality comparison based on their values, not identity. Place these in appropriate modules within the domain layer.
+
+## 3. Add domain validation logic to models [pending]
+### Dependencies: 3.1, 3.2
+### Description: Implement comprehensive validation logic within domain models to enforce business rules
+### Details:
+Enhance the domain models with validation logic that enforces business rules. Implement validation in constructors or factory methods to ensure objects can't be created in an invalid state. Add domain-specific validation rules for each action type (e.g., PIN might require specific repository metadata). Consider using a Result pattern or exceptions for validation failures. Document validation rules with clear error messages. Ensure validation is consistent across all model types.
+
+## 4. Implement entity equality based on identity [pending]
+### Dependencies: 3.1, 3.2, 3.3
+### Description: Ensure proper entity equality semantics based on identity rather than attribute values
+### Details:
+Override __eq__ and __hash__ methods in entity classes to implement equality based on identity (ID) rather than attribute values. Distinguish between entities (with identity) and value objects (with value equality) in the domain model. Ensure that collections of entities work correctly with identity-based equality. Add unit tests to verify correct equality behavior in different scenarios. Document the equality semantics for future developers.
+

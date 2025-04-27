@@ -1,0 +1,37 @@
+# Task ID: 4
+# Title: Implement Repository Pattern for Persistence
+# Status: pending
+# Dependencies: 3
+# Priority: medium
+# Description: Create repository interfaces and implementations for persistent data access
+# Details:
+Define repository interfaces in domain layer (e.g., `domain/source_control/repositories.py`). Implement concrete repositories in infrastructure layer. Use composition to inject dependencies. Implement in-memory repositories for testing. Consider using an ORM or simple file-based persistence depending on requirements.
+
+# Test Strategy:
+Create unit tests with mock/in-memory repositories. Test CRUD operations and query functionality.
+
+# Subtasks:
+## 1. Define Repository Interfaces in Domain Layer [pending]
+### Dependencies: None
+### Description: Create abstract repository interfaces in the domain layer to define the contract for data access
+### Details:
+Create a new file at `domain/source_control/repositories.py` that defines abstract base classes for each repository needed (e.g., `RepositoryBase`, `CommitRepository`, `BranchRepository`). Each interface should define methods for standard operations (create, read, update, delete) using domain entities as parameters and return types. Use Python's ABC module to create proper interfaces. Include method signatures with type hints but no implementations. Document each method with clear docstrings explaining the contract.
+
+## 2. Implement In-Memory Repository for Testing [pending]
+### Dependencies: 4.1
+### Description: Create in-memory implementations of the repository interfaces for use in testing
+### Details:
+Create in-memory implementations of each repository interface in `infrastructure/persistence/memory/repositories.py`. These should store entities in memory (using dictionaries or lists) and implement all methods defined in the interfaces. Include proper error handling for cases like not found entities or duplicates. These implementations will be used for unit tests and can serve as a reference for other implementations. Add comprehensive tests for these repositories in `tests/infrastructure/persistence/memory/`.
+
+## 3. Implement Persistent Repository Implementations [pending]
+### Dependencies: 4.1
+### Description: Create concrete implementations of the repository interfaces for actual persistence
+### Details:
+Implement concrete repositories in `infrastructure/persistence/` that provide actual data persistence. Choose an appropriate persistence mechanism (SQLite, file-based JSON, etc.) based on the project requirements. Each implementation should fully satisfy the interface contracts defined in subtask 1. Use dependency injection to provide any required services (like database connections). Implement proper error handling and logging. Ensure all operations are properly transactional where appropriate.
+
+## 4. Create Repository Factory and Dependency Injection Setup [pending]
+### Dependencies: 4.2, 4.3
+### Description: Implement a factory for creating repositories and set up the dependency injection system
+### Details:
+Create a repository factory in `infrastructure/persistence/factory.py` that instantiates the appropriate repository implementations based on configuration. Implement a dependency injection container (using a library like Injector or a custom solution) that registers and provides repositories to other components. Update any existing service classes to accept repositories through constructor injection. Include configuration options to switch between different repository implementations (e.g., in-memory for testing vs. persistent for production). Write integration tests that verify the complete repository setup.
+

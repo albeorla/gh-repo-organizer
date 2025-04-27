@@ -1,0 +1,43 @@
+# Task ID: 5
+# Title: Refactor Application Layer with Dependency Injection
+# Status: pending
+# Dependencies: 2, 4
+# Priority: medium
+# Description: Refactor application runner and implement proper dependency injection
+# Details:
+Refactor `app/application_runner.py` to use dependency injection. Move `app/application_factory.py` to `application/factories.py`. Implement command/query separation with command handlers and query handlers. Create application service interfaces in the application layer. Use constructor injection for dependencies.
+
+# Test Strategy:
+Write unit tests for application services with mock dependencies. Test the application runner with test doubles.
+
+# Subtasks:
+## 1. Create application service interfaces [pending]
+### Dependencies: None
+### Description: Define interfaces for all application services to support dependency injection
+### Details:
+Create a new file `application/interfaces.py` to define abstract base classes for all application services. Use Python's `abc` module to create proper interfaces. Each interface should define the contract for a specific application service with clear method signatures. This will serve as the foundation for dependency injection and enable loose coupling between components.
+
+## 2. Implement command/query separation pattern [pending]
+### Dependencies: 5.1
+### Description: Create command and query handlers with appropriate interfaces
+### Details:
+Create `application/commands` and `application/queries` directories. Implement base interfaces for `CommandHandler` and `QueryHandler` in their respective modules. Each command/query should be represented as a dataclass or simple class. Create concrete implementations of command and query handlers that implement the interfaces. Commands should modify state while queries should only return data without side effects.
+
+## 3. Move and refactor application factory [pending]
+### Dependencies: 5.1, 5.2
+### Description: Move application factory to application layer and update implementation
+### Details:
+Move `app/application_factory.py` to `application/factories.py`. Refactor the factory to construct the application using the new interfaces and dependency injection approach. The factory should instantiate all required dependencies and inject them into the services that need them. Use constructor injection pattern where dependencies are passed to the constructor of each service.
+
+## 4. Refactor application runner with dependency injection [pending]
+### Dependencies: 5.3
+### Description: Update application runner to use the new dependency injection pattern
+### Details:
+Refactor `app/application_runner.py` to use dependency injection. Remove direct instantiation of dependencies and instead receive them through constructor parameters. Update the runner to work with the command/query handlers. The runner should no longer have knowledge of concrete implementations but should work with the interfaces defined earlier.
+
+## 5. Update application bootstrapping and tests [pending]
+### Dependencies: 5.4
+### Description: Update main application entry point and tests to work with the new architecture
+### Details:
+Update the main application entry point to use the new factory and runner. Adjust any tests that interact with the application layer to use the new interfaces and dependency injection approach. Create test doubles (mocks/stubs) for the interfaces to enable proper unit testing. Verify that all functionality works as expected with the new architecture.
+
