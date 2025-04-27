@@ -1,180 +1,43 @@
 # Task ID: 2
-# Title: Implement Domain Events for Cross-Context Communication
+# Title: Implement Domain Models and Events
 # Status: pending
 # Dependencies: 1
 # Priority: high
-# Description: Create a domain event system to facilitate communication between bounded contexts
+# Description: Complete domain models for both bounded contexts and implement domain events for cross-context communication
 # Details:
-Create a `domain/core/events.py` module with base event classes. Implement specific domain events like `RepositoryAnalyzedEvent`. Add an event dispatcher in the application layer. Update domain services to publish events when significant state changes occur. Implement event subscribers in appropriate bounded contexts.
+Create or refine domain models for repository actions (DELETE/ARCHIVE/EXTRACT/KEEP/PIN) in their respective bounded contexts. Implement domain events for cross-bounded context communication. Ensure domain models are immutable where appropriate. Define event handlers for domain events. Create a domain event dispatcher mechanism.
 
 # Test Strategy:
-Create unit tests for event publishing and subscription. Test cross-context communication with mock subscribers.
+Write unit tests for domain models to verify immutability and behavior. Create tests for domain events to ensure they are properly dispatched and handled across bounded contexts.
 
 # Subtasks:
-## 1. Create Base Event System and Dispatcher [pending]
+## 1. Define Core Domain Models for Repository Actions [pending]
 ### Dependencies: None
-### Description: Implement the core event infrastructure including base event classes and dispatcher mechanism
+### Description: Create immutable domain models for repository actions (DELETE/ARCHIVE/EXTRACT/KEEP/PIN) in their respective bounded contexts with proper encapsulation and validation.
 ### Details:
-Create `domain/core/events.py` with: 1) A base `DomainEvent` class with common properties (event_id, timestamp, aggregate_id), 2) An `EventDispatcher` class with register/dispatch methods, 3) An event bus singleton for global access. Include type hints and proper documentation. The dispatcher should support both synchronous and asynchronous event handling patterns. Implement basic unit tests to verify the event system functionality.
+For each repository action: 1) Identify the bounded context it belongs to. 2) Create immutable model classes with private setters and validation in constructors. 3) Implement value objects for complex attributes. 4) Add factory methods for object creation. 5) Include business logic methods that enforce domain rules. Use record types where appropriate for immutability. Ensure each model captures the complete state needed for its bounded context.
 
-<info added on 2025-04-27T03:48:01.200Z>
-# Implementation Plan for Subtask 2.1: Create Base Event System and Dispatcher
-
-## Technical Implementation Details
-
-### Base Event Class Implementation
-```python
-from dataclasses import dataclass, field
-from datetime import datetime
-import uuid
-from typing import Any, Dict, Optional, Type, UUID
-
-@dataclass(frozen=True)
-class DomainEvent:
-    """Base class for all domain events in the system."""
-    aggregate_id: str
-    event_id: UUID = field(default_factory=uuid.uuid4)
-    timestamp: datetime = field(default_factory=datetime.utcnow)
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert event to dictionary representation for serialization."""
-        return {
-            "event_id": str(self.event_id),
-            "event_type": self.__class__.__name__,
-            "timestamp": self.timestamp.isoformat(),
-            "aggregate_id": self.aggregate_id,
-            "data": self._get_event_data()
-        }
-    
-    def _get_event_data(self) -> Dict[str, Any]:
-        """Extract event-specific data for serialization.
-        Override in subclasses to include specific event properties."""
-        return {}
-```
-
-### Event Dispatcher Implementation
-```python
-import inspect
-import asyncio
-from typing import Any, Callable, Dict, List, Set, Type, Union, cast
-import logging
-
-HandlerFunc = Callable[[DomainEvent], Any]
-AsyncHandlerFunc = Callable[[DomainEvent], Any]
-
-class EventDispatcher:
-    """Dispatches events to registered handlers."""
-    
-    def __init__(self):
-        self._handlers: Dict[Type[DomainEvent], List[Union[HandlerFunc, AsyncHandlerFunc]]] = {}
-        self._logger = logging.getLogger(__name__)
-    
-    def register(self, event_type: Type[DomainEvent], 
-                handler: Union[HandlerFunc, AsyncHandlerFunc]) -> None:
-        """Register a handler for a specific event type."""
-        if event_type not in self._handlers:
-            self._handlers[event_type] = []
-        
-        if handler not in self._handlers[event_type]:
-            self._handlers[event_type].append(handler)
-            self._logger.debug(f"Registered handler {handler.__name__} for {event_type.__name__}")
-    
-    def unregister(self, event_type: Type[DomainEvent], 
-                  handler: Union[HandlerFunc, AsyncHandlerFunc]) -> None:
-        """Unregister a handler for a specific event type."""
-        if event_type in self._handlers and handler in self._handlers[event_type]:
-            self._handlers[event_type].remove(handler)
-            self._logger.debug(f"Unregistered handler {handler.__name__} for {event_type.__name__}")
-    
-    async def dispatch(self, event: DomainEvent) -> None:
-        """Dispatch an event to all registered handlers."""
-        event_type = type(event)
-        handlers = self._get_handlers_for_event(event)
-        
-        if not handlers:
-            self._logger.warning(f"No handlers registered for {event_type.__name__}")
-            return
-        
-        self._logger.debug(f"Dispatching {event_type.__name__} to {len(handlers)} handlers")
-        
-        # Process synchronous and asynchronous handlers
-        sync_tasks = []
-        async_tasks = []
-        
-        for handler in handlers:
-            if inspect.iscoroutinefunction(handler):
-                async_tasks.append(handler(event))
-            else:
-                sync_tasks.append(handler(event))
-        
-        # Run synchronous handlers
-        for task in sync_tasks:
-            pass  # Already executed when appended to the list
-        
-        # Run asynchronous handlers
-        if async_tasks:
-            await asyncio.gather(*async_tasks)
-    
-    def _get_handlers_for_event(self, event: DomainEvent) -> List[Union[HandlerFunc, AsyncHandlerFunc]]:
-        """Get all handlers for an event, including handlers for parent classes."""
-        event_type = type(event)
-        handlers: Set[Union[HandlerFunc, AsyncHandlerFunc]] = set()
-        
-        # Get handlers for this event type and all its parent classes
-        for registered_type, type_handlers in self._handlers.items():
-            if issubclass(event_type, registered_type):
-                handlers.update(type_handlers)
-        
-        return list(handlers)
-
-# Singleton event bus for global access
-event_bus = EventDispatcher()
-```
-
-### Testing Strategy
-
-1. **Event Creation Tests**:
-   - Test event creation with required and optional parameters
-   - Verify immutability of events (frozen dataclass)
-   - Test serialization via `to_dict()` method
-
-2. **Dispatcher Registration Tests**:
-   - Test handler registration and unregistration
-   - Verify duplicate handler registration is prevented
-   - Test parent/child event class handler inheritance
-
-3. **Dispatch Mechanism Tests**:
-   - Test synchronous handler execution
-   - Test asynchronous handler execution
-   - Test mixed sync/async handler scenarios
-   - Verify all handlers receive the event
-
-4. **Error Handling Tests**:
-   - Test behavior when handlers raise exceptions
-   - Verify other handlers still execute if one fails
-
-### Performance Considerations
-
-1. Use weak references for long-lived event subscriptions to prevent memory leaks
-2. Consider adding batch processing capabilities for high-volume event scenarios
-3. Implement handler timeout mechanisms for async handlers to prevent blocking
-</info added on 2025-04-27T03:48:01.200Z>
-
-## 2. Implement Domain-Specific Events [pending]
+## 2. Design Domain Event Classes and Interfaces [pending]
 ### Dependencies: 2.1
-### Description: Create concrete domain event classes for key domain operations
+### Description: Create a domain event infrastructure with base interfaces and concrete event classes for cross-bounded context communication.
 ### Details:
-Define specific domain event classes that extend the base `DomainEvent` class, including: 1) `RepositoryAnalyzedEvent` with repository metadata and analysis results, 2) `CodeIssueDetectedEvent` with issue details, 3) `RecommendationGeneratedEvent` with recommendation data. Each event class should include appropriate properties, validation, and serialization methods. Group events by bounded context in appropriate modules (e.g., `analysis/events.py`, `recommendations/events.py`). Include unit tests for each event type.
+1) Create an IDomainEvent interface with common properties (EventId, Timestamp, etc.). 2) Implement a base abstract DomainEvent class. 3) Define specific event classes for each repository action (e.g., RepositoryDeletedEvent, RepositoryArchivedEvent). 4) Include all necessary data in events for consumers. 5) Ensure events are immutable. 6) Add event correlation IDs for tracing. Events should be serializable for potential persistence or transport across process boundaries.
 
-## 3. Integrate Event Publishing in Domain Services [pending]
-### Dependencies: 2.1, 2.2
-### Description: Update domain services to publish events when significant state changes occur
+## 3. Implement Domain Event Dispatcher Mechanism [pending]
+### Dependencies: 2.2
+### Description: Create a robust event dispatcher that can publish domain events to registered handlers across bounded contexts.
 ### Details:
-Modify domain services to publish events at appropriate points: 1) Update `RepositoryAnalysisService` to publish `RepositoryAnalyzedEvent` when analysis completes, 2) Update issue detection services to publish `CodeIssueDetectedEvent` when issues are found, 3) Update recommendation services to publish events when recommendations are generated. Ensure proper error handling around event publishing. Add integration tests to verify events are published with correct data during domain operations.
+1) Create an IEventDispatcher interface with methods for publishing events and registering handlers. 2) Implement a DomainEventDispatcher class that maintains a registry of event handlers. 3) Add methods for registering and unregistering handlers. 4) Implement synchronous dispatch logic with error handling. 5) Consider adding support for async handlers. 6) Implement thread safety for concurrent event publishing. Use dependency injection to provide the dispatcher to domain services.
 
-## 4. Implement Event Subscribers and Cross-Context Communication [pending]
-### Dependencies: 2.1, 2.2, 2.3
-### Description: Create event subscribers that listen for and react to domain events across bounded contexts
+## 4. Create Event Handlers for Domain Events [pending]
+### Dependencies: 2.2, 2.3
+### Description: Implement handlers for domain events in each bounded context that need to react to events from other contexts.
 ### Details:
-Implement event subscribers that handle cross-context communication: 1) Create a subscriber registration mechanism in the application startup, 2) Implement `RecommendationSubscriber` that listens for `RepositoryAnalyzedEvent` and triggers recommendation generation, 3) Implement `NotificationSubscriber` that listens for various events and sends appropriate notifications, 4) Add logging and monitoring for event flow. Create integration tests that verify the full event flow across contexts. Document the event flow patterns and subscription model for future development.
+1) Create an IEventHandler<T> interface where T is a domain event. 2) Implement concrete handlers for each event type in appropriate bounded contexts. 3) Add business logic in handlers to update domain models based on events. 4) Ensure handlers follow single responsibility principle. 5) Implement error handling and logging. 6) Make handlers stateless where possible. Consider using the mediator pattern for complex event handling scenarios.
+
+## 5. Integrate Domain Events with Repository Actions [pending]
+### Dependencies: 2.1, 2.2, 2.3, 2.4
+### Description: Connect domain models with the event system by raising appropriate events when repository actions occur.
+### Details:
+1) Modify domain services or aggregates to raise events when state changes. 2) Inject the event dispatcher into services that need to publish events. 3) Ensure events are raised after successful state changes. 4) Add unit tests to verify events are raised correctly. 5) Implement transactional boundaries to ensure consistency between state changes and event publishing. 6) Add integration tests to verify cross-context communication works correctly. Consider using the outbox pattern for reliable event delivery.
 

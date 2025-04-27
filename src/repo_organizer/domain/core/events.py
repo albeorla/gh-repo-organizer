@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, UTC
 import uuid
 from typing import Any, Callable, Dict, List, Set, Type, Union, Optional
 import inspect
@@ -14,7 +14,7 @@ class DomainEvent:
     """
     aggregate_id: str
     event_id: uuid.UUID = field(default_factory=uuid.uuid4)
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert event to dictionary representation for serialization."""

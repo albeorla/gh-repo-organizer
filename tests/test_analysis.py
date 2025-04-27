@@ -13,7 +13,7 @@ from repo_organizer.infrastructure.analysis.pydantic_models import (
     RepoRecommendation,
 )
 from repo_organizer.infrastructure.analysis.llm_service import LLMService
-from repo_organizer.services.repository_analyzer_service import (
+from repo_organizer.domain.analysis.services import (
     RepositoryAnalyzerService,
 )
 
@@ -42,7 +42,7 @@ class TestRepositoryAnalysis(unittest.TestCase):
         with open(self.fixtures_dir / filename, "r") as f:
             return json.load(f)
 
-    @patch("repo_organizer.services.llm_service.ChatAnthropic")
+    @patch("repo_organizer.infrastructure.analysis.llm_service.ChatAnthropic")
     def test_llm_service_analysis(self, mock_anthropic):
         """Test LLM service produces valid analysis."""
         # Setup mock LLM response
@@ -81,7 +81,7 @@ class TestRepositoryAnalysis(unittest.TestCase):
         self.assertIsInstance(result.recommendations[0], RepoRecommendation)
         self.assertEqual(result.estimated_value, "Medium")
 
-    @patch("repo_organizer.services.repository_analyzer_service.LLMService")
+    @patch("repo_organizer.domain.analysis.services.LLMService")
     def test_repository_analyzer_service(self, mock_llm_service):
         """Test repository analyzer service end-to-end."""
         # Setup mock LLM service

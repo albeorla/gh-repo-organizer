@@ -1,37 +1,43 @@
 # Task ID: 4
-# Title: Implement Repository Pattern for Persistence
+# Title: Refactor Application Layer with Dependency Injection
 # Status: pending
-# Dependencies: 3
+# Dependencies: 2, 3
 # Priority: medium
-# Description: Create repository interfaces and implementations for persistent data access
+# Description: Refactor application layer components to use proper dependency injection and command/query separation
 # Details:
-Define repository interfaces in domain layer (e.g., `domain/source_control/repositories.py`). Implement concrete repositories in infrastructure layer. Use composition to inject dependencies. Implement in-memory repositories for testing. Consider using an ORM or simple file-based persistence depending on requirements.
+Refactor `app/application_runner.py` to use proper dependency injection. Move `app/application_factory.py` to `application/factories.py`. Implement command/query separation in the application layer. Create command handlers and query handlers for different use cases. Implement a simple dependency injection container if needed.
 
 # Test Strategy:
-Create unit tests with mock/in-memory repositories. Test CRUD operations and query functionality.
+Write unit tests for application services using mocked dependencies. Create integration tests to verify the application layer correctly orchestrates domain and infrastructure components. Test command and query handlers separately.
 
 # Subtasks:
-## 1. Define Repository Interfaces in Domain Layer [pending]
+## 1. Create Dependency Injection Container [pending]
 ### Dependencies: None
-### Description: Create abstract repository interfaces in the domain layer to define the contract for data access
+### Description: Implement a simple dependency injection container to manage application dependencies
 ### Details:
-Create a new file at `domain/source_control/repositories.py` that defines abstract base classes for each repository needed (e.g., `RepositoryBase`, `CommitRepository`, `BranchRepository`). Each interface should define methods for standard operations (create, read, update, delete) using domain entities as parameters and return types. Use Python's ABC module to create proper interfaces. Include method signatures with type hints but no implementations. Document each method with clear docstrings explaining the contract.
+Create a new file `application/di_container.py` that implements a dependency injection container. The container should provide methods to register and resolve dependencies. Use a simple dictionary-based approach where dependencies are registered with a key and can be resolved later. Include methods like `register(key, factory)`, `resolve(key)`, and support for singleton vs transient registrations. This will serve as the foundation for the DI refactoring.
 
-## 2. Implement In-Memory Repository for Testing [pending]
+## 2. Move Application Factory to Application Package [pending]
 ### Dependencies: 4.1
-### Description: Create in-memory implementations of the repository interfaces for use in testing
+### Description: Move application factory module to the correct location and refactor it to use the DI container
 ### Details:
-Create in-memory implementations of each repository interface in `infrastructure/persistence/memory/repositories.py`. These should store entities in memory (using dictionaries or lists) and implement all methods defined in the interfaces. Include proper error handling for cases like not found entities or duplicates. These implementations will be used for unit tests and can serve as a reference for other implementations. Add comprehensive tests for these repositories in `tests/infrastructure/persistence/memory/`.
+Move `app/application_factory.py` to `application/factories.py`. Update the factory to use the new DI container for creating application components. The factory should register all required dependencies in the container and then resolve them when creating application components. Update any imports in other files that reference the old location. This ensures proper separation of concerns and prepares for further refactoring.
 
-## 3. Implement Persistent Repository Implementations [pending]
+## 3. Implement Command and Query Interfaces [pending]
 ### Dependencies: 4.1
-### Description: Create concrete implementations of the repository interfaces for actual persistence
+### Description: Create base interfaces and structures for command/query separation pattern
 ### Details:
-Implement concrete repositories in `infrastructure/persistence/` that provide actual data persistence. Choose an appropriate persistence mechanism (SQLite, file-based JSON, etc.) based on the project requirements. Each implementation should fully satisfy the interface contracts defined in subtask 1. Use dependency injection to provide any required services (like database connections). Implement proper error handling and logging. Ensure all operations are properly transactional where appropriate.
+Create new files in `application/commands/` and `application/queries/` directories. Implement base classes/interfaces: `Command`, `CommandHandler`, `CommandResult`, `Query`, `QueryHandler`, and `QueryResult`. Create a command/query dispatcher that uses the DI container to resolve the appropriate handler for a given command or query. The dispatcher should have methods like `dispatch_command(command)` and `dispatch_query(query)` that find and execute the corresponding handler.
 
-## 4. Create Repository Factory and Dependency Injection Setup [pending]
+## 4. Convert Existing Application Logic to Commands and Queries [pending]
 ### Dependencies: 4.2, 4.3
-### Description: Implement a factory for creating repositories and set up the dependency injection system
+### Description: Refactor existing application logic into the command/query pattern
 ### Details:
-Create a repository factory in `infrastructure/persistence/factory.py` that instantiates the appropriate repository implementations based on configuration. Implement a dependency injection container (using a library like Injector or a custom solution) that registers and provides repositories to other components. Update any existing service classes to accept repositories through constructor injection. Include configuration options to switch between different repository implementations (e.g., in-memory for testing vs. persistent for production). Write integration tests that verify the complete repository setup.
+Identify the main use cases in the current application and convert them to commands or queries. For write operations, create command classes in `application/commands/` with corresponding handlers. For read operations, create query classes in `application/queries/` with corresponding handlers. Each handler should follow the single responsibility principle and be registered in the DI container. For example, create `CreateUserCommand`, `CreateUserCommandHandler`, `GetUserByIdQuery`, `GetUserByIdQueryHandler`, etc.
+
+## 5. Refactor Application Runner with DI and Command/Query Pattern [pending]
+### Dependencies: 4.4
+### Description: Update the application runner to use the DI container and command/query dispatcher
+### Details:
+Refactor `app/application_runner.py` to use the DI container for resolving dependencies. The runner should no longer directly instantiate components but should get them from the container. Update the runner to use the command/query dispatcher for executing application logic. Remove any direct dependencies on concrete implementations and instead depend on abstractions. Test the refactored application to ensure it works correctly with the new architecture.
 

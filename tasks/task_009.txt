@@ -1,31 +1,43 @@
 # Task ID: 9
-# Title: Enhance CLI Output and Reporting
+# Title: Implement Repository Action Scripts
 # Status: pending
 # Dependencies: 8
-# Priority: medium
-# Description: Improve CLI output with progress reporting and summary reports
+# Priority: low
+# Description: Create scripts to help users implement recommended repository actions
 # Details:
-Add progress bars for long-running operations. Implement colored output for different repository actions. Create summary reports of action recommendations. Add filtering options to view different repository actions. Use libraries like rich or tqdm for enhanced console output.
+Develop scripts to implement DELETE, ARCHIVE, EXTRACT, KEEP, and PIN actions. Create safety mechanisms to prevent accidental data loss. Implement dry-run mode for action preview. Add confirmation prompts for destructive actions. Create detailed logging of performed actions.
 
 # Test Strategy:
-Test output formatting with various inputs. Verify summary reports contain accurate information. Test filtering functionality.
+Create integration tests with mock GitHub repositories. Test each action type in isolation. Verify safety mechanisms work as expected. Test error handling and recovery.
 
 # Subtasks:
-## 1. Implement Colored Output for Repository Actions [pending]
+## 1. Create core script framework with dry-run capability [pending]
 ### Dependencies: None
-### Description: Add color-coding to CLI output to improve readability and distinguish between different types of repository actions and message severity levels
+### Description: Develop the base script structure that will be shared across all repository actions with dry-run mode implementation
 ### Details:
-Use the 'rich' library to implement colored text output. Define a color scheme for different message types (e.g., green for success, yellow for warnings, red for errors, blue for information). Create utility functions that wrap output messages with appropriate styling. Update existing CLI output calls to use these new utility functions. Ensure consistent color usage across the application. Include a configuration option to disable colors for environments that don't support them.
+Create a script framework that defines a common interface for all repository actions. Implement command-line argument parsing for action selection and parameters. Build a dry-run mode that simulates actions without making changes. Set up a configuration loader for default settings. Establish a consistent output format for action results and logging.
 
-## 2. Add Progress Bars for Long-running Operations [pending]
+## 2. Implement non-destructive actions (KEEP and PIN) [pending]
 ### Dependencies: 9.1
-### Description: Implement progress indicators for operations that take significant time to complete, improving user experience by providing visual feedback
+### Description: Create scripts for KEEP and PIN actions that mark repositories for retention
 ### Details:
-Use the 'tqdm' or 'rich.progress' module to implement progress bars. Identify all long-running operations in the codebase (e.g., repository scanning, batch processing). Modify these operations to track and report progress. Implement a consistent progress bar style that works with the colored output from subtask 1. Add estimated time remaining when possible. Ensure progress bars degrade gracefully in non-interactive environments. Add an option to disable progress bars for CI/CD environments.
+Using the core framework, implement the KEEP action to mark repositories to be retained. Implement the PIN action to prevent repositories from being automatically modified. Add appropriate metadata tagging for these actions. Include validation to ensure targets exist. Test these non-destructive actions thoroughly as they'll serve as a template for the more complex actions.
 
-## 3. Create Summary Reports with Filtering Options [pending]
-### Dependencies: 9.1, 9.2
-### Description: Implement end-of-operation summary reports that provide an overview of actions taken and recommendations, with filtering capabilities
+## 3. Implement safety mechanisms and confirmation system [pending]
+### Dependencies: 9.1
+### Description: Create safety checks and confirmation prompts to prevent accidental data loss
 ### Details:
-Design a structured format for summary reports that shows counts of different action types, recommendations, and outcomes. Implement filtering options (--filter flag) that allow users to view specific types of actions (e.g., --filter=warnings, --filter=errors, --filter=recommendations). Create tabular views of the filtered data using rich.table. Add the ability to export reports in different formats (text, JSON, CSV). Ensure summary reports use the colored output system from subtask 1. Include timing information about how long operations took, leveraging the progress tracking from subtask 2.
+Develop a confirmation system that requires explicit user approval for destructive actions. Implement safety checks that verify repository status before actions. Create backup mechanisms where appropriate. Add validation to ensure the user has necessary permissions. Implement abort capabilities that can safely stop an action midway if needed. This system will be used by the destructive actions in subsequent tasks.
+
+## 4. Implement destructive actions (DELETE and ARCHIVE) [pending]
+### Dependencies: 9.1, 9.3
+### Description: Create scripts for DELETE and ARCHIVE actions with integrated safety mechanisms
+### Details:
+Implement the DELETE action to permanently remove repositories with safety mechanisms. Create the ARCHIVE action to compress and store repositories for later reference. Integrate the confirmation prompts and safety checks. Add specific validations for these destructive operations. Ensure proper error handling and recovery procedures. Test extensively with various edge cases to ensure data safety.
+
+## 5. Implement EXTRACT action and comprehensive logging [pending]
+### Dependencies: 9.1, 9.2, 9.4
+### Description: Create the EXTRACT action script and implement detailed logging across all actions
+### Details:
+Implement the EXTRACT action to pull out specific components from repositories. Create a comprehensive logging system that records all actions taken, including timestamps, users, affected repositories, and results. Implement different log levels (info, warning, error). Add the ability to export logs in multiple formats. Ensure logs capture both successful operations and failures with appropriate detail. Integrate logging across all previously implemented actions.
 

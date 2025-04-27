@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2025-04-27T03:17:10.599Z",
+    "generatedAt": "2025-04-27T04:07:26.155Z",
     "tasksAnalyzed": 10,
     "thresholdScore": 5,
     "projectName": "Your Project Name",
@@ -9,83 +9,83 @@
   "complexityAnalysis": [
     {
       "taskId": 1,
-      "taskTitle": "Restructure Services to DDD Layers",
-      "complexityScore": 4,
-      "recommendedSubtasks": 3,
-      "expansionPrompt": "Break down the task of restructuring services to DDD layers into specific subtasks including file movement, import updates, and testing steps",
-      "reasoning": "This task involves file reorganization with import updates. While conceptually straightforward, it requires careful attention to dependencies and import statements across the codebase. The risk of breaking functionality is moderate."
+      "taskTitle": "Refactor Services to DDD Infrastructure Layer",
+      "complexityScore": 5,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down the process of moving services to the DDD infrastructure layer, including creating interfaces, updating imports, and testing the refactored services.",
+      "reasoning": "This task involves moving files to new locations, creating interfaces, and updating imports throughout the codebase. The complexity is moderate as it requires understanding the existing code structure and ensuring all references are updated correctly. The risk of breaking existing functionality is significant."
     },
     {
       "taskId": 2,
-      "taskTitle": "Implement Domain Events for Cross-Context Communication",
-      "complexityScore": 7,
-      "recommendedSubtasks": 4,
-      "expansionPrompt": "Divide the implementation of a domain event system into subtasks covering base classes, event dispatcher, publisher integration, and subscriber implementation",
-      "reasoning": "Creating a domain event system requires designing a pattern for cross-context communication, which involves multiple components and careful consideration of event flow. This is a core architectural component that affects multiple bounded contexts."
+      "taskTitle": "Implement Domain Models and Events",
+      "complexityScore": 8,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Detail the steps to implement domain models for repository actions and the event system for cross-context communication, including model design, event creation, and handler implementation.",
+      "reasoning": "This task has high complexity as it involves designing core domain models and implementing an event system. It requires deep understanding of DDD principles and careful design to ensure proper communication between bounded contexts. The event dispatcher mechanism adds additional complexity."
     },
     {
       "taskId": 3,
-      "taskTitle": "Complete Domain Models Implementation",
-      "complexityScore": 6,
-      "recommendedSubtasks": 4,
-      "expansionPrompt": "Break down the domain models implementation task into subtasks for each model type, value objects, validation logic, and entity equality implementation",
-      "reasoning": "Implementing domain models requires deep understanding of the business domain and careful design of immutable objects, validation rules, and equality semantics. The task spans multiple model types across different contexts."
+      "taskTitle": "Implement Repository Pattern for Persistence",
+      "complexityScore": 7,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Break down the implementation of the Repository pattern, including interface design, concrete implementations, transaction management, and testing strategies.",
+      "reasoning": "Implementing the Repository pattern requires careful design of interfaces and implementations. The complexity comes from ensuring proper persistence of domain entities while maintaining domain integrity. The addition of a unit of work pattern and in-memory repositories for testing increases the scope."
     },
     {
       "taskId": 4,
-      "taskTitle": "Implement Repository Pattern for Persistence",
+      "taskTitle": "Refactor Application Layer with Dependency Injection",
       "complexityScore": 7,
-      "recommendedSubtasks": 4,
-      "expansionPrompt": "Divide the repository pattern implementation into subtasks covering interface definition, concrete implementations, in-memory test versions, and integration with existing code",
-      "reasoning": "The repository pattern implementation involves creating abstractions for data access, concrete implementations, and testing versions. This requires careful design to ensure proper separation of concerns and testability."
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Detail the steps to refactor the application layer with dependency injection, including command/query separation, handler implementation, and container setup.",
+      "reasoning": "This task involves significant architectural changes to the application layer. Implementing dependency injection and command/query separation requires careful design and refactoring. The task depends on the domain models and repositories being in place, adding to its complexity."
     },
     {
       "taskId": 5,
-      "taskTitle": "Refactor Application Layer with Dependency Injection",
-      "complexityScore": 8,
-      "recommendedSubtasks": 5,
-      "expansionPrompt": "Break down the application layer refactoring into subtasks for DI container setup, command/query separation, service interfaces, factory implementation, and integration testing",
-      "reasoning": "Refactoring the application layer with dependency injection is a significant architectural change that affects how components are wired together. It requires careful planning to avoid breaking existing functionality while improving the design."
+      "taskTitle": "Implement Adapter Composition Pattern",
+      "complexityScore": 6,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down the implementation of adapters using the composition pattern, including interface design, concrete implementations, and migration from legacy code.",
+      "reasoning": "Implementing the adapter composition pattern involves creating interfaces and concrete implementations, plus migrating from existing code. The complexity comes from ensuring proper translation between external systems and domain models while maintaining backward compatibility during transition."
     },
     {
       "taskId": 6,
-      "taskTitle": "Complete Adapter Implementations with Composition Pattern",
-      "complexityScore": 6,
-      "recommendedSubtasks": 4,
-      "expansionPrompt": "Divide the adapter implementation task into subtasks for each external service, composition pattern application, error handling, and migration from legacy implementations",
-      "reasoning": "Implementing adapters for external services requires understanding external APIs, designing composition patterns, and handling errors appropriately. The transition from legacy implementations adds complexity."
+      "taskTitle": "Implement Configuration Validation",
+      "complexityScore": 4,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Detail the steps to implement configuration validation, including validation mechanism design, error handling, and service implementation.",
+      "reasoning": "This task is relatively straightforward compared to others. It involves creating validation mechanisms for configuration settings with clear error messages. Using a library like Pydantic could simplify implementation. The scope is well-defined and isolated."
     },
     {
       "taskId": 7,
-      "taskTitle": "Implement Configuration Validation",
-      "complexityScore": 3,
-      "recommendedSubtasks": 3,
-      "expansionPrompt": "Break down configuration validation implementation into subtasks for validation library selection, environment variable validation, and integration with the application",
-      "reasoning": "Configuration validation is relatively straightforward, involving standard validation techniques for environment variables and configuration settings. The task is well-contained with limited dependencies."
+      "taskTitle": "Create Comprehensive Test Suite",
+      "complexityScore": 8,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Break down the creation of a comprehensive test suite, including unit tests, integration tests, end-to-end tests, and test fixtures for the new architecture.",
+      "reasoning": "Creating a comprehensive test suite for a complex system is highly challenging. It requires understanding all components and their interactions, developing appropriate test strategies for different layers, and ensuring good coverage. The dependency on multiple other tasks increases complexity."
     },
     {
       "taskId": 8,
-      "taskTitle": "Develop CLI Command Structure",
+      "taskTitle": "Improve CLI Interface",
       "complexityScore": 5,
       "recommendedSubtasks": 4,
-      "expansionPrompt": "Divide the CLI command structure development into subtasks for command pattern design, implementation of each command type, help documentation, and integration with application services",
-      "reasoning": "Creating a CLI command structure requires designing a consistent pattern for commands, implementing various command types, and ensuring proper integration with application services. The task has moderate complexity due to its user-facing nature."
+      "expansionPrompt": "Detail the steps to improve the CLI interface, including command structure design, progress reporting, and filtering capabilities.",
+      "reasoning": "Enhancing the CLI interface involves implementing a command pattern and improving output mechanisms. The complexity is moderate as it requires understanding user interaction patterns and implementing a clean command structure. The task depends on the application layer refactoring."
     },
     {
       "taskId": 9,
-      "taskTitle": "Enhance CLI Output and Reporting",
-      "complexityScore": 4,
-      "recommendedSubtasks": 3,
-      "expansionPrompt": "Break down CLI output enhancement into subtasks for progress bar implementation, colored output formatting, and summary report generation",
-      "reasoning": "Enhancing CLI output involves improving user experience through visual elements like progress bars and colored text. While not technically complex, it requires attention to usability details and consistent design."
+      "taskTitle": "Implement Repository Action Scripts",
+      "complexityScore": 6,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Break down the implementation of repository action scripts, including safety mechanisms, dry-run mode, confirmation prompts, and logging capabilities.",
+      "reasoning": "Creating scripts for repository actions involves implementing both the action logic and safety mechanisms. The complexity comes from ensuring data safety, providing clear user feedback, and implementing proper logging. The dependency on the CLI interface adds some complexity."
     },
     {
       "taskId": 10,
-      "taskTitle": "Create Action Implementation Scripts",
-      "complexityScore": 6,
+      "taskTitle": "Final Integration and Regression Testing",
+      "complexityScore": 7,
       "recommendedSubtasks": 4,
-      "expansionPrompt": "Divide action implementation scripts into subtasks for each action type (DELETE/ARCHIVE/EXTRACT/KEEP/PIN), safety features like confirmation prompts, dry-run mode, and batch operations",
-      "reasoning": "Creating scripts for repository actions involves implementing potentially destructive operations that require careful handling, confirmation steps, and proper logging. The variety of actions and safety requirements increase complexity."
+      "expansionPrompt": "Detail the steps for final integration and regression testing, including test planning, execution, bug fixing, and documentation.",
+      "reasoning": "Final integration testing is complex due to the need to verify all components working together correctly. It requires thorough test planning, execution, and fixing any regressions. The dependency on multiple other tasks makes this challenging as it needs to account for all possible interactions."
     }
   ]
 }

@@ -75,3 +75,8 @@ node_modules/
 .cursor/
 .windsurfrules
 README-task-master.md
+
+# Added by Claude Task Master
+# Task files
+tasks.json
+tasks/ 

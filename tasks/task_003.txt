@@ -1,37 +1,43 @@
 # Task ID: 3
-# Title: Complete Domain Models Implementation
+# Title: Implement Repository Pattern for Persistence
 # Status: pending
-# Dependencies: 1
+# Dependencies: 2
 # Priority: high
-# Description: Implement all required domain models in their respective bounded contexts
+# Description: Create proper persistence abstractions using the Repository pattern
 # Details:
-Create or update domain models for repository actions (DELETE/ARCHIVE/EXTRACT/KEEP/PIN) in `domain/analysis/models.py`. Ensure models are immutable where appropriate using frozen dataclasses or similar patterns. Implement value objects for all domain concepts. Add domain validation logic within models. Implement entity equality based on identity.
+Define repository interfaces in the domain layer. Implement concrete repository classes in the infrastructure layer. Create a unit of work pattern if needed for transaction management. Ensure repositories handle the persistence of domain entities and aggregates. Implement in-memory repositories for testing purposes.
 
 # Test Strategy:
-Write unit tests for all domain models, testing immutability, validation rules, and equality comparisons.
+Create unit tests for repository implementations using in-memory repositories. Test CRUD operations and any custom query methods. Verify that repositories properly maintain the integrity of domain models.
 
 # Subtasks:
-## 1. Create base immutable domain models for repository actions [pending]
+## 1. Define Repository Interfaces in Domain Layer [pending]
 ### Dependencies: None
-### Description: Implement the foundational domain models for repository actions (DELETE/ARCHIVE/EXTRACT/KEEP/PIN) using immutable patterns
+### Description: Create repository interfaces that define the contract for data access operations for each domain entity or aggregate
 ### Details:
-Create the core domain models in `domain/analysis/models.py` using frozen dataclasses or similar immutable patterns. Define the base classes/interfaces for repository actions with proper type hints. Include attributes needed for each action type (DELETE/ARCHIVE/EXTRACT/KEEP/PIN) and ensure they're properly encapsulated. Implement proper constructor logic that enforces immutability. Each model should represent a specific repository action with its relevant properties.
+Create an IRepository<T> generic interface in the domain layer that defines standard CRUD operations (Get, GetAll, Add, Update, Delete). Then create specific interfaces for each domain entity (e.g., IUserRepository, IProductRepository) that extend the generic interface and add domain-specific query methods. Each interface should focus on domain concepts rather than persistence details.
 
-## 2. Implement value objects for domain concepts [pending]
+## 2. Implement Unit of Work Interface [pending]
 ### Dependencies: 3.1
-### Description: Create value objects for all domain concepts related to repository actions
+### Description: Create the Unit of Work interface to manage transactions and coordinate multiple repository operations
 ### Details:
-Identify and implement value objects for domain concepts such as repository identifiers, action timestamps, user references, and any other primitives that should be encapsulated as value objects. Ensure these value objects are immutable and include appropriate validation in their constructors. Value objects should override __eq__ and __hash__ methods for proper equality comparison based on their values, not identity. Place these in appropriate modules within the domain layer.
+Define an IUnitOfWork interface in the domain layer that will manage transactions and coordinate work across multiple repositories. This interface should include methods for committing transactions (SaveChanges/Commit) and properties to access each repository. The UnitOfWork will be responsible for maintaining a single transaction context across multiple repository operations.
 
-## 3. Add domain validation logic to models [pending]
+## 3. Implement Concrete Repository Classes in Infrastructure Layer [pending]
+### Dependencies: 3.1
+### Description: Create concrete implementations of the repository interfaces that handle the actual data access logic
+### Details:
+Implement concrete repository classes in the infrastructure layer that implement the repository interfaces defined in the domain layer. Create a generic Repository<T> base class that implements IRepository<T> and handles common CRUD operations. Then create specific repository implementations (e.g., UserRepository, ProductRepository) that inherit from the base repository and implement domain-specific query methods. Use the appropriate data access technology (EF Core, Dapper, etc.) in these implementations.
+
+## 4. Implement Concrete Unit of Work Class [pending]
+### Dependencies: 3.2, 3.3
+### Description: Create the concrete Unit of Work implementation that coordinates repositories and manages transactions
+### Details:
+Implement a concrete UnitOfWork class in the infrastructure layer that implements the IUnitOfWork interface. This class should maintain a single database context or connection, instantiate all required repositories, and provide transaction management through the SaveChanges/Commit method. Ensure proper disposal of resources by implementing IDisposable if necessary.
+
+## 5. Implement In-Memory Repositories for Testing [pending]
 ### Dependencies: 3.1, 3.2
-### Description: Implement comprehensive validation logic within domain models to enforce business rules
+### Description: Create in-memory implementations of repositories and unit of work for testing purposes
 ### Details:
-Enhance the domain models with validation logic that enforces business rules. Implement validation in constructors or factory methods to ensure objects can't be created in an invalid state. Add domain-specific validation rules for each action type (e.g., PIN might require specific repository metadata). Consider using a Result pattern or exceptions for validation failures. Document validation rules with clear error messages. Ensure validation is consistent across all model types.
-
-## 4. Implement entity equality based on identity [pending]
-### Dependencies: 3.1, 3.2, 3.3
-### Description: Ensure proper entity equality semantics based on identity rather than attribute values
-### Details:
-Override __eq__ and __hash__ methods in entity classes to implement equality based on identity (ID) rather than attribute values. Distinguish between entities (with identity) and value objects (with value equality) in the domain model. Ensure that collections of entities work correctly with identity-based equality. Add unit tests to verify correct equality behavior in different scenarios. Document the equality semantics for future developers.
+Implement in-memory versions of all repositories and the unit of work for use in unit tests. These implementations should store entities in memory collections (e.g., List<T>) rather than a database. Ensure these implementations fully respect the repository and unit of work interfaces. Create a factory or dependency injection setup that allows easily switching between real and in-memory implementations. Include sample tests that demonstrate the in-memory repositories in action.
 
