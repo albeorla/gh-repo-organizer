@@ -10,7 +10,7 @@ from typing import Optional, Callable
 from rich.console import Console
 
 from repo_organizer.app.application_runner import ApplicationRunner
-from repo_organizer.services.github_service import GitHubService
+from repo_organizer.infrastructure.source_control.github_service import GitHubService
 from repo_organizer.services.progress_reporter import ProgressReporter
 from repo_organizer.utils.logger import Logger
 from repo_organizer.utils.rate_limiter import RateLimiter

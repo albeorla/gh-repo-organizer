@@ -12,8 +12,8 @@ from typing import Any, Dict, List, Optional
 
 from repo_organizer.infrastructure.analysis.pydantic_models import RepoAnalysis
 from repo_organizer.utils.logger import Logger
-from repo_organizer.services.github_service import GitHubService
-from repo_organizer.services.llm_service import LLMService
+from repo_organizer.infrastructure.source_control.github_service import GitHubService
+from repo_organizer.domain.analysis.protocols import AnalyzerPort
 
 
 class RepositoryAnalyzerService:
@@ -28,7 +28,7 @@ class RepositoryAnalyzerService:
         output_dir: str = ".out",
         api_key: Optional[str] = None,
         github_service: Optional[GitHubService] = None,
-        llm_service: Optional[LLMService] = None,
+        analyzer: Optional[AnalyzerPort] = None,
         max_repos: Optional[int] = None,
         debug: bool = False,
         repo_filter: Optional[str] = None,
@@ -42,7 +42,7 @@ class RepositoryAnalyzerService:
             output_dir: The directory to store output in.
             api_key: The Claude API key.
             github_service: The GitHub service instance.
-            llm_service: The LLM service instance.
+            analyzer: The analyzer implementing AnalyzerPort.
             max_repos: The maximum number of repos to analyze.
             debug: Whether to enable debug logging.
             repo_filter: A regex filter for repo names.
@@ -51,7 +51,7 @@ class RepositoryAnalyzerService:
         self.output_dir = output_dir
         self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
         self.github_service = github_service
-        self.llm_service = llm_service
+        self.analyzer = analyzer
         self.max_repos = max_repos
         self.repo_filter = repo_filter
         self.force_reanalyze = force_reanalyze
@@ -140,19 +140,17 @@ class RepositoryAnalyzerService:
             # Prepare input data for LLM
             analysis_input = self._prepare_repo_data(repo_info)
 
-            # Use LLM service to analyze the repository
-            if self.llm_service:
-                analysis = self.llm_service.analyze_repository(analysis_input)
-
-                # Ensure the repository name in the analysis matches the real
-                # repository name.  The LLM occasionally "corrects" or
-                # reformats the name (e.g. converting ``shell`` to
-                # ``data-analysis-automation``), which causes the generated
-                # markdown file names to diverge from the actual GitHub
-                # repository names and breaks cross-links as well as
-                # subsequent look-ups.  Overwrite the value returned from the
-                # model with the authoritative name from the GitHub API.
-
+            # Use analyzer (implements AnalyzerPort) to analyze the repository
+            if self.analyzer:
+                # Convert to domain model
+                domain_analysis = self.analyzer.analyze(analysis_input)
+                
+                # Convert back to Pydantic model for backward compatibility
+                analysis = domain_analysis.to_pydantic()
+                
+                # Ensure the repository name in the analysis matches the real repository name.
+                # The LLM occasionally "corrects" or reformats the name, which causes issues
+                # with filename consistency
                 analysis.repo_name = repo_name
 
                 self.logger.log(f"Successfully analyzed {repo_name}", level="success")
@@ -161,14 +159,14 @@ class RepositoryAnalyzerService:
                 return analysis
             else:
                 self.logger.log(
-                    f"LLM service not available for {repo_name}", level="error"
+                    f"Analyzer not available for {repo_name}", level="error"
                 )
                 self.logger.update_stats("repos_failed")
 
                 # Create a placeholder analysis with error tag
                 return RepoAnalysis(
                     repo_name=repo_name,
-                    summary="LLM service not available",
+                    summary="Analyzer not available",
                     strengths=["Analysis failed"],
                     weaknesses=["Analysis failed"],
                     recommendations=[],

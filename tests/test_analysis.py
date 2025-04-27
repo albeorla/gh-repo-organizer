@@ -12,7 +12,7 @@ from repo_organizer.infrastructure.analysis.pydantic_models import (
     RepoAnalysis,
     RepoRecommendation,
 )
-from repo_organizer.services.llm_service import LLMService
+from repo_organizer.infrastructure.analysis.llm_service import LLMService
 from repo_organizer.services.repository_analyzer_service import (
     RepositoryAnalyzerService,
 )

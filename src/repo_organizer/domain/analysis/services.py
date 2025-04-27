@@ -16,7 +16,7 @@ class AnalysisService:
     Service containing pure domain logic for working with repository analyses.
 
     This is a stateless domain service that contains business logic for working
-    with RepoAnalysis objects.
+    with RepoAnalysis objects and determining actions based on analyses.
     """
 
     @staticmethod
@@ -110,3 +110,71 @@ class AnalysisService:
             hasattr(analysis, "estimated_value")
             and analysis.estimated_value.lower() == "high"
         )
+        
+    @staticmethod
+    def should_extract_value(analysis: RepoAnalysis) -> bool:
+        """
+        Determine if valuable parts should be extracted from repository before archiving/deleting.
+        
+        Args:
+            analysis: A repository analysis
+            
+        Returns:
+            True if the repository has valuable parts that should be extracted
+        """
+        # Check for explicit EXTRACT recommendation
+        if (
+            hasattr(analysis, "recommended_action")
+            and analysis.recommended_action == "EXTRACT"
+        ):
+            return True
+            
+        return False
+        
+    @staticmethod
+    def get_action_reasoning(analysis: RepoAnalysis) -> str:
+        """
+        Get the reasoning behind the recommended action.
+        
+        Args:
+            analysis: A repository analysis
+            
+        Returns:
+            The reasoning for the recommended action
+        """
+        if hasattr(analysis, "action_reasoning"):
+            return analysis.action_reasoning
+            
+        return "No specific reasoning provided"
+    
+    @staticmethod
+    def categorize_by_action(analyses: Sequence[RepoAnalysis]) -> dict:
+        """
+        Categorize analyses by their recommended action.
+        
+        Args:
+            analyses: A sequence of repository analyses
+            
+        Returns:
+            Dictionary mapping action types to lists of analyses
+        """
+        result = {
+            "DELETE": [],
+            "ARCHIVE": [],
+            "EXTRACT": [],
+            "KEEP": [],
+            "PIN": []
+        }
+        
+        for analysis in analyses:
+            action = "KEEP"  # default
+            if hasattr(analysis, "recommended_action") and analysis.recommended_action:
+                action = analysis.recommended_action.upper()
+                
+            if action in result:
+                result[action].append(analysis)
+            else:
+                # Default to KEEP for any unknown actions
+                result["KEEP"].append(analysis)
+                
+        return result

@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "generatedAt": "2025-04-27T03:17:10.599Z",
+    "tasksAnalyzed": 10,
+    "thresholdScore": 5,
+    "projectName": "Your Project Name",
+    "usedResearch": false
+  },
+  "complexityAnalysis": [
+    {
+      "taskId": 1,
+      "taskTitle": "Restructure Services to DDD Layers",
+      "complexityScore": 4,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Break down the task of restructuring services to DDD layers into specific subtasks including file movement, import updates, and testing steps",
+      "reasoning": "This task involves file reorganization with import updates. While conceptually straightforward, it requires careful attention to dependencies and import statements across the codebase. The risk of breaking functionality is moderate."
+    },
+    {
+      "taskId": 2,
+      "taskTitle": "Implement Domain Events for Cross-Context Communication",
+      "complexityScore": 7,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Divide the implementation of a domain event system into subtasks covering base classes, event dispatcher, publisher integration, and subscriber implementation",
+      "reasoning": "Creating a domain event system requires designing a pattern for cross-context communication, which involves multiple components and careful consideration of event flow. This is a core architectural component that affects multiple bounded contexts."
+    },
+    {
+      "taskId": 3,
+      "taskTitle": "Complete Domain Models Implementation",
+      "complexityScore": 6,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down the domain models implementation task into subtasks for each model type, value objects, validation logic, and entity equality implementation",
+      "reasoning": "Implementing domain models requires deep understanding of the business domain and careful design of immutable objects, validation rules, and equality semantics. The task spans multiple model types across different contexts."
+    },
+    {
+      "taskId": 4,
+      "taskTitle": "Implement Repository Pattern for Persistence",
+      "complexityScore": 7,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Divide the repository pattern implementation into subtasks covering interface definition, concrete implementations, in-memory test versions, and integration with existing code",
+      "reasoning": "The repository pattern implementation involves creating abstractions for data access, concrete implementations, and testing versions. This requires careful design to ensure proper separation of concerns and testability."
+    },
+    {
+      "taskId": 5,
+      "taskTitle": "Refactor Application Layer with Dependency Injection",
+      "complexityScore": 8,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Break down the application layer refactoring into subtasks for DI container setup, command/query separation, service interfaces, factory implementation, and integration testing",
+      "reasoning": "Refactoring the application layer with dependency injection is a significant architectural change that affects how components are wired together. It requires careful planning to avoid breaking existing functionality while improving the design."
+    },
+    {
+      "taskId": 6,
+      "taskTitle": "Complete Adapter Implementations with Composition Pattern",
+      "complexityScore": 6,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Divide the adapter implementation task into subtasks for each external service, composition pattern application, error handling, and migration from legacy implementations",
+      "reasoning": "Implementing adapters for external services requires understanding external APIs, designing composition patterns, and handling errors appropriately. The transition from legacy implementations adds complexity."
+    },
+    {
+      "taskId": 7,
+      "taskTitle": "Implement Configuration Validation",
+      "complexityScore": 3,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Break down configuration validation implementation into subtasks for validation library selection, environment variable validation, and integration with the application",
+      "reasoning": "Configuration validation is relatively straightforward, involving standard validation techniques for environment variables and configuration settings. The task is well-contained with limited dependencies."
+    },
+    {
+      "taskId": 8,
+      "taskTitle": "Develop CLI Command Structure",
+      "complexityScore": 5,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Divide the CLI command structure development into subtasks for command pattern design, implementation of each command type, help documentation, and integration with application services",
+      "reasoning": "Creating a CLI command structure requires designing a consistent pattern for commands, implementing various command types, and ensuring proper integration with application services. The task has moderate complexity due to its user-facing nature."
+    },
+    {
+      "taskId": 9,
+      "taskTitle": "Enhance CLI Output and Reporting",
+      "complexityScore": 4,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Break down CLI output enhancement into subtasks for progress bar implementation, colored output formatting, and summary report generation",
+      "reasoning": "Enhancing CLI output involves improving user experience through visual elements like progress bars and colored text. While not technically complex, it requires attention to usability details and consistent design."
+    },
+    {
+      "taskId": 10,
+      "taskTitle": "Create Action Implementation Scripts",
+      "complexityScore": 6,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Divide action implementation scripts into subtasks for each action type (DELETE/ARCHIVE/EXTRACT/KEEP/PIN), safety features like confirmation prompts, dry-run mode, and batch operations",
+      "reasoning": "Creating scripts for repository actions involves implementing potentially destructive operations that require careful handling, confirmation steps, and proper logging. The variety of actions and safety requirements increase complexity."
+    }
+  ]
+}

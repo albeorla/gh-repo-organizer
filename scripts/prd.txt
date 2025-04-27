@@ -1,0 +1,69 @@
+# GitHub Repository Organizer PRD
+
+## Overview
+GitHub Repository Organizer is a tool designed to help users manage their growing collection of GitHub repositories by analyzing them and recommending appropriate actions (DELETE, ARCHIVE, EXTRACT, KEEP, or PIN). It uses LLM technology to provide intelligent analysis and follows Domain-Driven Design principles for maintainability.
+
+## Current Status
+The project has partially implemented a DDD architecture with bounded contexts for analysis and source control. The core functionality works, but several architectural improvements are needed following proper DDD practices. The project is transitioning from a service-based architecture to a proper domain-driven design.
+
+## Core Requirements
+
+### Architectural Refactoring
+1. Complete migration of services to proper DDD layers
+   - Move `services/llm_service.py` → `infrastructure/analysis/llm_service.py`
+   - Move `services/github_service.py` → `infrastructure/source_control/github_service.py`
+   - Split repository analyzer service between domain and application layers
+2. Implement proper domain events for cross-bounded context communication
+3. Create source_control domain services
+4. Add proper persistence abstractions using Repository pattern
+5. Implement configuration validation for environment variables
+
+### Testing and Quality Assurance
+1. Create comprehensive test suite for new adapter implementations
+2. Fix any regressions in the main analysis flow
+3. Complete adapter refactoring for composition pattern
+4. Improve test coverage
+
+### User Interface Improvements
+1. Add command-line output for repository actions
+2. Improve progress reporting and console output
+3. Generate summary reports of action recommendations
+4. Add basic filtering options to CLI for viewing different repository actions
+5. Create script to help users implement recommended actions (archive/delete repositories)
+
+## Technical Specifications
+
+### Domain Model
+- Properly implement all domain models in their respective bounded contexts
+- Complete the domain model for repository actions (DELETE/ARCHIVE/EXTRACT/KEEP/PIN)
+- Ensure domain models are immutable where appropriate
+
+### Application Layer
+- Refactor `app/application_runner.py` to use proper dependency injection
+- Move `app/application_factory.py` to `application/factories.py`
+- Create a command/query separation in the application layer
+
+### Infrastructure Layer
+- Complete the implementation of all adapters using composition pattern
+- Remove legacy implementations once new adapters are fully tested
+- Implement proper repository pattern for persistent data
+
+### CLI Interface
+- Create proper command structure in `cli/` directory
+- Implement command pattern for CLI operations
+- Add commands for the new repository actions
+
+## Success Criteria
+1. All architectural debt is resolved with proper DDD implementation
+2. Test coverage is comprehensive for all critical components
+3. CLI provides clear, actionable recommendations for repositories
+4. Users can easily implement recommended actions through the CLI
+5. Code follows SOLID principles and design patterns outlined in CLAUDE.md
+
+## Future Enhancements (Post-v1.0)
+1. Web interface for viewing repository analyses
+2. Dashboard for tracking repository metrics
+3. Integration with additional LLM providers
+4. Support for GitLab and BitBucket repositories
+5. GitHub Action for scheduled analysis
+6. VSCode extension for viewing analysis results

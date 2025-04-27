@@ -6,8 +6,8 @@ Hexagonal Architecture pattern, separating domain logic from external
 dependencies.
 """
 
-from repo_organizer.services.github_service import GitHubService
-from repo_organizer.services.llm_service import LLMService
+from repo_organizer.infrastructure.source_control.github_service import GitHubService
+from repo_organizer.infrastructure.analysis.llm_service import LLMService
 from repo_organizer.services.repository_analyzer_service import (
     RepositoryAnalyzerService,
 )

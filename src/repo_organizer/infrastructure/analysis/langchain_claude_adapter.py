@@ -11,7 +11,7 @@ from typing import Mapping, Optional, Any
 
 from repo_organizer.domain.analysis.models import RepoAnalysis
 from repo_organizer.domain.analysis.protocols import AnalyzerPort
-from repo_organizer.services.llm_service import LLMService
+from repo_organizer.infrastructure.analysis.llm_service import LLMService
 from repo_organizer.utils.logger import Logger
 from repo_organizer.utils.rate_limiter import RateLimiter
 
