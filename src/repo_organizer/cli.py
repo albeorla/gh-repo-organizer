@@ -23,7 +23,8 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.syntax import Syntax
 
-from repo_organizer.app.application_factory import ApplicationFactory
+# Import needed for running the CLI without accessing it through the entry points
+# This prevents relative import errors when running the CLI directly
 from repo_organizer.config.settings import load_settings
 
 # Create Typer app with rich integration
@@ -674,6 +675,11 @@ def reset(
 
     # Fetch the user's actual repositories
     try:
+        # Import necessary classes here to avoid circular imports
+        from repo_organizer.utils.logger import Logger
+        from repo_organizer.utils.rate_limiter import RateLimiter
+        from repo_organizer.infrastructure.github_rest import GitHubRestAdapter
+        
         # Create rate limiter and logger for the GitHub adapter
         logger = Logger(str(output_path / "analysis.log"), console, debug_enabled=False, quiet_mode=quiet)
         github_lim = RateLimiter(settings.github_rate_limit, name="GitHub")
