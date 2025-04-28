@@ -1,69 +1,702 @@
-# GitHub Repository Organizer PRD
+# GitHub Repository Organizer - Product Requirements Document
 
-## Overview
-GitHub Repository Organizer is a tool designed to help users manage their growing collection of GitHub repositories by analyzing them and recommending appropriate actions (DELETE, ARCHIVE, EXTRACT, KEEP, or PIN). It uses LLM technology to provide intelligent analysis and follows Domain-Driven Design principles for maintainability.
+**Version:** 1.1
 
-## Current Status
-The project has partially implemented a DDD architecture with bounded contexts for analysis and source control. The core functionality works, but several architectural improvements are needed following proper DDD practices. The project is transitioning from a service-based architecture to a proper domain-driven design.
+**Date:** 2025-04-30
 
-## Core Requirements
+**Author:** Product Management Team
 
-### Architectural Refactoring
-1. Complete migration of services to proper DDD layers
-   - Move `services/llm_service.py` → `infrastructure/analysis/llm_service.py`
-   - Move `services/github_service.py` → `infrastructure/source_control/github_service.py`
-   - Split repository analyzer service between domain and application layers
-2. Implement proper domain events for cross-bounded context communication
-3. Create source_control domain services
-4. Add proper persistence abstractions using Repository pattern
-5. Implement configuration validation for environment variables
+**Table of Contents**
 
-### Testing and Quality Assurance
-1. Create comprehensive test suite for new adapter implementations
-2. Fix any regressions in the main analysis flow
-3. Complete adapter refactoring for composition pattern
-4. Improve test coverage
+1.  Introduction / Overview
+2.  Goals and Objectives
+3.  Technical Architecture
+4.  Phased Release Plan
+5.  Logical Dependency Chain
+6.  Risks and Mitigations
+7.  Appendix
 
-### User Interface Improvements
-1. Add command-line output for repository actions
-2. Improve progress reporting and console output
-3. Generate summary reports of action recommendations
-4. Add basic filtering options to CLI for viewing different repository actions
-5. Create script to help users implement recommended actions (archive/delete repositories)
+---
 
-## Technical Specifications
+## 1. Introduction / Overview
 
-### Domain Model
-- Properly implement all domain models in their respective bounded contexts
-- Complete the domain model for repository actions (DELETE/ARCHIVE/EXTRACT/KEEP/PIN)
-- Ensure domain models are immutable where appropriate
+GitHub Repository Organizer is a command-line tool designed to help developers analyze and organize their GitHub repositories using AI-powered insights. The tool addresses the common challenge of managing numerous repositories that accumulate over time by providing detailed analysis and actionable recommendations.
 
-### Application Layer
-- Refactor `app/application_runner.py` to use proper dependency injection
-- Move `app/application_factory.py` to `application/factories.py`
-- Create a command/query separation in the application layer
+Using Claude AI, the tool evaluates each repository's purpose, value, and activity level, then recommends specific actions (DELETE/ARCHIVE/EXTRACT/KEEP/PIN) with clear reasoning. This enables developers to make informed decisions about maintaining, archiving, or removing repositories based on objective analysis rather than gut feeling.
 
-### Infrastructure Layer
-- Complete the implementation of all adapters using composition pattern
-- Remove legacy implementations once new adapters are fully tested
-- Implement proper repository pattern for persistent data
+**Phased Development Approach:**
+To deliver value quickly, we are implementing the product using a phased approach that prioritizes the core functionality in an MVP (Minimum Viable Product), followed by incremental enhancements in subsequent releases.
 
-### CLI Interface
-- Create proper command structure in `cli/` directory
-- Implement command pattern for CLI operations
-- Add commands for the new repository actions
+## 2. Goals and Objectives
 
-## Success Criteria
-1. All architectural debt is resolved with proper DDD implementation
-2. Test coverage is comprehensive for all critical components
-3. CLI provides clear, actionable recommendations for repositories
-4. Users can easily implement recommended actions through the CLI
-5. Code follows SOLID principles and design patterns outlined in CLAUDE.md
+* **Primary Goal (P0):** Help developers effectively manage their GitHub repositories by providing AI-powered analysis and actionable recommendations.
 
-## Future Enhancements (Post-v1.0)
-1. Web interface for viewing repository analyses
-2. Dashboard for tracking repository metrics
-3. Integration with additional LLM providers
-4. Support for GitLab and BitBucket repositories
-5. GitHub Action for scheduled analysis
-6. VSCode extension for viewing analysis results
+* **Secondary Goals (by priority):**
+    * **P0:** Generate repository analysis reports with strengths and weaknesses for each repository
+    * **P0:** Provide clear action recommendations (DELETE/ARCHIVE/EXTRACT/KEEP/PIN) to guide repository management decisions
+    * **P1:** Include detailed reasoning for each action recommendation to increase user confidence
+    * **P1:** Categorize repositories by value and activity level to enable better portfolio management
+    * **P2:** Support bulk operations based on AI recommendations to streamline repository maintenance
+    * **P2-P3:** Implement a reliable and maintainable system using Domain-Driven Design architecture
+    * **P0-P3:** Deliver a user-friendly command-line interface with rich console output (basic in P0, enhanced in later phases)
+
+* **Non-Goals:**
+    * Automatic execution of recommended actions without user confirmation
+    * Analysis of repositories not owned by the user (forks, starred repos)
+    * Web or GUI interface (CLI only)
+    * Integration with non-GitHub source control platforms
+    * Code quality or security vulnerability assessment (focus is on organizational aspects)
+
+---
+
+## 3. Technical Architecture
+
+### 3.1 System Components
+
+1. **Domain Layer** *(evolving across phases)*
+   * Core business logic and domain models independent of external frameworks
+   * Divided into bounded contexts:
+     * **Analysis Context**: Models and services for repository analysis
+     * **Source Control Context**: Models and services for interacting with repositories
+   * Implements pure domain logic through immutable dataclasses
+   * Uses Protocol classes to define interfaces required by the domain
+
+2. **Application Layer** *(basic in P0, refined in P2-P3)*
+   * Orchestrates domain objects to fulfill specific use cases
+   * Contains ApplicationRunner to coordinate the analysis process
+   * Implements the analyze_repositories use case that connects source control with analysis
+   * Handles cross-cutting concerns like error handling and progress tracking
+   * Follows command pattern for encapsulating execution logic
+
+3. **Infrastructure Layer** *(essential adapters in P0, enhanced in later phases)*
+   * Implements domain interfaces using specific technologies:
+     * **GitHub REST Adapter**: Implements source control interfaces using GitHub API
+     * **LangChain Claude Adapter**: Implements analysis using Claude AI and LangChain
+   * Manages external dependencies and API communication
+   * Handles rate limiting and retries for external service calls
+   * Implements the repository pattern for data access
+
+4. **Interface Layer (CLI)** *(basic in P0, enhanced in P2)*
+   * Command-line interface with rich formatting using Typer and Rich libraries
+   * Implements commands: analyze (P0), cleanup (P0), logs (P1), reports (P1), reset (P2), actions (P2)
+   * Provides progress visualization and formatted output
+   * Handles command-line arguments and environment variables
+   * Follows facade pattern to simplify complex operations for end users
+
+5. **Configuration Layer** *(basic in P0, enhanced in P2)*
+   * Manages application settings from environment variables
+   * Implements validation logic for configuration values
+   * Creates directories as needed based on configuration
+   * Provides defaults for optional settings
+
+### 3.2 Data Models
+
+#### Repository Model
+
+```json
+{
+  "name": "string",
+  "description": "string | null",
+  "url": "string | null",
+  "updated_at": "string (ISO-8601) | null",
+  "is_archived": "boolean",
+  "stars": "integer",
+  "forks": "integer",
+  "languages": [
+    {
+      "language": "string",
+      "percentage": "float (0-100)"
+    }
+  ]
+}
+```
+
+#### RepoAnalysis Model
+
+```json
+{
+  "repo_name": "string",
+  "summary": "string",
+  "strengths": ["string"],
+  "weaknesses": ["string"],
+  "recommendations": [
+    {
+      "recommendation": "string",
+      "reason": "string",
+      "priority": "string (High|Medium|Low)"
+    }
+  ],
+  "activity_assessment": "string",
+  "estimated_value": "string (High|Medium|Low)",
+  "tags": ["string"],
+  "recommended_action": "string (DELETE|ARCHIVE|EXTRACT|KEEP|PIN)",
+  "action_reasoning": "string"
+}
+```
+
+#### Contributor Model
+
+```json
+{
+  "name": "string",
+  "commits": "integer"
+}
+```
+
+#### Commit Model
+
+```json
+{
+  "hash": "string",
+  "message": "string",
+  "author": "string",
+  "date": "string (ISO-8601)"
+}
+```
+
+## 4. Phased Release Plan
+
+### Phase 0: MVP Release (2 weeks)
+* **GitHub API Integration**
+  * REST-based GitHub API integration for fetching repository data
+  * Retrieve metadata, languages, commit history, and contributor information
+  * Implement authentication with GitHub token
+  
+* **Basic LLM Analysis with Claude**
+  * Integration with Claude AI via LangChain for repository analysis
+  * Generate basic insights including strengths and weaknesses
+  * Implement extended thinking capabilities for improved analysis
+  
+* **Action Recommendations**
+  * Implement core recommendation logic (DELETE/ARCHIVE/EXTRACT/KEEP/PIN)
+  * Generate action recommendations based on repository analysis
+  * Include basic reasoning for each recommendation
+  
+* **Essential CLI Interface**
+  * Implement core `analyze` command with basic options
+  * Add `cleanup` command for basic housekeeping
+  * Display progress indicators during analysis
+  
+* **Basic Reporting**
+  * Generate individual repository markdown reports
+  * Include repository metadata, analysis results, and recommendations
+  * Implement basic formatting for readability
+  
+* **Rate Limiting and Error Handling**
+  * Configure rate limiters for GitHub and Claude APIs
+  * Implement retry mechanisms with exponential backoff
+  * Add basic error handling for API failures
+
+### Phase 1: Enhanced Analysis (3 weeks)
+* **Detailed Recommendation Reasoning**
+  * Improve reasoning provided for each recommended action
+  * Add more context to help users understand recommendations
+  * Enhance clarity and actionability of reasoning
+  
+* **Categorized Summary Reports**
+  * Generate reports that group repositories by value (High/Medium/Low)
+  * Add activity-based categorization
+  * Create executive summary with portfolio overview
+  
+* **Improved LLM Prompts**
+  * Refine prompts to elicit more specific and actionable recommendations
+  * Optimize token usage for cost efficiency
+  * Improve consistency of analysis output
+  
+* **Enhanced CLI Output**
+  * Add rich formatting with color coding for different actions
+  * Implement better progress visualization
+  * Add `logs` and `reports` commands
+  
+* **Essential DDD Architecture**
+  * Complete minimal necessary DDD architecture changes
+  * Ensure proper separation of core domain logic
+  * Implement critical interfaces and adapters
+
+### Phase 2: Workflow Improvements (4 weeks)
+* **Bulk Action Execution**
+  * Implement capabilities to execute recommended actions in bulk
+  * Add confirmation workflows for action execution
+  * Track action history
+  
+* **Advanced CLI Features**
+  * Add `reset` and `actions` commands with full options
+  * Implement filtering options for repository selection
+  * Add configuration command-line parameters
+  
+* **Basic Repository Pattern**
+  * Implement basic repository pattern for data persistence
+  * Add caching mechanisms for improved performance
+  * Reduce direct file system access from application layer
+  
+* **Further DDD Architecture Improvements**
+  * Continue migration from inheritance to composition pattern in adapters
+  * Refine bounded contexts and domain models
+  * Improve error handling across layers
+
+### Phase 3: Advanced Features and Quality (6 weeks)
+* **Complete DDD Architecture**
+  * Finish architecture refactoring across all components
+  * Apply consistent patterns throughout the codebase
+  * Implement proper dependency injection
+  
+* **Application Layer Refinements**
+  * Implement command/query separation
+  * Move application factory to proper location
+  * Refine use case implementations
+  
+* **Domain Events System**
+  * Implement cross-bounded context communication
+  * Add event sourcing for tracking changes
+  * Create domain event handlers
+  
+* **Data Visualization**
+  * Add visualization capabilities for repository insights
+  * Implement charts and graphs in reports
+  * Create visual portfolio overview
+  
+* **Comprehensive Testing**
+  * Increase test coverage across all components
+  * Implement integration tests for full workflows
+  * Add performance benchmarks
+
+## 5. Logical Dependency Chain
+
+The GitHub Repository Organizer follows a layered architecture with dependencies flowing inward (infrastructure → application → domain). Below is the logical dependency chain with MVP components highlighted.
+
+1. **Configuration Loading** *(P0)*
+   * Environment variables are loaded and validated through Settings
+   * Output and log directories are created if they don't exist
+
+2. **Service Initialization** *(P0)*
+   * GitHubService is initialized with GitHub token and username
+   * LangChainClaudeAdapter is initialized with Anthropic API key
+   * Rate limiters are configured for both GitHub and LLM APIs
+   * Logger is initialized for tracking operations
+
+3. **Command Execution Flow** *(P0-P2)*
+   * CLI command is parsed by Typer
+   * Command calls ApplicationFactory to create ApplicationRunner
+   * ApplicationRunner coordinates the execution:
+     * Fetches repositories from GitHub
+     * For each repository:
+       * Checks if analysis should be skipped (cached report exists)
+       * Prepares repository data for analysis
+       * Calls LangChainClaudeAdapter to analyze repository
+       * Writes analysis report to disk
+     * Generates summary report categorizing repositories *(P1)*
+
+4. **Analysis Process** *(P0)*
+   * Source Control layer fetches repository metadata
+   * Analysis layer generates insights using Claude AI
+   * Domain services determine recommended actions
+   * Reports are generated based on analysis results
+
+5. **Data Flow** *(P0-P3)*
+   * Repository metadata → AnalyzerPort → RepoAnalysis → Report Generation
+   * Enhanced with domain events in later phases *(P3)*
+
+## 6. Risks and Mitigations
+
+### 1. API Rate Limiting
+* **Risk**: GitHub API has strict rate limits that could prevent analyzing many repositories
+* **Mitigation**: 
+  * Implemented configurable rate limiter (default: 30 calls/minute)
+  * Built-in retry mechanism with exponential backoff
+  * Caching of previously analyzed repositories
+  * API token usage to get higher rate limits
+
+### 2. LLM API Reliability and Cost
+* **Risk**: Claude API calls may fail, be inconsistent, or incur significant costs
+* **Mitigation**:
+  * Configurable rate limiting for LLM calls (default: 10 calls/minute)
+  * Cache analysis results to avoid redundant API calls
+  * Structured output parsing with fallback mechanisms
+  * Error handling with graceful degradation
+  * Configurable token budget for extended thinking
+
+### 3. Data Consistency
+* **Risk**: Analysis reports may become stale as repositories change
+* **Mitigation**:
+  * Report timestamp comparison with repository updated date
+  * Force re-analysis option
+  * Reset command to remove outdated reports *(P2)*
+
+### 4. System Complexity
+* **Risk**: DDD architecture increases system complexity
+* **Mitigation**:
+  * Phased implementation of DDD, beginning with core components for MVP
+  * Clear documentation of architecture decisions
+  * Well-defined bounded contexts and interfaces
+  * Consistent naming conventions and patterns
+
+### 5. Authentication Issues
+* **Risk**: GitHub token might not have necessary permissions
+* **Mitigation**:
+  * Clear documentation on required permissions
+  * Graceful error handling for authentication failures
+  * Detailed logging to help diagnose permission issues
+
+### 6. Performance with Large Repositories
+* **Risk**: Users with many repositories may experience long processing times
+* **Mitigation**:
+  * Progress reporting with rich console output *(P0)*
+  * Repository limiting options *(P0)*
+  * Caching to avoid reprocessing unchanged repositories *(P0)*
+  * Parallel processing with configurable worker count *(P2)*
+
+### 7. MVP Scope Creep
+* **Risk**: Adding too many features to the MVP could delay delivery
+* **Mitigation**:
+  * Strict prioritization focusing on core value proposition
+  * Clear definition of what features constitute the MVP
+  * Frequent progress reviews against MVP goals
+  * Deferring enhancement features to post-MVP releases
+
+## 7. Appendix
+
+### A. Configuration Options
+
+The GitHub Repository Organizer can be configured through environment variables:
+
+```
+# API Keys
+ANTHROPIC_API_KEY=         # Required for Claude AI integration
+GITHUB_TOKEN=              # Optional for GitHub API access
+
+# GitHub Configuration
+GITHUB_USERNAME=           # Required GitHub username to analyze
+
+# Repository Settings
+OUTPUT_DIR=.out/repos      # Directory for output files
+LOGS_DIR=.logs             # Directory for log files
+MAX_REPOS=100              # Maximum repositories to analyze
+
+# LLM Settings
+LLM_MODEL=claude-3-7-sonnet-latest  # Claude model to use
+LLM_TEMPERATURE=0.2                 # Temperature (0.0-1.0)
+LLM_THINKING_ENABLED=true           # Enable extended thinking
+LLM_THINKING_BUDGET=16000           # Token budget for thinking
+
+# Concurrency and Rate Limiting
+MAX_WORKERS=5              # Parallel worker threads
+GITHUB_RATE_LIMIT=30       # GitHub API calls per minute
+LLM_RATE_LIMIT=10          # LLM API calls per minute
+
+# Debug Settings
+DEBUG_LOGGING=false        # Enable verbose logging
+QUIET_MODE=false           # Minimize console output
+```
+
+### B. Command-Line Interface
+
+The tool provides the following commands (with phased implementation):
+
+```
+# Main analysis command (P0)
+repo-analyzer analyze [OPTIONS]
+  --owner, -o TEXT         GitHub owner/user to analyze
+  --limit, -l INTEGER      Maximum repositories to analyze
+  --output-dir TEXT        Directory for output files
+  --force, -f              Force re-analysis of all repositories
+  --debug, -d              Enable debug logging
+  --quiet, -q              Minimize console output
+
+# Utility commands
+repo-analyzer cleanup       # Remove analysis files (P0)
+repo-analyzer logs          # View analysis logs (P1)
+repo-analyzer reports       # View repository reports (P1)
+repo-analyzer reset         # Reset and clean up analysis files (P2)
+repo-analyzer actions       # Execute repository actions (P2)
+```
+
+### C. Example Analysis Output
+
+Each repository analysis generates a markdown report with:
+
+1. Basic repository information
+2. Analysis summary
+3. Strengths and weaknesses
+4. Prioritized recommendations with reasoning
+5. Activity and value assessment
+6. Tags and categories
+7. Recommended action with reasoning
+
+The summary report categorizes repositories by value (High/Medium/Low), making it easy to focus on the most valuable assets in your GitHub portfolio.
+
+### D. Architecture Decision Records
+
+Architecture decisions are documented in ADRs:
+1. ADR 0001: Domain-Driven Design Architecture - Documents the transition to DDD
+2. ADR 0002: Repository Action Decisions - Documents the addition of action recommendations
+3. ADR 0003: Phased Implementation Approach - Documents the MVP-first approach
+
+### E. Roadmap
+
+<roadmap>
+# GitHub Repository Organizer Roadmap
+
+## 1. Project Overview
+
+The GitHub Repository Organizer is a command-line tool designed to help developers analyze and organize their GitHub repositories using AI-powered insights. Using Claude AI, the tool evaluates each repository's purpose, value, and activity level, then recommends specific actions (DELETE/ARCHIVE/EXTRACT/KEEP/PIN) with clear reasoning. The project follows Domain-Driven Design (DDD) architecture for improved maintainability and is currently transitioning through its architectural refactoring phase while preparing to enhance its analysis capabilities.
+
+## 2. Completed Items
+
+- **Core GitHub API Integration**: REST-based GitHub API integration for fetching repository data, including metadata, languages, commit history, and contributor information
+- **LLM Analysis with Claude**: Integration with Claude AI via LangChain for repository analysis with extended thinking capabilities
+- **CLI Interface with Rich Output**: Modern command-line interface using Typer and Rich libraries with commands for analyze, cleanup, logs, reports, reset
+- **Repository Analysis and Reporting**: Generation of detailed markdown reports for each repository with strengths, weaknesses, and recommendations
+- **Rate Limiting and Error Handling**: Configurable rate limiting for both GitHub and LLM APIs with retry mechanisms
+- **Partial DDD Architecture Implementation**:
+  - Established bounded contexts for analysis and source control
+  - Created domain models and interfaces (protocols)
+  - Implemented initial infrastructure adapters for GitHub and Claude
+  - Documented architecture decisions in ADRs
+  - Initial events system for domain events
+
+## 3. Next Steps
+
+1. **Complete DDD Architecture Transition** (High Priority)
+   - Refactor remaining legacy services (in services/ folder) to follow DDD principles
+   - Complete migration from inheritance to composition pattern in adapters
+   - Ensure proper separation between domain, application, and infrastructure layers
+   - Move GitHub service to infrastructure/source_control/github_service.py
+
+2. **Implement Enhanced Repository Action Capabilities** (High Priority)
+   - Fully implement action recommendations (DELETE/ARCHIVE/EXTRACT/KEEP/PIN)
+   - Add detailed reasoning for recommended actions
+   - Update LLM prompt to elicit more specific and actionable recommendations
+   - Complete the AnalysisService implementation for action determination
+
+3. **Refine Application Layer** (Medium Priority)
+   - Refactor ApplicationRunner to use proper dependency injection
+   - Move ApplicationFactory to application/factories.py
+   - Implement proper command/query separation in the application layer
+   - Ensure use cases are properly isolated and testable
+
+4. **Expand Domain Events Implementation** (Medium Priority)
+   - Enhance the existing event dispatcher for cross-bounded context communication
+   - Create domain events for significant state changes in repositories
+   - Implement event handlers for relevant actions
+   - Add event sourcing capabilities for tracking changes
+
+5. **Improve Repository Pattern for Data Persistence** (Medium Priority)
+   - Implement interfaces in domain layer for data persistence
+   - Create repository implementations in infrastructure layer
+   - Remove direct file system access from application layer
+   - Add data caching mechanisms to improve performance
+
+## 4. Full Roadmap
+
+### Phase 1: Core Functionality (COMPLETED)
+- ✅ Implement base GitHub API integration
+- ✅ Develop LLM analysis with Claude
+- ✅ Create CLI interface for basic commands
+- ✅ Generate individual repository reports
+- ✅ Implement rate limiting for APIs
+
+### Phase 2: Domain-Driven Design Transition (IN PROGRESS)
+- ✅ Initial refactoring to DDD architecture
+- ✅ Establish bounded contexts (analysis, source_control)
+- ✅ Create initial domain models and interfaces
+- ✅ Create initial infrastructure adapters
+- 🔄 Complete migration to composition over inheritance pattern
+- 🔄 Add comprehensive error handling across all layers
+- 🔄 Refactor remaining legacy services to follow DDD principles
+
+### Phase 3: Enhanced Analysis Capabilities (NEXT)
+- 🔄 Implement repository action recommendations (DELETE/ARCHIVE/EXTRACT/KEEP/PIN)
+- ⬜ Add detailed reasoning for recommendations
+- 🔄 Complete analysis service for determining actions
+- ⬜ Update LLM prompt to elicit better recommendations
+- 🔄 Generate categorized summary reports by value
+- ⬜ Implement bulk action execution based on recommendations
+
+### Phase 4: Application Layer Refinement (PLANNED)
+- ⬜ Refactor application runner to use proper dependency injection
+- ⬜ Move application factory to application/factories
+- ⬜ Implement command/query separation
+- 🔄 Add proper domain events for cross-bounded context communication
+- ⬜ Create repository pattern for persistent data
+- ⬜ Add event sourcing capabilities
+
+### Phase 5: Infrastructure and Interface Improvements (PLANNED)
+- ⬜ Complete adapter composition transformation
+- ⬜ Implement better repository pattern for persistent data
+- ⬜ Add interfaces in domain layer for data persistence
+- ⬜ Remove direct file system access from application layer
+- ⬜ Enhance CLI with additional commands and options
+- ⬜ Add data visualization capabilities for repository insights
+- ⬜ Implement configuration profiles for different environments
+
+### Phase 6: Testing and Quality Improvements (PLANNED)
+- ⬜ Increase test coverage for domain services
+- ⬜ Add integration tests for full use cases
+- ⬜ Implement property-based testing for critical components
+- ⬜ Add performance benchmarks and optimizations
+- ⬜ Create comprehensive documentation
+- ⬜ Implement continuous integration pipeline
+
+Legend:
+- ✅ Completed
+- 🔄 In Progress
+- ⬜ Not Started
+</roadmap>
+
+### F. Release scheduled
+
+# Release Plan Analysis
+
+I'll start by analyzing the PRD and roadmap to identify core features, assess their implementation status, and prioritize them for the MVP release.
+
+<release_plan_analysis>
+## Core Features Identification and Prioritization
+
+I'll extract all the key features from the PRD and roadmap, rate their importance for an MVP, note their implementation status, and provide rationale for prioritization.
+
+### 1. GitHub API Integration
+- **Importance for MVP**: 5/5
+- **Implementation Status**: COMPLETED
+- **Rationale**: This is the fundamental capability to fetch repository data from GitHub, without which the application cannot function. It's the foundation for all other features and is essential for the MVP.
+
+### 2. LLM Analysis with Claude
+- **Importance for MVP**: 5/5
+- **Implementation Status**: COMPLETED
+- **Rationale**: Core analysis functionality using Claude AI is the main value proposition of the tool and distinguishes it from basic GitHub clients. It's essential for generating insights about repositories.
+
+### 3. Basic CLI Interface
+- **Importance for MVP**: 5/5
+- **Implementation Status**: COMPLETED
+- **Rationale**: Users need a way to interact with the application. The CLI interface is the only planned interface according to the PRD, so it's critical for the MVP.
+
+### 4. Repository Analysis and Basic Reporting
+- **Importance for MVP**: 5/5
+- **Implementation Status**: COMPLETED
+- **Rationale**: Generating analysis reports is a core function and provides the main value to users. Without this capability, the tool would not serve its purpose.
+
+### 5. Rate Limiting and Error Handling
+- **Importance for MVP**: 4/5
+- **Implementation Status**: COMPLETED
+- **Rationale**: Important for reliable operation when interacting with external APIs (GitHub and Claude). Without proper rate limiting, the tool could hit API limits and become unusable.
+
+### 6. Domain-Driven Design Architecture
+- **Importance for MVP**: 2/5
+- **Implementation Status**: IN PROGRESS
+- **Rationale**: While good architecture is important for maintainability and future development, a partial implementation is sufficient for an MVP. The complete DDD architecture transition is more important for long-term development than for initial user value.
+
+### 7. Action Recommendations (DELETE/ARCHIVE/EXTRACT/KEEP/PIN)
+- **Importance for MVP**: 5/5
+- **Implementation Status**: IN PROGRESS
+- **Rationale**: This is central to the product's goal of helping users organize repositories. The specific action recommendations are mentioned in the introduction of the PRD, indicating they are core to the product's purpose.
+
+### 8. Detailed Reasoning for Recommendations
+- **Importance for MVP**: 4/5
+- **Implementation Status**: NOT STARTED
+- **Rationale**: Providing reasoning helps users trust and act on recommendations. This is important but could be enhanced in subsequent releases.
+
+### 9. Enhanced LLM Prompts for Better Recommendations
+- **Importance for MVP**: 3/5
+- **Implementation Status**: NOT STARTED
+- **Rationale**: Improving the quality of recommendations is important but can be iteratively enhanced after the initial MVP.
+
+### 10. Categorized Summary Reports by Value
+- **Importance for MVP**: 4/5
+- **Implementation Status**: IN PROGRESS
+- **Rationale**: Categorization helps users prioritize actions and understand their repository portfolio at a glance, making it an important feature for the initial value proposition.
+
+### 11. Bulk Action Execution
+- **Importance for MVP**: 2/5
+- **Implementation Status**: NOT STARTED
+- **Rationale**: While convenient, this is an efficiency feature rather than a core capability. Users can manually execute actions based on recommendations in the MVP.
+
+### 12. Application Layer Refinements (DI, Command/Query separation)
+- **Importance for MVP**: 1/5
+- **Implementation Status**: NOT STARTED/PARTIAL
+- **Rationale**: These are architectural improvements that don't directly affect user experience or core functionality.
+
+### 13. Domain Events Implementation
+- **Importance for MVP**: 1/5
+- **Implementation Status**: IN PROGRESS
+- **Rationale**: Important for system architecture but not critical for MVP functionality from the user's perspective.
+
+### 14. Repository Pattern for Data Persistence
+- **Importance for MVP**: 2/5
+- **Implementation Status**: NOT STARTED
+- **Rationale**: Improved data handling is important but the current implementation is likely sufficient for an MVP.
+
+### 15. Advanced CLI Features and Data Visualization
+- **Importance for MVP**: 2/5
+- **Implementation Status**: NOT STARTED
+- **Rationale**: Basic CLI capabilities are sufficient for MVP. Advanced features and visualizations can be added in later releases.
+
+### 16. Testing and Quality Improvements
+- **Importance for MVP**: 3/5
+- **Implementation Status**: NOT STARTED/MINIMAL
+- **Rationale**: Some level of testing is important for reliability, but comprehensive testing can be expanded in later releases.
+
+## Considerations for Quick MVP Delivery
+
+1. **Leverage Completed Components**: The core GitHub API integration, LLM analysis with Claude, basic CLI interface, and repository analysis reporting are already completed, providing a solid foundation for the MVP.
+
+2. **Focus on Action Recommendations**: Since action recommendations (DELETE/ARCHIVE/EXTRACT/KEEP/PIN) are central to the product's value proposition and are already in progress, prioritize completing this feature for the MVP.
+
+3. **Minimize Architectural Refactoring**: While DDD architecture is valuable long-term, extensive refactoring can delay the MVP. Focus on completing only the architectural components necessary for core functionality.
+
+4. **Keep the MVP Focused**: Limit the scope to the essential features that deliver the primary value proposition - analyzing GitHub repositories and providing actionable recommendations.
+
+5. **Defer Enhancement Features**: Features that enhance existing functionality (like improved prompts, bulk actions, advanced visualization) can be deferred to post-MVP releases.
+
+6. **Implement Basic Error Handling**: Ensure the MVP has sufficient error handling for a reliable user experience, but defer comprehensive error handling across all layers.
+
+7. **Prioritize User-Facing Features**: Focus on features that directly impact the user experience and value proposition, rather than internal architectural improvements.
+
+8. **Consider Technical Debt**: Be mindful of technical debt that might be introduced by expediting the MVP, and plan to address it in subsequent releases.
+</release_plan_analysis>
+
+Based on my analysis, I'll now create a phased release plan starting with the P0 release (MVP) followed by subsequent releases.
+
+The P0 release will focus on delivering the core functionality that provides immediate value to users - analyzing GitHub repositories and providing actionable recommendations. This includes features with high importance ratings (4-5) that are either completed or far along in implementation.
+
+P1 and P2 releases will add enhancements and additional capabilities based on their importance and implementation status.
+
+# Refactored Release Plan
+
+## P0 Release (MVP)
+- **GitHub API Integration**: Fetch repository data including metadata, languages, commits, and contributors
+- **Basic Repository Analysis with Claude AI**: Generate insights for repositories with strengths and weaknesses
+- **Simple CLI Interface**: Implement core `analyze` command with basic options
+- **Action Recommendations**: Implement core recommendation logic (DELETE/ARCHIVE/EXTRACT/KEEP/PIN)
+- **Basic Report Generation**: Create individual repository reports with analysis results
+- **Rate Limiting and Basic Error Handling**: Ensure reliable API interactions
+
+## P1 Release
+- **Enhanced Action Recommendations**: Add detailed reasoning for each recommended action
+- **Improved LLM Prompts**: Update prompts to elicit more specific and actionable recommendations
+- **Categorized Summary Reports**: Generate reports that group repositories by value and activity
+- **Partial DDD Architecture**: Complete essential refactoring needed for feature stability
+- **Rich Console Output**: Enhance CLI with progress visualization and better formatting
+- **Comprehensive Error Handling**: Add robust error handling across all operations
+
+## P2 Release
+- **Bulk Action Execution**: Implement capabilities to execute recommended actions in bulk
+- **Complete DDD Architecture Transition**: Finish migration from inheritance to composition
+- **Repository Pattern for Data**: Implement proper data persistence with caching
+- **Application Layer Refinements**: Add dependency injection and command/query separation
+- **Enhanced CLI Commands**: Add `actions`, `reports`, and `reset` commands with full options
+- **Configuration Profiles**: Support different configuration environments
+
+## P3 Release
+- **Domain Events System**: Implement cross-context communication via events
+- **Data Visualization**: Add visualization capabilities for repository insights
+- **Performance Optimizations**: Parallel processing with configurable workers
+- **Advanced Filtering**: Filter repositories by various criteria for targeted analysis
+- **Expanded Test Coverage**: Comprehensive unit and integration tests
+- **Continuous Integration Pipeline**: Automated testing and deployment processes
+
+## Future Considerations
+- Event sourcing capabilities for tracking changes
+- Alternative AI model support
+- Advanced reporting with custom templates
+- Integration with additional GitHub features (Issues, Pull Requests)
+- Performance benchmarks and profiling tools
+- Export capabilities to different formats (PDF, HTML, etc.)

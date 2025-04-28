@@ -1,43 +1,17 @@
 # Task ID: 2
-# Title: Implement Domain Models and Events
+# Title: Implement GitHub API integration
 # Status: pending
 # Dependencies: 1
 # Priority: high
-# Description: Complete domain models for both bounded contexts and implement domain events for cross-context communication
+# Description: Create a GitHub REST API adapter to fetch repository data including metadata, languages, commit history, and contributor information.
 # Details:
-Create or refine domain models for repository actions (DELETE/ARCHIVE/EXTRACT/KEEP/PIN) in their respective bounded contexts. Implement domain events for cross-bounded context communication. Ensure domain models are immutable where appropriate. Define event handlers for domain events. Create a domain event dispatcher mechanism.
+1. Create GitHubService in the infrastructure layer
+2. Implement authentication with GitHub token
+3. Create methods to fetch repository metadata, languages, commits, and contributors
+4. Implement rate limiting with configurable limits (default: 30 calls/minute)
+5. Add retry mechanism with exponential backoff
+6. Create data transformation from GitHub API responses to domain models
+7. Implement error handling for API failures
 
 # Test Strategy:
-Write unit tests for domain models to verify immutability and behavior. Create tests for domain events to ensure they are properly dispatched and handled across bounded contexts.
-
-# Subtasks:
-## 1. Define Core Domain Models for Repository Actions [pending]
-### Dependencies: None
-### Description: Create immutable domain models for repository actions (DELETE/ARCHIVE/EXTRACT/KEEP/PIN) in their respective bounded contexts with proper encapsulation and validation.
-### Details:
-For each repository action: 1) Identify the bounded context it belongs to. 2) Create immutable model classes with private setters and validation in constructors. 3) Implement value objects for complex attributes. 4) Add factory methods for object creation. 5) Include business logic methods that enforce domain rules. Use record types where appropriate for immutability. Ensure each model captures the complete state needed for its bounded context.
-
-## 2. Design Domain Event Classes and Interfaces [pending]
-### Dependencies: 2.1
-### Description: Create a domain event infrastructure with base interfaces and concrete event classes for cross-bounded context communication.
-### Details:
-1) Create an IDomainEvent interface with common properties (EventId, Timestamp, etc.). 2) Implement a base abstract DomainEvent class. 3) Define specific event classes for each repository action (e.g., RepositoryDeletedEvent, RepositoryArchivedEvent). 4) Include all necessary data in events for consumers. 5) Ensure events are immutable. 6) Add event correlation IDs for tracing. Events should be serializable for potential persistence or transport across process boundaries.
-
-## 3. Implement Domain Event Dispatcher Mechanism [pending]
-### Dependencies: 2.2
-### Description: Create a robust event dispatcher that can publish domain events to registered handlers across bounded contexts.
-### Details:
-1) Create an IEventDispatcher interface with methods for publishing events and registering handlers. 2) Implement a DomainEventDispatcher class that maintains a registry of event handlers. 3) Add methods for registering and unregistering handlers. 4) Implement synchronous dispatch logic with error handling. 5) Consider adding support for async handlers. 6) Implement thread safety for concurrent event publishing. Use dependency injection to provide the dispatcher to domain services.
-
-## 4. Create Event Handlers for Domain Events [pending]
-### Dependencies: 2.2, 2.3
-### Description: Implement handlers for domain events in each bounded context that need to react to events from other contexts.
-### Details:
-1) Create an IEventHandler<T> interface where T is a domain event. 2) Implement concrete handlers for each event type in appropriate bounded contexts. 3) Add business logic in handlers to update domain models based on events. 4) Ensure handlers follow single responsibility principle. 5) Implement error handling and logging. 6) Make handlers stateless where possible. Consider using the mediator pattern for complex event handling scenarios.
-
-## 5. Integrate Domain Events with Repository Actions [pending]
-### Dependencies: 2.1, 2.2, 2.3, 2.4
-### Description: Connect domain models with the event system by raising appropriate events when repository actions occur.
-### Details:
-1) Modify domain services or aggregates to raise events when state changes. 2) Inject the event dispatcher into services that need to publish events. 3) Ensure events are raised after successful state changes. 4) Add unit tests to verify events are raised correctly. 5) Implement transactional boundaries to ensure consistency between state changes and event publishing. 6) Add integration tests to verify cross-context communication works correctly. Consider using the outbox pattern for reliable event delivery.
-
+Test with mock GitHub API responses. Verify authentication process. Validate rate limiting behavior. Ensure proper transformation of API responses to domain models. Test retry mechanism with simulated failures.

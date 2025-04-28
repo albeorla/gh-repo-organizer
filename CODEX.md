@@ -1,22 +1,22 @@
 ---
-description: Unified guidelines for development workflow, rule creation, and maintenance in this repository, focused on Claude Code.
+description: Unified guidelines for development workflow, rule creation, and maintenance in this repository, focused on OpenAI Codex CLI.
 globs: **/*
 alwaysApply: true
 ---
 
-# Claude Code Project Guide
+# OpenAI Codex CLI Project Guide
 
 This document provides actionable guidelines for:
-- Using [Claude Code](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview) as your agentic coding tool
-- Setting up, configuring, and maintaining your project with Claude Code
+- Using [OpenAI Codex CLI](https://platform.openai.com/docs/guides/codex) as your agentic coding tool
+- Setting up, configuring, and maintaining your project with Codex CLI
 - Creating, maintaining, and evolving rules and workflows for effective AI-assisted development
 - Ensuring security, clarity, and continuous improvement across the codebase
 
 ---
 
-## 1. Claude Code Overview
+## 1. OpenAI Codex CLI Overview
 
-[Claude Code](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview) is an agentic coding tool by Anthropic that operates directly in your terminal, understands your codebase, and helps you code faster through natural language commands. It streamlines your workflow without requiring additional servers or complex setup.
+[OpenAI Codex CLI](https://platform.openai.com/docs/guides/codex) is an agentic coding tool by OpenAI that operates directly in your terminal, understands your codebase, and helps you code faster through natural language commands. It streamlines your workflow without requiring additional servers or complex setup.
 
 **Key Capabilities:**
 - Editing files and fixing bugs across your codebase
@@ -26,43 +26,43 @@ This document provides actionable guidelines for:
 - Automating CI and infra workflows (non-interactive mode)
 
 **Security and Privacy:**
-- Direct API connection to Anthropic (no intermediate servers)
+- Direct API connection to OpenAI (no intermediate servers)
 - Operates in your terminal, maintaining project context
-- Strict privacy safeguards and limited data retention ([see docs](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview#security-and-privacy-by-design))
+- Strict privacy safeguards and limited data retention ([see docs](https://platform.openai.com/docs/guides/codex))
 
 ---
 
 ## 2. Setup and Authentication
 
 1. **Install Node.js 18+**
-2. **Install Claude Code globally:**
+2. **Install OpenAI Codex CLI globally:**
    ```sh
-   npm install -g @anthropic-ai/claude-code
+   npm install -g @openai/codex-cli
    ```
    *Do NOT use `sudo npm install -g`.*
 3. **Navigate to your project:**
    ```sh
    cd your-project-directory
    ```
-4. **Start Claude Code:**
+4. **Start Codex CLI:**
    ```sh
-   claude
+   codex
    ```
 5. **Authenticate:**
-   - Follow the OAuth process with your Anthropic Console account (active billing required).
+   - Follow the authentication process with your OpenAI account and API key (active billing required).
 
-For troubleshooting installation or authentication, see [Claude Code Troubleshooting](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/troubleshooting).
+For troubleshooting installation or authentication, see [OpenAI Codex CLI Troubleshooting](https://platform.openai.com/docs/guides/codex/troubleshooting).
 
 ---
 
 ## 3. Core Features and Workflows
 
-Claude Code operates directly in your terminal, understanding your project context and taking real actions. No need to manually add files to context—Claude will explore your codebase as needed.
+OpenAI Codex CLI operates directly in your terminal, understanding your project context and taking real actions. No need to manually add files to context—Codex will explore your codebase as needed.
 
 ### Common Use Cases
 - **Understand unfamiliar code:**
   ```
-  claude
+  codex
   > what does the payment processing system do?
   > find where user permissions are checked
   > explain how the caching layer works
@@ -91,34 +91,33 @@ Claude Code operates directly in your terminal, understanding your project conte
   > think about how we should architect the new payment service
   > think hard about the edge cases in our authentication flow
   ```
-  - Use "think" or "think hard" to trigger extended planning ([see tips](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview#encourage-deeper-thinking)).
+  - Use "think" or "think hard" to trigger extended planning ([see tips](https://platform.openai.com/docs/guides/codex#encourage-deeper-thinking)).
 - **Automate CI and infra workflows:**
-  - Use non-interactive mode with `claude -p "<command>"` for scripts and pipelines.
+  - Use non-interactive mode with `codex -p "<command>"` for scripts and pipelines.
 
 ---
 
 ## 4. CLI Commands and Usage Patterns
 
-Claude Code provides a rich CLI for interactive and non-interactive use. See the [official CLI command reference](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview#cli-commands).
+OpenAI Codex CLI provides a rich CLI for interactive and non-interactive use. See the [official CLI command reference](https://platform.openai.com/docs/guides/codex/cli-commands).
 
 | Command                       | Description                              | Example                                                                                                 |
 | ----------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| claude                        | Start interactive REPL                   | claude                                                                                                  |
-| claude "query"                | Start REPL with initial prompt           | claude "how does our authentication system work?"                                                      |
-| claude commit                 | Create a commit                          | claude commit                                                                                           |
-| claude -p "<command>"         | Non-interactive mode (for CI/scripts)    | claude -p "update the README with the latest changes"                                                  |
+| codex                         | Start interactive REPL                   | codex                                                                                                   |
+| codex "query"                | Start REPL with initial prompt           | codex "how does our authentication system work?"                                                       |
+| codex commit                  | Create a commit                          | codex commit                                                                                           |
+| codex -p "<command>"         | Non-interactive mode (for CI/scripts)    | codex -p "update the README with the latest changes"                                                   |
 
-For more, see [Claude Code Tutorials](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/tutorials).
+For more, see [OpenAI Codex CLI Tutorials](https://platform.openai.com/docs/guides/codex/tutorials).
 
 ---
 
 ## 5. Environment Variables and Configuration
 
-- `ANTHROPIC_API_KEY`: Your Anthropic API key (required)
-- `CLAUDE_CODE_USE_BEDROCK=1`: Use Amazon Bedrock as backend ([see docs](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview#connect-to-amazon-bedrock))
-- `CLAUDE_CODE_USE_VERTEX=1`: Use Google Vertex AI as backend ([see docs](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview#connect-to-google-vertex-ai))
-- `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_CUSTOM_HEADERS`, `HTTP_PROXY`, `HTTPS_PROXY`: Proxy and custom header support
-- For full configuration options, see [Claude Code Configuration](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview#environment-variables)
+- `OPENAI_API_KEY`: Your OpenAI API key (required)
+- `OPENAI_CLI_MODEL`: Model to use (e.g., `gpt-4`, `gpt-3.5-turbo`)
+- `HTTP_PROXY`, `HTTPS_PROXY`: Proxy and custom header support
+- For full configuration options, see [OpenAI Codex CLI Configuration](https://platform.openai.com/docs/guides/codex/configuration)
 
 ---
 
@@ -410,25 +409,25 @@ alwaysApply: true
 - **Continuous Improvement**
   - Monitor code review comments and implementation logs
   - Update rules after sprints, merges, or onboarding
-  - See [Claude Code Tutorials](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/tutorials) and [Troubleshooting](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/troubleshooting) for more
+  - See [OpenAI Codex CLI Tutorials](https://platform.openai.com/docs/guides/codex/tutorials) and [Troubleshooting](https://platform.openai.com/docs/guides/codex/troubleshooting) for more
 
 ---
 
 ## 10. Advanced: Model Context Protocol (MCP)
 
-Claude Code supports advanced workflows and tool integrations via the [Model Context Protocol (MCP)](https://docs.anthropic.com/en/docs/agents-and-tools/mcp). MCP enables structured tool use, memory management, and advanced agentic behaviors.
+OpenAI Codex CLI supports advanced workflows and tool integrations via the [Model Context Protocol (MCP)](https://platform.openai.com/docs/guides/codex/mcp). MCP enables structured tool use, memory management, and advanced agentic behaviors.
 
 ---
 
 ## 11. References and Further Reading
 
-- [Claude Code Overview](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview)
-- [Claude Code Tutorials](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/tutorials)
-- [Claude Code Troubleshooting](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/troubleshooting)
-- [Model Context Protocol (MCP)](https://docs.anthropic.com/en/docs/agents-and-tools/mcp)
+- [OpenAI Codex CLI Overview](https://platform.openai.com/docs/guides/codex)
+- [OpenAI Codex CLI Tutorials](https://platform.openai.com/docs/guides/codex/tutorials)
+- [OpenAI Codex CLI Troubleshooting](https://platform.openai.com/docs/guides/codex/troubleshooting)
+- [Model Context Protocol (MCP)](https://platform.openai.com/docs/guides/codex/mcp)
 
 ---
 
-By following these Claude Code-centric meta-rules and workflow guidelines, you ensure that all code, rules, and processes in this repository are clear, maintainable, and effective for both human and AI contributors.
+By following these OpenAI Codex CLI-centric meta-rules and workflow guidelines, you ensure that all code, rules, and processes in this repository are clear, maintainable, and effective for both human and AI contributors.
 
 

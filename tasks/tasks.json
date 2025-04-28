@@ -2,600 +2,195 @@
   "tasks": [
     {
       "id": 1,
-      "title": "Refactor Services to DDD Infrastructure Layer",
-      "description": "Move existing services to their proper locations in the infrastructure layer according to DDD principles",
-      "status": "pending",
+      "title": "Set up project structure and configuration",
+      "description": "Create the initial project structure following Domain-Driven Design architecture and implement configuration loading from environment variables.",
+      "status": "done",
       "dependencies": [],
       "priority": "high",
-      "details": "Move `services/llm_service.py` to `infrastructure/analysis/llm_service.py` and `services/github_service.py` to `infrastructure/source_control/github_service.py`. Ensure imports are updated throughout the codebase. Create appropriate interfaces in the domain layer that these services implement. Update any direct references to these services in the codebase.",
-      "testStrategy": "Create unit tests to verify the services function correctly in their new locations. Implement integration tests to ensure the moved services still interact correctly with other components.",
+      "details": "1. Create project directory structure with domain, application, infrastructure, and interface layers\n2. Implement Settings class to load configuration from environment variables\n3. Set up logging configuration\n4. Create directory initialization for output and logs\n5. Configure rate limiters for GitHub and LLM APIs\n6. Implement basic error handling utilities\n7. Set up project dependencies and requirements.txt",
+      "testStrategy": "Verify configuration loading with different environment variables. Test directory creation logic. Ensure rate limiter configurations are correctly applied. Validate error handling utilities with mock errors.",
       "subtasks": [
         {
           "id": 1,
-          "title": "Create domain interfaces for services",
-          "description": "Define interfaces in the domain layer that will be implemented by the infrastructure services",
-          "status": "pending",
+          "title": "Create DDD project directory structure",
+          "description": "Set up the initial project directory structure following Domain-Driven Design architecture principles with separate layers for domain, application, infrastructure, and interface.",
           "dependencies": [],
-          "details": "Create `domain/analysis/llm_interface.py` and `domain/source_control/source_control_interface.py` files. Define abstract base classes with appropriate methods that match the current functionality in the existing services. Use `@abstractmethod` decorators from the `abc` module for all interface methods. The LLM interface should define methods for text analysis and generation, while the source control interface should define methods for repository interaction."
+          "details": "1. Create the root project directory\n2. Create subdirectories for each DDD layer:\n   - `domain/`: Core business logic and entities\n   - `application/`: Use cases and application services\n   - `infrastructure/`: External services, repositories, and technical concerns\n   - `interface/`: API endpoints, CLI, or UI components\n3. Add `__init__.py` files to make directories importable Python packages\n4. Create a basic README.md with project overview\n5. Test by verifying all directories exist and are properly structured\n\n<info added on 2025-04-27T23:13:42.047Z>\n# Implementation Details for DDD Structure\n\n## Specific Directory Structure\n```\nsrc/repo_organizer/\n├── domain/\n│   ├── __init__.py\n│   ├── entities/\n│   │   └── __init__.py\n│   ├── value_objects/\n│   │   └── __init__.py\n│   ├── repositories/\n│   │   └── __init__.py\n│   └── services/\n│       └── __init__.py\n├── application/\n│   ├── __init__.py\n│   ├── use_cases/\n│   │   └── __init__.py\n│   ├── services/\n│   │   └── __init__.py\n│   └── dtos/\n│       └── __init__.py\n├── infrastructure/\n│   ├── __init__.py\n│   ├── repositories/\n│   │   └── __init__.py\n│   ├── external_services/\n│   │   └── __init__.py\n│   └── persistence/\n│       └── __init__.py\n└── interface/\n    ├── __init__.py\n    ├── cli/\n    │   └── __init__.py\n    ├── api/\n    │   └── __init__.py\n    └── views/\n        └── __init__.py\n```\n\n## Layer Responsibility Documentation\nCreate a `ARCHITECTURE.md` file explaining:\n- **Domain Layer**: Contains business entities (Repository, File, Commit), value objects (FileType, Path), domain services, and repository interfaces\n- **Application Layer**: Contains use cases (OrganizeRepository, AnalyzeCodebase), application services, and DTOs for data transfer\n- **Infrastructure Layer**: Contains repository implementations, GitHub/GitLab API clients, file system access\n- **Interface Layer**: Contains CLI commands, API controllers, and view models\n\n## Implementation Notes\n- Use absolute imports (e.g., `from repo_organizer.domain.entities import Repository`)\n- Add `__all__` lists in `__init__.py` files to control exported symbols\n- Create empty placeholder files (e.g., `.gitkeep`) in directories that will be populated later\n- Consider adding a simple dependency injection container in the infrastructure layer\n\n## Verification Script\n```python\nimport os\nimport sys\n\ndef verify_structure(base_path):\n    \"\"\"Verify the DDD directory structure exists correctly\"\"\"\n    required_dirs = [\n        \"domain\", \"domain/entities\", \"domain/value_objects\",\n        \"application\", \"application/use_cases\",\n        \"infrastructure\", \"infrastructure/repositories\",\n        \"interface\", \"interface/cli\"\n    ]\n    \n    for dir_path in required_dirs:\n        full_path = os.path.join(base_path, dir_path)\n        if not os.path.exists(full_path):\n            print(f\"ERROR: Missing directory {full_path}\")\n            return False\n        \n        init_file = os.path.join(full_path, \"__init__.py\")\n        if not os.path.exists(init_file):\n            print(f\"ERROR: Missing __init__.py in {full_path}\")\n            return False\n    \n    print(\"✅ Directory structure verified successfully\")\n    return True\n\nif __name__ == \"__main__\":\n    if len(sys.argv) > 1:\n        base_path = sys.argv[1]\n    else:\n        base_path = \"src/repo_organizer\"\n    \n    verify_structure(base_path)\n```\n</info added on 2025-04-27T23:13:42.047Z>\n\n<info added on 2025-04-28T00:10:01.885Z>\n# Implementation Plan for Subtask 1.1: Create DDD Project Directory Structure\n\n## 1. Review Existing Structure\n- The current workspace already contains a `src/repo_organizer/` directory with subfolders: `domain/`, `application/`, `infrastructure/`, `interface/`, and their respective submodules (e.g., `core/`, `analysis/`, `source_control/`, `cli/`).\n- I will compare the actual structure to the planned DDD structure to ensure all required directories and `__init__.py` files exist.\n\n## 2. Planned Actions\n- Verify and, if needed, create the following directories and files:\n  - `src/repo_organizer/domain/` with subfolders: `entities/`, `value_objects/`, `repositories/`, `services/`\n  - `src/repo_organizer/application/` with subfolders: `use_cases/`, `services/`, `dtos/`\n  - `src/repo_organizer/infrastructure/` with subfolders: `repositories/`, `external_services/`, `persistence/`\n  - `src/repo_organizer/interface/` with subfolders: `cli/`, `api/`, `views/`\n- Ensure each directory contains an `__init__.py` file (create if missing).\n- Add `.gitkeep` files to empty directories for version control.\n- Add or update `ARCHITECTURE.md` to document layer responsibilities.\n- Add or update a verification script to check the structure.\n\n## 3. Reasoning\n- This ensures the project adheres to DDD principles and is ready for further development.\n- Having all `__init__.py` files allows for proper Python imports.\n- Documenting the architecture helps onboard new contributors and clarifies design intent.\n\n## 4. Potential Challenges\n- Some subfolders may already exist with different names (e.g., `core/` instead of `entities/`).\n- Need to avoid overwriting existing files or removing custom code.\n- Will log any discrepancies and resolve them as needed.\n\n## 5. Next Steps\n- Run the verification script after making changes to confirm the structure is correct.\n- Mark this subtask as done once the structure matches the plan and is verified.\n</info added on 2025-04-28T00:10:01.885Z>",
+          "status": "done",
+          "parentTaskId": 1
         },
         {
           "id": 2,
-          "title": "Refactor LLM service to infrastructure layer",
-          "description": "Move the LLM service to the infrastructure layer and implement the domain interface",
-          "status": "pending",
+          "title": "Implement Settings class for configuration management",
+          "description": "Create a Settings class that loads and manages configuration from environment variables with appropriate defaults and validation.",
           "dependencies": [
             1
           ],
-          "details": "Create the directory structure `infrastructure/analysis/` if it doesn't exist. Move `services/llm_service.py` to `infrastructure/analysis/llm_service.py`. Update the class to implement the `LLMInterface` from the domain layer. Add the necessary imports at the top of the file. Ensure the implementation satisfies all the interface requirements. If there are any implementation-specific methods that aren't part of the interface, consider whether they should be added to the interface or kept as internal functionality."
+          "details": "1. Create `infrastructure/config/settings.py`\n2. Implement a Settings class using Pydantic BaseSettings\n3. Define configuration fields with appropriate types and default values\n4. Add validation for required fields\n5. Implement environment variable loading with proper prefixes\n6. Add documentation for each configuration option\n7. Test by creating a sample .env file and verifying settings are loaded correctly\n\n<info added on 2025-04-28T00:21:41.895Z>\n# Implementation Details for Settings Class\n\n## Code Structure\n```python\nfrom pydantic import BaseSettings, Field, validator\nfrom typing import Optional, List\nimport os\n\nclass Settings(BaseSettings):\n    # GitHub API configuration\n    github_token: str = Field(..., description=\"GitHub Personal Access Token\")\n    github_username: Optional[str] = Field(None, description=\"GitHub username for API requests\")\n    \n    # Application settings\n    log_level: str = Field(\"INFO\", description=\"Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)\")\n    cache_dir: str = Field(\"~/.repo_organizer/cache\", description=\"Directory for caching data\")\n    max_repos: int = Field(100, description=\"Maximum number of repositories to process\")\n    \n    # Feature flags\n    enable_analytics: bool = Field(False, description=\"Enable usage analytics\")\n    debug_mode: bool = Field(False, description=\"Enable debug mode with additional logging\")\n    \n    @validator('github_token')\n    def validate_github_token(cls, v):\n        if not v or len(v) < 10:\n            raise ValueError(\"GitHub token is required and must be valid\")\n        return v\n    \n    class Config:\n        env_prefix = \"REPO_ORGANIZER_\"\n        env_file = \".env\"\n        env_file_encoding = \"utf-8\"\n        case_sensitive = False\n```\n\n## Usage Example\n```python\n# Example usage in application\nfrom infrastructure.config.settings import Settings\n\ndef initialize_app():\n    settings = Settings()\n    print(f\"Using GitHub token: {settings.github_token[:4]}...\")\n    print(f\"Cache directory: {settings.cache_dir}\")\n    return settings\n\n# Access settings throughout the application\nsettings = initialize_app()\n```\n\n## Testing Strategy\n1. Create a test file with different environment configurations\n2. Test missing required fields (should raise validation errors)\n3. Test default values when not specified\n4. Test environment variable overrides\n5. Test .env file loading\n\n## Error Handling\n- Add custom error messages for common configuration issues\n- Implement a configuration validation function that can be called at startup\n- Consider adding a `get_settings()` factory function for dependency injection in FastAPI\n</info added on 2025-04-28T00:21:41.895Z>",
+          "status": "done",
+          "parentTaskId": 1
         },
         {
           "id": 3,
-          "title": "Refactor GitHub service to infrastructure layer",
-          "description": "Move the GitHub service to the infrastructure layer and implement the domain interface",
-          "status": "pending",
-          "dependencies": [
-            1
-          ],
-          "details": "Create the directory structure `infrastructure/source_control/` if it doesn't exist. Move `services/github_service.py` to `infrastructure/source_control/github_service.py`. Update the class to implement the `SourceControlInterface` from the domain layer. Add the necessary imports at the top of the file. Ensure the implementation satisfies all the interface requirements. Make sure any GitHub-specific functionality is properly encapsulated while still adhering to the interface contract."
-        },
-        {
-          "id": 4,
-          "title": "Update service references throughout the codebase",
-          "description": "Update all imports and references to the moved services in the entire codebase",
-          "status": "pending",
-          "dependencies": [
-            2,
-            3
-          ],
-          "details": "Use a tool like grep or your IDE's search functionality to find all imports of the old service paths (`from services.llm_service import` and `from services.github_service import`). Update these imports to reference the new paths (`from infrastructure.analysis.llm_service import` and `from infrastructure.source_control.github_service import`). For any direct instantiation of these services, consider whether to use dependency injection instead, injecting the interface rather than the concrete implementation. Run all tests to ensure the refactoring hasn't broken any functionality. Update any affected documentation or configuration files."
-        }
-      ]
-    },
-    {
-      "id": 2,
-      "title": "Implement Domain Models and Events",
-      "description": "Complete domain models for both bounded contexts and implement domain events for cross-context communication",
-      "status": "pending",
-      "dependencies": [
-        1
-      ],
-      "priority": "high",
-      "details": "Create or refine domain models for repository actions (DELETE/ARCHIVE/EXTRACT/KEEP/PIN) in their respective bounded contexts. Implement domain events for cross-bounded context communication. Ensure domain models are immutable where appropriate. Define event handlers for domain events. Create a domain event dispatcher mechanism.",
-      "testStrategy": "Write unit tests for domain models to verify immutability and behavior. Create tests for domain events to ensure they are properly dispatched and handled across bounded contexts.",
-      "subtasks": [
-        {
-          "id": 1,
-          "title": "Define Core Domain Models for Repository Actions",
-          "description": "Create immutable domain models for repository actions (DELETE/ARCHIVE/EXTRACT/KEEP/PIN) in their respective bounded contexts with proper encapsulation and validation.",
-          "status": "pending",
-          "dependencies": [],
-          "details": "For each repository action: 1) Identify the bounded context it belongs to. 2) Create immutable model classes with private setters and validation in constructors. 3) Implement value objects for complex attributes. 4) Add factory methods for object creation. 5) Include business logic methods that enforce domain rules. Use record types where appropriate for immutability. Ensure each model captures the complete state needed for its bounded context."
-        },
-        {
-          "id": 2,
-          "title": "Design Domain Event Classes and Interfaces",
-          "description": "Create a domain event infrastructure with base interfaces and concrete event classes for cross-bounded context communication.",
-          "status": "pending",
-          "dependencies": [
-            1
-          ],
-          "details": "1) Create an IDomainEvent interface with common properties (EventId, Timestamp, etc.). 2) Implement a base abstract DomainEvent class. 3) Define specific event classes for each repository action (e.g., RepositoryDeletedEvent, RepositoryArchivedEvent). 4) Include all necessary data in events for consumers. 5) Ensure events are immutable. 6) Add event correlation IDs for tracing. Events should be serializable for potential persistence or transport across process boundaries."
-        },
-        {
-          "id": 3,
-          "title": "Implement Domain Event Dispatcher Mechanism",
-          "description": "Create a robust event dispatcher that can publish domain events to registered handlers across bounded contexts.",
-          "status": "pending",
+          "title": "Set up logging configuration and directory initialization",
+          "description": "Configure the logging system and implement automatic creation of required directories for logs and output files.",
           "dependencies": [
             2
           ],
-          "details": "1) Create an IEventDispatcher interface with methods for publishing events and registering handlers. 2) Implement a DomainEventDispatcher class that maintains a registry of event handlers. 3) Add methods for registering and unregistering handlers. 4) Implement synchronous dispatch logic with error handling. 5) Consider adding support for async handlers. 6) Implement thread safety for concurrent event publishing. Use dependency injection to provide the dispatcher to domain services."
+          "details": "1. Create `infrastructure/logging/logger.py`\n2. Configure logging with different levels (DEBUG, INFO, ERROR)\n3. Set up log formatting with timestamps and log levels\n4. Implement file and console handlers\n5. Create a function to initialize required directories (logs/, output/)\n6. Add error handling for directory creation\n7. Test by writing logs to both console and file, verifying directories are created",
+          "status": "done",
+          "parentTaskId": 1
         },
         {
           "id": 4,
-          "title": "Create Event Handlers for Domain Events",
-          "description": "Implement handlers for domain events in each bounded context that need to react to events from other contexts.",
-          "status": "pending",
+          "title": "Implement rate limiters for external APIs",
+          "description": "Create rate limiting utilities for GitHub and LLM APIs to prevent exceeding usage limits.",
           "dependencies": [
             2,
             3
           ],
-          "details": "1) Create an IEventHandler<T> interface where T is a domain event. 2) Implement concrete handlers for each event type in appropriate bounded contexts. 3) Add business logic in handlers to update domain models based on events. 4) Ensure handlers follow single responsibility principle. 5) Implement error handling and logging. 6) Make handlers stateless where possible. Consider using the mediator pattern for complex event handling scenarios."
+          "details": "1. Create `infrastructure/rate_limiting/` directory\n2. Implement a base RateLimiter class with configurable limits\n3. Create specific implementations for GitHub API (GitHubRateLimiter)\n4. Create specific implementations for LLM API (LLMRateLimiter)\n5. Add retry logic with exponential backoff\n6. Implement rate limit tracking and persistence\n7. Test by simulating rapid API calls and verifying rate limiting behavior",
+          "status": "done",
+          "parentTaskId": 1
         },
         {
           "id": 5,
-          "title": "Integrate Domain Events with Repository Actions",
-          "description": "Connect domain models with the event system by raising appropriate events when repository actions occur.",
-          "status": "pending",
+          "title": "Set up error handling and project dependencies",
+          "description": "Implement error handling utilities and define project dependencies in requirements.txt.",
           "dependencies": [
             1,
             2,
             3,
             4
           ],
-          "details": "1) Modify domain services or aggregates to raise events when state changes. 2) Inject the event dispatcher into services that need to publish events. 3) Ensure events are raised after successful state changes. 4) Add unit tests to verify events are raised correctly. 5) Implement transactional boundaries to ensure consistency between state changes and event publishing. 6) Add integration tests to verify cross-context communication works correctly. Consider using the outbox pattern for reliable event delivery."
+          "details": "1. Create `infrastructure/errors/` directory\n2. Implement custom exception classes for different error types\n3. Create error handling utilities (try-except wrappers, error loggers)\n4. Create requirements.txt with all necessary dependencies and version constraints\n5. Add setup.py for package installation\n6. Document installation process in README.md\n7. Test by installing dependencies in a fresh virtual environment and verifying error handling works",
+          "status": "done",
+          "parentTaskId": 1
         }
       ]
     },
     {
-      "id": 3,
-      "title": "Implement Repository Pattern for Persistence",
-      "description": "Create proper persistence abstractions using the Repository pattern",
-      "status": "pending",
-      "dependencies": [
-        2
-      ],
-      "priority": "high",
-      "details": "Define repository interfaces in the domain layer. Implement concrete repository classes in the infrastructure layer. Create a unit of work pattern if needed for transaction management. Ensure repositories handle the persistence of domain entities and aggregates. Implement in-memory repositories for testing purposes.",
-      "testStrategy": "Create unit tests for repository implementations using in-memory repositories. Test CRUD operations and any custom query methods. Verify that repositories properly maintain the integrity of domain models.",
-      "subtasks": [
-        {
-          "id": 1,
-          "title": "Define Repository Interfaces in Domain Layer",
-          "description": "Create repository interfaces that define the contract for data access operations for each domain entity or aggregate",
-          "status": "pending",
-          "dependencies": [],
-          "details": "Create an IRepository<T> generic interface in the domain layer that defines standard CRUD operations (Get, GetAll, Add, Update, Delete). Then create specific interfaces for each domain entity (e.g., IUserRepository, IProductRepository) that extend the generic interface and add domain-specific query methods. Each interface should focus on domain concepts rather than persistence details."
-        },
-        {
-          "id": 2,
-          "title": "Implement Unit of Work Interface",
-          "description": "Create the Unit of Work interface to manage transactions and coordinate multiple repository operations",
-          "status": "pending",
-          "dependencies": [
-            1
-          ],
-          "details": "Define an IUnitOfWork interface in the domain layer that will manage transactions and coordinate work across multiple repositories. This interface should include methods for committing transactions (SaveChanges/Commit) and properties to access each repository. The UnitOfWork will be responsible for maintaining a single transaction context across multiple repository operations."
-        },
-        {
-          "id": 3,
-          "title": "Implement Concrete Repository Classes in Infrastructure Layer",
-          "description": "Create concrete implementations of the repository interfaces that handle the actual data access logic",
-          "status": "pending",
-          "dependencies": [
-            1
-          ],
-          "details": "Implement concrete repository classes in the infrastructure layer that implement the repository interfaces defined in the domain layer. Create a generic Repository<T> base class that implements IRepository<T> and handles common CRUD operations. Then create specific repository implementations (e.g., UserRepository, ProductRepository) that inherit from the base repository and implement domain-specific query methods. Use the appropriate data access technology (EF Core, Dapper, etc.) in these implementations."
-        },
-        {
-          "id": 4,
-          "title": "Implement Concrete Unit of Work Class",
-          "description": "Create the concrete Unit of Work implementation that coordinates repositories and manages transactions",
-          "status": "pending",
-          "dependencies": [
-            2,
-            3
-          ],
-          "details": "Implement a concrete UnitOfWork class in the infrastructure layer that implements the IUnitOfWork interface. This class should maintain a single database context or connection, instantiate all required repositories, and provide transaction management through the SaveChanges/Commit method. Ensure proper disposal of resources by implementing IDisposable if necessary."
-        },
-        {
-          "id": 5,
-          "title": "Implement In-Memory Repositories for Testing",
-          "description": "Create in-memory implementations of repositories and unit of work for testing purposes",
-          "status": "pending",
-          "dependencies": [
-            1,
-            2
-          ],
-          "details": "Implement in-memory versions of all repositories and the unit of work for use in unit tests. These implementations should store entities in memory collections (e.g., List<T>) rather than a database. Ensure these implementations fully respect the repository and unit of work interfaces. Create a factory or dependency injection setup that allows easily switching between real and in-memory implementations. Include sample tests that demonstrate the in-memory repositories in action."
-        }
-      ]
-    },
-    {
-      "id": 4,
-      "title": "Refactor Application Layer with Dependency Injection",
-      "description": "Refactor application layer components to use proper dependency injection and command/query separation",
-      "status": "pending",
-      "dependencies": [
-        2,
-        3
-      ],
-      "priority": "medium",
-      "details": "Refactor `app/application_runner.py` to use proper dependency injection. Move `app/application_factory.py` to `application/factories.py`. Implement command/query separation in the application layer. Create command handlers and query handlers for different use cases. Implement a simple dependency injection container if needed.",
-      "testStrategy": "Write unit tests for application services using mocked dependencies. Create integration tests to verify the application layer correctly orchestrates domain and infrastructure components. Test command and query handlers separately.",
-      "subtasks": [
-        {
-          "id": 1,
-          "title": "Create Dependency Injection Container",
-          "description": "Implement a simple dependency injection container to manage application dependencies",
-          "status": "pending",
-          "dependencies": [],
-          "details": "Create a new file `application/di_container.py` that implements a dependency injection container. The container should provide methods to register and resolve dependencies. Use a simple dictionary-based approach where dependencies are registered with a key and can be resolved later. Include methods like `register(key, factory)`, `resolve(key)`, and support for singleton vs transient registrations. This will serve as the foundation for the DI refactoring."
-        },
-        {
-          "id": 2,
-          "title": "Move Application Factory to Application Package",
-          "description": "Move application factory module to the correct location and refactor it to use the DI container",
-          "status": "pending",
-          "dependencies": [
-            1
-          ],
-          "details": "Move `app/application_factory.py` to `application/factories.py`. Update the factory to use the new DI container for creating application components. The factory should register all required dependencies in the container and then resolve them when creating application components. Update any imports in other files that reference the old location. This ensures proper separation of concerns and prepares for further refactoring."
-        },
-        {
-          "id": 3,
-          "title": "Implement Command and Query Interfaces",
-          "description": "Create base interfaces and structures for command/query separation pattern",
-          "status": "pending",
-          "dependencies": [
-            1
-          ],
-          "details": "Create new files in `application/commands/` and `application/queries/` directories. Implement base classes/interfaces: `Command`, `CommandHandler`, `CommandResult`, `Query`, `QueryHandler`, and `QueryResult`. Create a command/query dispatcher that uses the DI container to resolve the appropriate handler for a given command or query. The dispatcher should have methods like `dispatch_command(command)` and `dispatch_query(query)` that find and execute the corresponding handler."
-        },
-        {
-          "id": 4,
-          "title": "Convert Existing Application Logic to Commands and Queries",
-          "description": "Refactor existing application logic into the command/query pattern",
-          "status": "pending",
-          "dependencies": [
-            2,
-            3
-          ],
-          "details": "Identify the main use cases in the current application and convert them to commands or queries. For write operations, create command classes in `application/commands/` with corresponding handlers. For read operations, create query classes in `application/queries/` with corresponding handlers. Each handler should follow the single responsibility principle and be registered in the DI container. For example, create `CreateUserCommand`, `CreateUserCommandHandler`, `GetUserByIdQuery`, `GetUserByIdQueryHandler`, etc."
-        },
-        {
-          "id": 5,
-          "title": "Refactor Application Runner with DI and Command/Query Pattern",
-          "description": "Update the application runner to use the DI container and command/query dispatcher",
-          "status": "pending",
-          "dependencies": [
-            4
-          ],
-          "details": "Refactor `app/application_runner.py` to use the DI container for resolving dependencies. The runner should no longer directly instantiate components but should get them from the container. Update the runner to use the command/query dispatcher for executing application logic. Remove any direct dependencies on concrete implementations and instead depend on abstractions. Test the refactored application to ensure it works correctly with the new architecture."
-        }
-      ]
-    },
-    {
-      "id": 5,
-      "title": "Implement Adapter Composition Pattern",
-      "description": "Complete the implementation of all adapters using the composition pattern",
-      "status": "pending",
-      "dependencies": [
-        1,
-        3
-      ],
-      "priority": "medium",
-      "details": "Refactor existing adapters to use the composition pattern. Create adapter interfaces in the domain layer. Implement concrete adapters in the infrastructure layer. Remove legacy implementations once new adapters are fully tested. Ensure adapters properly translate between external systems and domain models.",
-      "testStrategy": "Create unit tests for each adapter implementation. Write integration tests to verify adapters correctly interact with external systems. Implement test doubles (mocks/stubs) for external dependencies.",
-      "subtasks": [
-        {
-          "id": 1,
-          "title": "Define Adapter Interfaces in Domain Layer",
-          "description": "Create well-defined adapter interfaces in the domain layer that establish the contract between the domain and external systems",
-          "status": "pending",
-          "dependencies": [],
-          "details": "1. Identify all required adapter interfaces by analyzing domain needs\n2. Design interface methods focusing on domain language and concepts\n3. Document each interface method with clear input/output specifications\n4. Include appropriate error handling patterns in the interfaces\n5. Ensure interfaces are independent of any infrastructure concerns\n6. Organize interfaces in appropriate domain packages/namespaces"
-        },
-        {
-          "id": 2,
-          "title": "Implement Concrete Adapters Using Composition",
-          "description": "Create concrete adapter implementations in the infrastructure layer using the composition pattern",
-          "status": "pending",
-          "dependencies": [
-            1
-          ],
-          "details": "1. For each adapter interface, create a corresponding concrete implementation\n2. Use composition to wrap external system clients/services\n3. Implement translation logic between external data structures and domain models\n4. Handle error conditions from external systems and convert to domain-appropriate exceptions\n5. Add logging for debugging and monitoring purposes\n6. Implement proper resource management (connection handling, cleanup, etc.)"
-        },
-        {
-          "id": 3,
-          "title": "Update Dependency Injection Configuration",
-          "description": "Configure the dependency injection system to use the new adapter implementations",
-          "status": "pending",
-          "dependencies": [
-            2
-          ],
-          "details": "1. Update DI container configuration to register new adapter implementations\n2. Create appropriate lifetime management for adapter instances\n3. Implement feature flags to allow gradual rollout of new adapters\n4. Configure parallel operation of legacy and new adapters during transition\n5. Set up monitoring to compare behavior between old and new implementations\n6. Document the configuration changes for the development team"
-        },
-        {
-          "id": 4,
-          "title": "Test and Remove Legacy Adapter Implementations",
-          "description": "Validate the new adapters function correctly and remove the legacy implementations",
-          "status": "pending",
-          "dependencies": [
-            3
-          ],
-          "details": "1. Create comprehensive test suite for new adapter implementations\n2. Run tests comparing outputs of legacy and new adapters with the same inputs\n3. Deploy new adapters to staging environment with feature flags\n4. Monitor performance and error rates of new adapters\n5. Once validated, update all adapter clients to use the new implementations\n6. Remove legacy adapter code and any feature flag conditionals\n7. Update documentation to reflect the completed migration"
-        }
-      ]
-    },
-    {
-      "id": 6,
-      "title": "Implement Configuration Validation",
-      "description": "Add validation for environment variables and configuration settings",
+      "id": 2,
+      "title": "Implement GitHub API integration",
+      "description": "Create a GitHub REST API adapter to fetch repository data including metadata, languages, commit history, and contributor information.",
       "status": "pending",
       "dependencies": [
         1
       ],
-      "priority": "low",
-      "details": "Create a configuration validation mechanism for environment variables. Implement clear error messages for missing or invalid configuration. Create a configuration service that provides validated configuration values to other components. Consider using a library like Pydantic for validation if appropriate.",
-      "testStrategy": "Write unit tests with various configuration scenarios (valid, missing required values, invalid formats). Test error handling and messaging for configuration issues.",
-      "subtasks": [
-        {
-          "id": 1,
-          "title": "Define configuration schema and requirements",
-          "description": "Create a schema that defines all required environment variables and configuration settings with their types and constraints",
-          "status": "pending",
-          "dependencies": [],
-          "details": "Create a schema definition (using Pydantic models or similar approach) that specifies all environment variables and configuration settings needed by the application. For each configuration item, define: name, data type, whether it's required, default value (if any), and validation rules (e.g., min/max values, string patterns). Document the purpose of each configuration item. Group related configuration items logically (e.g., database settings, API settings, etc.). This schema will serve as the foundation for validation in subsequent steps."
-        },
-        {
-          "id": 2,
-          "title": "Implement configuration loading and validation mechanism",
-          "description": "Create a mechanism to load configuration from environment variables and validate against the defined schema",
-          "status": "pending",
-          "dependencies": [
-            1
-          ],
-          "details": "Implement a configuration loader that reads environment variables and configuration files. Integrate Pydantic (or similar validation library) to validate the loaded configuration against the schema defined in subtask 1. Implement comprehensive error handling that provides clear, actionable error messages when validation fails (e.g., 'DATABASE_URL is required but not provided'). The validation should check for missing required values, type mismatches, and constraint violations. Include functionality to handle different environments (development, testing, production) if needed."
-        },
-        {
-          "id": 3,
-          "title": "Create configuration service for application-wide access",
-          "description": "Develop a service that provides validated configuration values to other components in the application",
-          "status": "pending",
-          "dependencies": [
-            2
-          ],
-          "details": "Create a ConfigurationService class that acts as a centralized provider of validated configuration values. This service should load and validate configuration at startup using the mechanism developed in subtask 2. Implement methods to access configuration values in a type-safe manner. Add caching if appropriate to avoid repeated validation. Ensure the service is easily injectable into other components that need configuration values. Write unit tests to verify the service correctly handles valid configurations and properly reports validation errors for invalid configurations. Document usage patterns for other developers."
-        }
-      ]
+      "priority": "high",
+      "details": "1. Create GitHubService in the infrastructure layer\n2. Implement authentication with GitHub token\n3. Create methods to fetch repository metadata, languages, commits, and contributors\n4. Implement rate limiting with configurable limits (default: 30 calls/minute)\n5. Add retry mechanism with exponential backoff\n6. Create data transformation from GitHub API responses to domain models\n7. Implement error handling for API failures",
+      "testStrategy": "Test with mock GitHub API responses. Verify authentication process. Validate rate limiting behavior. Ensure proper transformation of API responses to domain models. Test retry mechanism with simulated failures."
     },
     {
-      "id": 7,
-      "title": "Create Comprehensive Test Suite",
-      "description": "Develop a comprehensive test suite covering all critical components",
+      "id": 3,
+      "title": "Create LangChain Claude AI integration",
+      "description": "Implement the LangChain Claude Adapter for AI-powered repository analysis with extended thinking capabilities.",
+      "status": "pending",
+      "dependencies": [
+        1
+      ],
+      "priority": "high",
+      "details": "1. Create LangChainClaudeAdapter in the infrastructure layer\n2. Implement authentication with Anthropic API key\n3. Design analysis prompts for repository evaluation\n4. Implement extended thinking capabilities with configurable token budget\n5. Create response parsing for structured output\n6. Add rate limiting (default: 10 calls/minute)\n7. Implement error handling and fallback mechanisms\n8. Configure temperature and other LLM parameters",
+      "testStrategy": "Test with mock LLM responses. Verify prompt construction. Validate response parsing with sample outputs. Test rate limiting behavior. Ensure error handling works correctly with simulated API failures."
+    },
+    {
+      "id": 4,
+      "title": "Develop core domain models and services",
+      "description": "Create the domain models and services for repository analysis and action recommendations following DDD principles.",
+      "status": "pending",
+      "dependencies": [
+        1
+      ],
+      "priority": "high",
+      "details": "1. Create Repository domain model with metadata, languages, commits, and contributors\n2. Implement RepoAnalysis domain model with strengths, weaknesses, and recommendations\n3. Create AnalysisService for determining repository value and activity\n4. Implement ActionRecommendationService for generating DELETE/ARCHIVE/EXTRACT/KEEP/PIN recommendations\n5. Define interfaces/protocols for infrastructure adapters\n6. Create value objects for recommendations, actions, and assessment results\n7. Implement domain events for significant state changes",
+      "testStrategy": "Unit test domain models with various data scenarios. Verify action recommendation logic with different repository characteristics. Test domain services with mock dependencies. Ensure protocols are properly defined with required methods."
+    },
+    {
+      "id": 5,
+      "title": "Implement application layer orchestration",
+      "description": "Create the application layer to orchestrate the repository analysis process and coordinate between domain services.",
       "status": "pending",
       "dependencies": [
         2,
         3,
-        4,
-        5,
-        6
+        4
+      ],
+      "priority": "high",
+      "details": "1. Create ApplicationRunner to coordinate the analysis process\n2. Implement AnalyzeRepositoriesUseCase to connect source control with analysis\n3. Create ApplicationFactory for dependency injection\n4. Implement progress tracking and reporting\n5. Add cross-cutting concerns like error handling\n6. Create caching mechanism for previously analyzed repositories\n7. Implement report generation coordination",
+      "testStrategy": "Test application runner with mock domain services. Verify use case execution flow. Test progress tracking with different repository counts. Validate caching mechanism with repeated analysis requests. Ensure proper error propagation and handling."
+    },
+    {
+      "id": 6,
+      "title": "Create CLI interface with Typer and Rich",
+      "description": "Implement the command-line interface with rich formatting for user interaction and progress visualization.",
+      "status": "pending",
+      "dependencies": [
+        5
       ],
       "priority": "medium",
-      "details": "Create unit tests for all domain models, services, and repositories. Implement integration tests for cross-component interactions. Add end-to-end tests for critical user flows. Set up test fixtures and factories for common test scenarios. Ensure test coverage for edge cases and error handling.",
-      "testStrategy": "Use a coverage tool to identify untested code. Implement test-driven development for new components. Create a CI pipeline to run tests automatically.",
-      "subtasks": [
-        {
-          "id": 1,
-          "title": "Set up test infrastructure and utilities",
-          "description": "Configure testing frameworks, create test helpers, and establish test fixtures/factories",
-          "status": "pending",
-          "dependencies": [],
-          "details": "Install and configure testing frameworks (e.g., Jest, Mocha, or JUnit depending on tech stack). Create test utilities for common operations like database setup/teardown. Implement test fixtures and factories for generating test data consistently across all test types. Set up mocking utilities for external dependencies. Configure test runners and reporting tools for clear test results visualization."
-        },
-        {
-          "id": 2,
-          "title": "Implement unit tests for domain models",
-          "description": "Create comprehensive unit tests for all domain models and their methods",
-          "status": "pending",
-          "dependencies": [
-            1
-          ],
-          "details": "Write unit tests for each domain model class, ensuring all public methods are tested. Cover standard use cases, edge cases, and error conditions. Use the test fixtures created in subtask 1 to generate test data. Aim for high code coverage (>90%) for model classes. Test validation logic, business rules, and any complex calculations within models. Organize tests to mirror the structure of the domain model packages."
-        },
-        {
-          "id": 3,
-          "title": "Develop unit tests for services and repositories",
-          "description": "Create unit tests for all service and repository classes with appropriate mocking",
-          "status": "pending",
-          "dependencies": [
-            1,
-            2
-          ],
-          "details": "Write unit tests for all service classes, mocking their dependencies (repositories, external services). Test repositories with appropriate database test doubles or isolated test databases. Cover standard operations, error handling, and edge cases. Test transaction management and concurrency handling where applicable. Ensure proper isolation between tests to prevent test interference. Use the test fixtures from subtask 1 for consistent test data."
-        },
-        {
-          "id": 4,
-          "title": "Create integration tests for component interactions",
-          "description": "Implement integration tests that verify correct interactions between components",
-          "status": "pending",
-          "dependencies": [
-            1,
-            2,
-            3
-          ],
-          "details": "Develop integration tests that verify multiple components working together correctly. Test API endpoints with realistic request/response cycles. Create tests for database interactions that verify ORM/repository implementations against actual database. Test service-to-service communication patterns. Focus on boundaries between architectural layers (e.g., controller-to-service, service-to-repository). Use test containers or similar technologies for external dependencies when needed."
-        },
-        {
-          "id": 5,
-          "title": "Implement end-to-end tests for critical user flows",
-          "description": "Create end-to-end tests that verify complete user journeys through the system",
-          "status": "pending",
-          "dependencies": [
-            1,
-            4
-          ],
-          "details": "Identify and document critical user flows through the application. Implement automated end-to-end tests for each flow using appropriate tools (e.g., Selenium, Cypress, TestCafe). Create realistic test scenarios that mimic actual user behavior. Test happy paths thoroughly and important error paths. Ensure proper test environment setup and teardown to prevent test pollution. Implement reporting that clearly shows which user journeys are covered and working correctly."
-        }
-      ]
+      "details": "1. Set up Typer CLI application structure\n2. Implement 'analyze' command with options for repository selection and analysis\n3. Create 'cleanup' command for housekeeping\n4. Implement progress visualization using Rich library\n5. Add color coding for different actions and outputs\n6. Create help documentation for commands\n7. Implement command-line argument parsing\n8. Add environment variable handling for configuration",
+      "testStrategy": "Test CLI commands with mock application layer. Verify command-line argument parsing. Test progress visualization with different repository counts. Ensure help documentation is complete and accurate. Validate environment variable handling."
+    },
+    {
+      "id": 7,
+      "title": "Implement repository analysis reporting",
+      "description": "Create the reporting system to generate individual repository reports and summary reports with categorization.",
+      "status": "pending",
+      "dependencies": [
+        4,
+        5
+      ],
+      "priority": "medium",
+      "details": "1. Implement markdown report generator for individual repositories\n2. Create summary report generator with categorization by value and activity\n3. Add formatting for strengths, weaknesses, and recommendations\n4. Implement repository grouping by recommended action\n5. Create executive summary with portfolio overview\n6. Add report caching and timestamp comparison\n7. Implement report directory management",
+      "testStrategy": "Test report generation with sample repository data. Verify markdown formatting. Test categorization logic with various repository characteristics. Validate executive summary creation. Ensure report caching works correctly with timestamp comparison."
     },
     {
       "id": 8,
-      "title": "Improve CLI Interface",
-      "description": "Enhance the command-line interface with better output and filtering options",
+      "title": "Develop action recommendation system",
+      "description": "Implement the core recommendation logic to generate actionable suggestions (DELETE/ARCHIVE/EXTRACT/KEEP/PIN) with detailed reasoning.",
       "status": "pending",
       "dependencies": [
-        4
+        4,
+        7
       ],
-      "priority": "medium",
-      "details": "Create proper command structure in `cli/` directory. Implement command pattern for CLI operations. Add commands for repository actions. Improve progress reporting and console output. Generate summary reports of action recommendations. Add basic filtering options to CLI for viewing different repository actions.",
-      "testStrategy": "Create unit tests for CLI commands. Implement integration tests that verify CLI commands correctly interact with the application layer. Test CLI output formatting and error handling.",
-      "subtasks": [
-        {
-          "id": 1,
-          "title": "Implement Command Pattern Structure",
-          "description": "Create the foundational command pattern structure in the CLI directory with base command classes and interfaces",
-          "status": "pending",
-          "dependencies": [],
-          "details": "Create a `cli/` directory and implement a command pattern architecture. Define a base `Command` interface or abstract class with methods like `execute()`, `help()`, and `validate()`. Create a command registry and parser that can register commands and parse command-line arguments. Implement a basic CLI entry point that routes to the appropriate command based on user input. This structure should be extensible for all future commands."
-        },
-        {
-          "id": 2,
-          "title": "Implement Core Repository Action Commands",
-          "description": "Create specific command implementations for essential repository actions",
-          "status": "pending",
-          "dependencies": [
-            1
-          ],
-          "details": "Using the command pattern structure from subtask 1, implement concrete command classes for core repository operations (e.g., scan, analyze, list). Each command should handle its specific CLI arguments, perform validation, execute the appropriate application logic, and return results. Include proper error handling and help text for each command. Commands should follow a consistent pattern and be registered with the command registry created in subtask 1."
-        },
-        {
-          "id": 3,
-          "title": "Enhance Console Output and Progress Reporting",
-          "description": "Improve the CLI's visual feedback with better formatting, colors, and progress indicators",
-          "status": "pending",
-          "dependencies": [
-            2
-          ],
-          "details": "Create a dedicated output manager class in the CLI module that handles different types of console output (normal, warning, error, success). Implement progress bars or spinners for long-running operations. Add support for colored output using a library like chalk or colors. Create standardized output formats for different types of information (tables, lists, etc.). Update existing commands to use these new output capabilities. Include options for different verbosity levels (quiet, normal, verbose)."
-        },
-        {
-          "id": 4,
-          "title": "Implement Filtering and Summary Reports",
-          "description": "Add filtering capabilities and summary report generation to CLI commands",
-          "status": "pending",
-          "dependencies": [
-            3
-          ],
-          "details": "Extend the command implementations to support filtering options (e.g., by priority, by type, by status). Create a reporting module that can generate summary reports of action recommendations. Implement output formatting for these reports (table, JSON, CSV). Add global and command-specific filtering flags to the CLI argument parser. Update help documentation to explain filtering options. Ensure all commands that list or display repository actions support the new filtering capabilities."
-        }
-      ]
+      "priority": "high",
+      "details": "1. Refine action recommendation algorithms based on repository characteristics\n2. Implement detailed reasoning generation for each recommendation\n3. Create priority assignment for recommendations (High/Medium/Low)\n4. Implement strength and weakness analysis based on repository data\n5. Add value assessment logic (High/Medium/Low)\n6. Create activity assessment based on commit history\n7. Implement tagging system for repository categorization",
+      "testStrategy": "Test recommendation logic with various repository scenarios. Verify reasoning generation for different actions. Test priority assignment algorithm. Validate strength and weakness analysis with different repository characteristics. Ensure value and activity assessments are consistent."
     },
     {
       "id": 9,
-      "title": "Implement Repository Action Scripts",
-      "description": "Create scripts to help users implement recommended repository actions",
+      "title": "Implement rate limiting and error handling",
+      "description": "Create robust rate limiting and error handling mechanisms for GitHub and LLM API interactions.",
       "status": "pending",
       "dependencies": [
-        8
+        2,
+        3
       ],
-      "priority": "low",
-      "details": "Develop scripts to implement DELETE, ARCHIVE, EXTRACT, KEEP, and PIN actions. Create safety mechanisms to prevent accidental data loss. Implement dry-run mode for action preview. Add confirmation prompts for destructive actions. Create detailed logging of performed actions.",
-      "testStrategy": "Create integration tests with mock GitHub repositories. Test each action type in isolation. Verify safety mechanisms work as expected. Test error handling and recovery.",
-      "subtasks": [
-        {
-          "id": 1,
-          "title": "Create core script framework with dry-run capability",
-          "description": "Develop the base script structure that will be shared across all repository actions with dry-run mode implementation",
-          "status": "pending",
-          "dependencies": [],
-          "details": "Create a script framework that defines a common interface for all repository actions. Implement command-line argument parsing for action selection and parameters. Build a dry-run mode that simulates actions without making changes. Set up a configuration loader for default settings. Establish a consistent output format for action results and logging."
-        },
-        {
-          "id": 2,
-          "title": "Implement non-destructive actions (KEEP and PIN)",
-          "description": "Create scripts for KEEP and PIN actions that mark repositories for retention",
-          "status": "pending",
-          "dependencies": [
-            1
-          ],
-          "details": "Using the core framework, implement the KEEP action to mark repositories to be retained. Implement the PIN action to prevent repositories from being automatically modified. Add appropriate metadata tagging for these actions. Include validation to ensure targets exist. Test these non-destructive actions thoroughly as they'll serve as a template for the more complex actions."
-        },
-        {
-          "id": 3,
-          "title": "Implement safety mechanisms and confirmation system",
-          "description": "Create safety checks and confirmation prompts to prevent accidental data loss",
-          "status": "pending",
-          "dependencies": [
-            1
-          ],
-          "details": "Develop a confirmation system that requires explicit user approval for destructive actions. Implement safety checks that verify repository status before actions. Create backup mechanisms where appropriate. Add validation to ensure the user has necessary permissions. Implement abort capabilities that can safely stop an action midway if needed. This system will be used by the destructive actions in subsequent tasks."
-        },
-        {
-          "id": 4,
-          "title": "Implement destructive actions (DELETE and ARCHIVE)",
-          "description": "Create scripts for DELETE and ARCHIVE actions with integrated safety mechanisms",
-          "status": "pending",
-          "dependencies": [
-            1,
-            3
-          ],
-          "details": "Implement the DELETE action to permanently remove repositories with safety mechanisms. Create the ARCHIVE action to compress and store repositories for later reference. Integrate the confirmation prompts and safety checks. Add specific validations for these destructive operations. Ensure proper error handling and recovery procedures. Test extensively with various edge cases to ensure data safety."
-        },
-        {
-          "id": 5,
-          "title": "Implement EXTRACT action and comprehensive logging",
-          "description": "Create the EXTRACT action script and implement detailed logging across all actions",
-          "status": "pending",
-          "dependencies": [
-            1,
-            2,
-            4
-          ],
-          "details": "Implement the EXTRACT action to pull out specific components from repositories. Create a comprehensive logging system that records all actions taken, including timestamps, users, affected repositories, and results. Implement different log levels (info, warning, error). Add the ability to export logs in multiple formats. Ensure logs capture both successful operations and failures with appropriate detail. Integrate logging across all previously implemented actions."
-        }
-      ]
+      "priority": "medium",
+      "details": "1. Implement configurable rate limiters for GitHub API (default: 30 calls/minute)\n2. Create rate limiters for LLM API (default: 10 calls/minute)\n3. Implement retry mechanisms with exponential backoff\n4. Add error categorization for different failure types\n5. Create graceful degradation paths for API failures\n6. Implement detailed logging for debugging\n7. Add user-friendly error messages for common issues",
+      "testStrategy": "Test rate limiting with rapid API requests. Verify retry behavior with simulated failures. Test error handling with various error scenarios. Validate logging output for different error types. Ensure graceful degradation works as expected."
     },
     {
       "id": 10,
-      "title": "Final Integration and Regression Testing",
-      "description": "Perform final integration testing and fix any regressions in the main analysis flow",
+      "title": "Set up testing framework and initial tests",
+      "description": "Create a comprehensive testing framework with initial tests for core functionality.",
       "status": "pending",
       "dependencies": [
-        7,
-        8,
-        9
+        1,
+        2,
+        3,
+        4,
+        5
       ],
-      "priority": "high",
-      "details": "Conduct end-to-end testing of the complete system. Fix any regressions in the main analysis flow. Verify all components work together correctly. Ensure the system meets all requirements specified in the PRD. Document any known issues or limitations.",
-      "testStrategy": "Create comprehensive end-to-end tests covering all user scenarios. Test with real GitHub repositories if possible. Verify performance and resource usage. Conduct user acceptance testing if appropriate.",
-      "subtasks": [
-        {
-          "id": 1,
-          "title": "Create Integration Test Plan and Environment Setup",
-          "description": "Develop a comprehensive test plan for end-to-end testing and prepare the test environment",
-          "status": "pending",
-          "dependencies": [],
-          "details": "Create a detailed test plan document covering all system components and their interactions. Define test scenarios that verify each requirement in the PRD. Include positive and negative test cases. Set up a dedicated test environment that mirrors production. Configure monitoring tools to track system behavior during testing. Prepare test data sets that exercise all major functionality paths."
-        },
-        {
-          "id": 2,
-          "title": "Execute End-to-End Integration Tests",
-          "description": "Run the full suite of integration tests according to the test plan and document all issues found",
-          "status": "pending",
-          "dependencies": [
-            1
-          ],
-          "details": "Execute all test cases defined in the test plan. Test the complete analysis flow from data input to final output. Verify all API contracts between components. Test performance under expected load conditions. Document all issues discovered during testing with detailed reproduction steps. Categorize issues by severity and component. Create tickets for each issue in the tracking system."
-        },
-        {
-          "id": 3,
-          "title": "Fix Regressions and Critical Issues",
-          "description": "Address and resolve all regressions and critical issues identified during integration testing",
-          "status": "pending",
-          "dependencies": [
-            2
-          ],
-          "details": "Prioritize issues based on severity and impact on core functionality. Fix all regressions in the main analysis flow first. Debug integration issues between components. Address performance bottlenecks identified during testing. Implement fixes with minimal changes to reduce risk of new issues. Create unit tests for each fix to prevent future regressions. Verify each fix in isolation before proceeding to the next issue."
-        },
-        {
-          "id": 4,
-          "title": "Final Verification and Documentation",
-          "description": "Perform final verification of all fixes and create comprehensive documentation of system status",
-          "status": "pending",
-          "dependencies": [
-            3
-          ],
-          "details": "Re-run the complete test suite to verify all fixes. Confirm that no new issues were introduced during the fix process. Validate that all requirements in the PRD are met. Create a final test report documenting test coverage and results. Document any known issues or limitations that remain. Include workarounds for any known issues. Create release notes highlighting the current system capabilities and constraints. Get final approval from stakeholders on the system status."
-        }
-      ]
-    },
-    {
-      "id": 11,
-      "title": "Implement P0 Priority Integration for Immediate Deployment",
-      "description": "Configure the system to work with P0 priority level immediately, ensuring critical issues are addressed first in the analysis flow.",
-      "details": "This task involves modifying the core analysis engine to recognize and prioritize P0 (highest priority) issues in the workflow:\n\n1. Update the priority classification system to specifically identify P0 issues\n2. Modify the analysis pipeline to process P0 issues first before other priority levels\n3. Create a fast-track processing path for P0 issues that bypasses non-essential analysis steps\n4. Add visual indicators in the output (CLI and any UI) that highlight P0 issues with appropriate urgency markers\n5. Update the sorting algorithm in result displays to always show P0 issues at the top\n6. Implement notification system that immediately alerts when P0 issues are detected\n7. Document the P0 classification criteria in the codebase and user documentation\n8. Ensure the Repository Action Scripts (Task #9) provide special handling for P0 issues with expedited resolution paths\n\nThe implementation should maintain backward compatibility with existing priority levels while adding this new urgent classification.",
-      "testStrategy": "Testing should verify the P0 priority integration works correctly:\n\n1. Unit tests:\n   - Verify priority classification correctly identifies P0 issues\n   - Test that sorting algorithms properly prioritize P0 issues\n   - Ensure notification system triggers correctly for P0 issues\n\n2. Integration tests:\n   - Create test repositories with simulated P0 issues and verify they're processed first\n   - Confirm the fast-track processing path works correctly\n   - Validate that P0 issues appear correctly highlighted in all output formats\n\n3. Performance tests:\n   - Measure processing time for P0 issues vs. other priorities to confirm expedited handling\n   - Test system under load to ensure P0 prioritization remains effective\n\n4. User acceptance testing:\n   - Have team members verify P0 issues are immediately obvious in the interface\n   - Confirm the documentation clearly explains P0 classification criteria\n\nAll tests should pass with 100% success rate before considering this task complete.",
-      "status": "pending",
-      "dependencies": [],
-      "priority": "medium"
+      "priority": "low",
+      "details": "1. Set up pytest testing framework\n2. Create mock objects for GitHub and LLM APIs\n3. Implement unit tests for domain models and services\n4. Create integration tests for application layer\n5. Implement test fixtures with sample repository data\n6. Add test coverage reporting\n7. Create CI configuration for automated testing\n8. Implement performance benchmarks for critical operations",
+      "testStrategy": "Verify test coverage across all components. Ensure mocks accurately simulate API behavior. Test both success and failure paths. Validate integration tests with end-to-end scenarios. Measure performance benchmarks for baseline metrics."
     }
   ],
   "metadata": {
     "projectName": "GitHub Repository Organizer",
     "totalTasks": 10,
-    "sourceFile": "/Users/aorlando/dev/github/gh-repo-organizer/scripts/prd.txt",
-    "generatedAt": "2023-11-14"
+    "sourceFile": "scripts/prd.txt",
+    "generatedAt": "2023-07-19"
   }
 }

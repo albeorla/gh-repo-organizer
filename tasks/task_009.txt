@@ -1,43 +1,17 @@
 # Task ID: 9
-# Title: Implement Repository Action Scripts
+# Title: Implement rate limiting and error handling
 # Status: pending
-# Dependencies: 8
-# Priority: low
-# Description: Create scripts to help users implement recommended repository actions
+# Dependencies: 2, 3
+# Priority: medium
+# Description: Create robust rate limiting and error handling mechanisms for GitHub and LLM API interactions.
 # Details:
-Develop scripts to implement DELETE, ARCHIVE, EXTRACT, KEEP, and PIN actions. Create safety mechanisms to prevent accidental data loss. Implement dry-run mode for action preview. Add confirmation prompts for destructive actions. Create detailed logging of performed actions.
+1. Implement configurable rate limiters for GitHub API (default: 30 calls/minute)
+2. Create rate limiters for LLM API (default: 10 calls/minute)
+3. Implement retry mechanisms with exponential backoff
+4. Add error categorization for different failure types
+5. Create graceful degradation paths for API failures
+6. Implement detailed logging for debugging
+7. Add user-friendly error messages for common issues
 
 # Test Strategy:
-Create integration tests with mock GitHub repositories. Test each action type in isolation. Verify safety mechanisms work as expected. Test error handling and recovery.
-
-# Subtasks:
-## 1. Create core script framework with dry-run capability [pending]
-### Dependencies: None
-### Description: Develop the base script structure that will be shared across all repository actions with dry-run mode implementation
-### Details:
-Create a script framework that defines a common interface for all repository actions. Implement command-line argument parsing for action selection and parameters. Build a dry-run mode that simulates actions without making changes. Set up a configuration loader for default settings. Establish a consistent output format for action results and logging.
-
-## 2. Implement non-destructive actions (KEEP and PIN) [pending]
-### Dependencies: 9.1
-### Description: Create scripts for KEEP and PIN actions that mark repositories for retention
-### Details:
-Using the core framework, implement the KEEP action to mark repositories to be retained. Implement the PIN action to prevent repositories from being automatically modified. Add appropriate metadata tagging for these actions. Include validation to ensure targets exist. Test these non-destructive actions thoroughly as they'll serve as a template for the more complex actions.
-
-## 3. Implement safety mechanisms and confirmation system [pending]
-### Dependencies: 9.1
-### Description: Create safety checks and confirmation prompts to prevent accidental data loss
-### Details:
-Develop a confirmation system that requires explicit user approval for destructive actions. Implement safety checks that verify repository status before actions. Create backup mechanisms where appropriate. Add validation to ensure the user has necessary permissions. Implement abort capabilities that can safely stop an action midway if needed. This system will be used by the destructive actions in subsequent tasks.
-
-## 4. Implement destructive actions (DELETE and ARCHIVE) [pending]
-### Dependencies: 9.1, 9.3
-### Description: Create scripts for DELETE and ARCHIVE actions with integrated safety mechanisms
-### Details:
-Implement the DELETE action to permanently remove repositories with safety mechanisms. Create the ARCHIVE action to compress and store repositories for later reference. Integrate the confirmation prompts and safety checks. Add specific validations for these destructive operations. Ensure proper error handling and recovery procedures. Test extensively with various edge cases to ensure data safety.
-
-## 5. Implement EXTRACT action and comprehensive logging [pending]
-### Dependencies: 9.1, 9.2, 9.4
-### Description: Create the EXTRACT action script and implement detailed logging across all actions
-### Details:
-Implement the EXTRACT action to pull out specific components from repositories. Create a comprehensive logging system that records all actions taken, including timestamps, users, affected repositories, and results. Implement different log levels (info, warning, error). Add the ability to export logs in multiple formats. Ensure logs capture both successful operations and failures with appropriate detail. Integrate logging across all previously implemented actions.
-
+Test rate limiting with rapid API requests. Verify retry behavior with simulated failures. Test error handling with various error scenarios. Validate logging output for different error types. Ensure graceful degradation works as expected.

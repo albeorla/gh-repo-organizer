@@ -1,37 +1,17 @@
 # Task ID: 8
-# Title: Improve CLI Interface
+# Title: Develop action recommendation system
 # Status: pending
-# Dependencies: 4
-# Priority: medium
-# Description: Enhance the command-line interface with better output and filtering options
+# Dependencies: 4, 7
+# Priority: high
+# Description: Implement the core recommendation logic to generate actionable suggestions (DELETE/ARCHIVE/EXTRACT/KEEP/PIN) with detailed reasoning.
 # Details:
-Create proper command structure in `cli/` directory. Implement command pattern for CLI operations. Add commands for repository actions. Improve progress reporting and console output. Generate summary reports of action recommendations. Add basic filtering options to CLI for viewing different repository actions.
+1. Refine action recommendation algorithms based on repository characteristics
+2. Implement detailed reasoning generation for each recommendation
+3. Create priority assignment for recommendations (High/Medium/Low)
+4. Implement strength and weakness analysis based on repository data
+5. Add value assessment logic (High/Medium/Low)
+6. Create activity assessment based on commit history
+7. Implement tagging system for repository categorization
 
 # Test Strategy:
-Create unit tests for CLI commands. Implement integration tests that verify CLI commands correctly interact with the application layer. Test CLI output formatting and error handling.
-
-# Subtasks:
-## 1. Implement Command Pattern Structure [pending]
-### Dependencies: None
-### Description: Create the foundational command pattern structure in the CLI directory with base command classes and interfaces
-### Details:
-Create a `cli/` directory and implement a command pattern architecture. Define a base `Command` interface or abstract class with methods like `execute()`, `help()`, and `validate()`. Create a command registry and parser that can register commands and parse command-line arguments. Implement a basic CLI entry point that routes to the appropriate command based on user input. This structure should be extensible for all future commands.
-
-## 2. Implement Core Repository Action Commands [pending]
-### Dependencies: 8.1
-### Description: Create specific command implementations for essential repository actions
-### Details:
-Using the command pattern structure from subtask 1, implement concrete command classes for core repository operations (e.g., scan, analyze, list). Each command should handle its specific CLI arguments, perform validation, execute the appropriate application logic, and return results. Include proper error handling and help text for each command. Commands should follow a consistent pattern and be registered with the command registry created in subtask 1.
-
-## 3. Enhance Console Output and Progress Reporting [pending]
-### Dependencies: 8.2
-### Description: Improve the CLI's visual feedback with better formatting, colors, and progress indicators
-### Details:
-Create a dedicated output manager class in the CLI module that handles different types of console output (normal, warning, error, success). Implement progress bars or spinners for long-running operations. Add support for colored output using a library like chalk or colors. Create standardized output formats for different types of information (tables, lists, etc.). Update existing commands to use these new output capabilities. Include options for different verbosity levels (quiet, normal, verbose).
-
-## 4. Implement Filtering and Summary Reports [pending]
-### Dependencies: 8.3
-### Description: Add filtering capabilities and summary report generation to CLI commands
-### Details:
-Extend the command implementations to support filtering options (e.g., by priority, by type, by status). Create a reporting module that can generate summary reports of action recommendations. Implement output formatting for these reports (table, JSON, CSV). Add global and command-specific filtering flags to the CLI argument parser. Update help documentation to explain filtering options. Ensure all commands that list or display repository actions support the new filtering capabilities.
-
+Test recommendation logic with various repository scenarios. Verify reasoning generation for different actions. Test priority assignment algorithm. Validate strength and weakness analysis with different repository characteristics. Ensure value and activity assessments are consistent.

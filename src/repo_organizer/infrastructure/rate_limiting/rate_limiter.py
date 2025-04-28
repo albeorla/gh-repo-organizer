@@ -1,32 +1,32 @@
 """
 Rate limiter for API calls to respect service limits.
+
+This module provides rate limiting functionality for API calls to prevent
+exceeding service rate limits, with functionality for tracking and reporting
+on rate limiting statistics.
 """
 
 import time
 from threading import Lock
 from statistics import mean
-from typing import Optional
+from typing import Any, Dict, Optional
 
-from repo_organizer.utils.exceptions import RateLimitExceededError
+from repo_organizer.infrastructure.logging.logger import Logger
 
 
 class RateLimiter:
-    """Rate limiter for API calls to respect service limits."""
+    """Rate limiter for API calls to respect service limits.
+    
+    Implements a simple rate limiting mechanism based on time intervals
+    between calls, with support for logging and statistics tracking.
+    """
 
-    def __init__(
-        self, 
-        calls_per_minute: int = 60, 
-        name: str = "API",
-        max_wait_time: Optional[float] = None,
-        fail_on_limit: bool = False
-    ):
+    def __init__(self, calls_per_minute: int = 60, name: str = "API"):
         """Initialize rate limiter.
 
         Args:
             calls_per_minute: Maximum number of calls allowed per minute
             name: Name of the API being rate limited (for logging)
-            max_wait_time: Maximum time to wait in seconds (None for unlimited)
-            fail_on_limit: If True, raise an exception instead of waiting when limit exceeded
         """
         self.calls_per_minute = calls_per_minute
         self.interval = 60.0 / calls_per_minute  # Time between calls in seconds
@@ -36,11 +36,8 @@ class RateLimiter:
         self.wait_times = []
         self.total_waits = 0
         self.total_calls = 0
-        self.max_wait_time = max_wait_time
-        self.fail_on_limit = fail_on_limit
-        self.rate_limit_exceptions = 0
 
-    def wait(self, logger=None, debug=False):
+    def wait(self, logger: Optional[Logger] = None, debug: bool = False) -> float:
         """Wait until next call is allowed according to rate limits.
 
         Args:
@@ -49,9 +46,6 @@ class RateLimiter:
 
         Returns:
             Time waited in seconds
-            
-        Raises:
-            RateLimitExceededError: If fail_on_limit is True and wait time exceeds max_wait_time
         """
         with self.lock:
             current_time = time.time()
@@ -60,27 +54,6 @@ class RateLimiter:
 
             if elapsed < self.interval:
                 wait_time = self.interval - elapsed
-                
-                # Check if wait time exceeds max_wait_time
-                if self.max_wait_time is not None and wait_time > self.max_wait_time:
-                    if self.fail_on_limit:
-                        self.rate_limit_exceptions += 1
-                        error_msg = (
-                            f"Rate limit exceeded for {self.name} API: would need to wait {wait_time:.2f}s, "
-                            f"max allowed is {self.max_wait_time:.2f}s"
-                        )
-                        if logger:
-                            logger.log(error_msg, level="error")
-                        raise RateLimitExceededError(error_msg)
-                    else:
-                        # Cap wait time at max_wait_time
-                        wait_time = self.max_wait_time
-                        if logger:
-                            logger.log(
-                                f"Rate limit: Capping wait time to {wait_time:.2f}s for {self.name} API",
-                                level="warning" if debug else "info",
-                            )
-                
                 if logger and debug:
                     logger.log(
                         f"Rate limit: Waiting {wait_time:.2f}s for {self.name} API",
@@ -94,7 +67,7 @@ class RateLimiter:
             self.total_calls += 1
             return wait_time
 
-    def get_stats(self) -> dict:
+    def get_stats(self) -> Dict[str, Any]:
         """Get statistics about rate limiting.
 
         Returns:
@@ -111,7 +84,34 @@ class RateLimiter:
             "pct_rate_limited": (self.total_waits / self.total_calls * 100)
             if self.total_calls
             else 0,
-            "rate_limit_exceptions": self.rate_limit_exceptions,
-            "max_wait_time": self.max_wait_time,
-            "fail_on_limit": self.fail_on_limit,
         }
+
+
+class GitHubRateLimiter(RateLimiter):
+    """GitHub API-specific rate limiter.
+    
+    Extends the base RateLimiter with GitHub-specific functionality.
+    """
+    
+    def __init__(self, calls_per_minute: int = 30):
+        """Initialize GitHub rate limiter.
+        
+        Args:
+            calls_per_minute: Maximum number of calls allowed per minute
+        """
+        super().__init__(calls_per_minute=calls_per_minute, name="GitHub")
+
+
+class LLMRateLimiter(RateLimiter):
+    """LLM API-specific rate limiter.
+    
+    Extends the base RateLimiter with LLM-specific functionality.
+    """
+    
+    def __init__(self, calls_per_minute: int = 10):
+        """Initialize LLM rate limiter.
+        
+        Args:
+            calls_per_minute: Maximum number of calls allowed per minute
+        """
+        super().__init__(calls_per_minute=calls_per_minute, name="LLM")

@@ -1,37 +1,271 @@
 # Task ID: 1
-# Title: Refactor Services to DDD Infrastructure Layer
-# Status: pending
+# Title: Set up project structure and configuration
+# Status: done
 # Dependencies: None
 # Priority: high
-# Description: Move existing services to their proper locations in the infrastructure layer according to DDD principles
+# Description: Create the initial project structure following Domain-Driven Design architecture and implement configuration loading from environment variables.
 # Details:
-Move `services/llm_service.py` to `infrastructure/analysis/llm_service.py` and `services/github_service.py` to `infrastructure/source_control/github_service.py`. Ensure imports are updated throughout the codebase. Create appropriate interfaces in the domain layer that these services implement. Update any direct references to these services in the codebase.
+1. Create project directory structure with domain, application, infrastructure, and interface layers
+2. Implement Settings class to load configuration from environment variables
+3. Set up logging configuration
+4. Create directory initialization for output and logs
+5. Configure rate limiters for GitHub and LLM APIs
+6. Implement basic error handling utilities
+7. Set up project dependencies and requirements.txt
 
 # Test Strategy:
-Create unit tests to verify the services function correctly in their new locations. Implement integration tests to ensure the moved services still interact correctly with other components.
+Verify configuration loading with different environment variables. Test directory creation logic. Ensure rate limiter configurations are correctly applied. Validate error handling utilities with mock errors.
 
 # Subtasks:
-## 1. Create domain interfaces for services [pending]
+## 1. Create DDD project directory structure [done]
 ### Dependencies: None
-### Description: Define interfaces in the domain layer that will be implemented by the infrastructure services
+### Description: Set up the initial project directory structure following Domain-Driven Design architecture principles with separate layers for domain, application, infrastructure, and interface.
 ### Details:
-Create `domain/analysis/llm_interface.py` and `domain/source_control/source_control_interface.py` files. Define abstract base classes with appropriate methods that match the current functionality in the existing services. Use `@abstractmethod` decorators from the `abc` module for all interface methods. The LLM interface should define methods for text analysis and generation, while the source control interface should define methods for repository interaction.
+1. Create the root project directory
+2. Create subdirectories for each DDD layer:
+   - `domain/`: Core business logic and entities
+   - `application/`: Use cases and application services
+   - `infrastructure/`: External services, repositories, and technical concerns
+   - `interface/`: API endpoints, CLI, or UI components
+3. Add `__init__.py` files to make directories importable Python packages
+4. Create a basic README.md with project overview
+5. Test by verifying all directories exist and are properly structured
 
-## 2. Refactor LLM service to infrastructure layer [pending]
+<info added on 2025-04-27T23:13:42.047Z>
+# Implementation Details for DDD Structure
+
+## Specific Directory Structure
+```
+src/repo_organizer/
+├── domain/
+│   ├── __init__.py
+│   ├── entities/
+│   │   └── __init__.py
+│   ├── value_objects/
+│   │   └── __init__.py
+│   ├── repositories/
+│   │   └── __init__.py
+│   └── services/
+│       └── __init__.py
+├── application/
+│   ├── __init__.py
+│   ├── use_cases/
+│   │   └── __init__.py
+│   ├── services/
+│   │   └── __init__.py
+│   └── dtos/
+│       └── __init__.py
+├── infrastructure/
+│   ├── __init__.py
+│   ├── repositories/
+│   │   └── __init__.py
+│   ├── external_services/
+│   │   └── __init__.py
+│   └── persistence/
+│       └── __init__.py
+└── interface/
+    ├── __init__.py
+    ├── cli/
+    │   └── __init__.py
+    ├── api/
+    │   └── __init__.py
+    └── views/
+        └── __init__.py
+```
+
+## Layer Responsibility Documentation
+Create a `ARCHITECTURE.md` file explaining:
+- **Domain Layer**: Contains business entities (Repository, File, Commit), value objects (FileType, Path), domain services, and repository interfaces
+- **Application Layer**: Contains use cases (OrganizeRepository, AnalyzeCodebase), application services, and DTOs for data transfer
+- **Infrastructure Layer**: Contains repository implementations, GitHub/GitLab API clients, file system access
+- **Interface Layer**: Contains CLI commands, API controllers, and view models
+
+## Implementation Notes
+- Use absolute imports (e.g., `from repo_organizer.domain.entities import Repository`)
+- Add `__all__` lists in `__init__.py` files to control exported symbols
+- Create empty placeholder files (e.g., `.gitkeep`) in directories that will be populated later
+- Consider adding a simple dependency injection container in the infrastructure layer
+
+## Verification Script
+```python
+import os
+import sys
+
+def verify_structure(base_path):
+    """Verify the DDD directory structure exists correctly"""
+    required_dirs = [
+        "domain", "domain/entities", "domain/value_objects",
+        "application", "application/use_cases",
+        "infrastructure", "infrastructure/repositories",
+        "interface", "interface/cli"
+    ]
+    
+    for dir_path in required_dirs:
+        full_path = os.path.join(base_path, dir_path)
+        if not os.path.exists(full_path):
+            print(f"ERROR: Missing directory {full_path}")
+            return False
+        
+        init_file = os.path.join(full_path, "__init__.py")
+        if not os.path.exists(init_file):
+            print(f"ERROR: Missing __init__.py in {full_path}")
+            return False
+    
+    print("✅ Directory structure verified successfully")
+    return True
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        base_path = sys.argv[1]
+    else:
+        base_path = "src/repo_organizer"
+    
+    verify_structure(base_path)
+```
+</info added on 2025-04-27T23:13:42.047Z>
+
+<info added on 2025-04-28T00:10:01.885Z>
+# Implementation Plan for Subtask 1.1: Create DDD Project Directory Structure
+
+## 1. Review Existing Structure
+- The current workspace already contains a `src/repo_organizer/` directory with subfolders: `domain/`, `application/`, `infrastructure/`, `interface/`, and their respective submodules (e.g., `core/`, `analysis/`, `source_control/`, `cli/`).
+- I will compare the actual structure to the planned DDD structure to ensure all required directories and `__init__.py` files exist.
+
+## 2. Planned Actions
+- Verify and, if needed, create the following directories and files:
+  - `src/repo_organizer/domain/` with subfolders: `entities/`, `value_objects/`, `repositories/`, `services/`
+  - `src/repo_organizer/application/` with subfolders: `use_cases/`, `services/`, `dtos/`
+  - `src/repo_organizer/infrastructure/` with subfolders: `repositories/`, `external_services/`, `persistence/`
+  - `src/repo_organizer/interface/` with subfolders: `cli/`, `api/`, `views/`
+- Ensure each directory contains an `__init__.py` file (create if missing).
+- Add `.gitkeep` files to empty directories for version control.
+- Add or update `ARCHITECTURE.md` to document layer responsibilities.
+- Add or update a verification script to check the structure.
+
+## 3. Reasoning
+- This ensures the project adheres to DDD principles and is ready for further development.
+- Having all `__init__.py` files allows for proper Python imports.
+- Documenting the architecture helps onboard new contributors and clarifies design intent.
+
+## 4. Potential Challenges
+- Some subfolders may already exist with different names (e.g., `core/` instead of `entities/`).
+- Need to avoid overwriting existing files or removing custom code.
+- Will log any discrepancies and resolve them as needed.
+
+## 5. Next Steps
+- Run the verification script after making changes to confirm the structure is correct.
+- Mark this subtask as done once the structure matches the plan and is verified.
+</info added on 2025-04-28T00:10:01.885Z>
+
+## 2. Implement Settings class for configuration management [done]
 ### Dependencies: 1.1
-### Description: Move the LLM service to the infrastructure layer and implement the domain interface
+### Description: Create a Settings class that loads and manages configuration from environment variables with appropriate defaults and validation.
 ### Details:
-Create the directory structure `infrastructure/analysis/` if it doesn't exist. Move `services/llm_service.py` to `infrastructure/analysis/llm_service.py`. Update the class to implement the `LLMInterface` from the domain layer. Add the necessary imports at the top of the file. Ensure the implementation satisfies all the interface requirements. If there are any implementation-specific methods that aren't part of the interface, consider whether they should be added to the interface or kept as internal functionality.
+1. Create `infrastructure/config/settings.py`
+2. Implement a Settings class using Pydantic BaseSettings
+3. Define configuration fields with appropriate types and default values
+4. Add validation for required fields
+5. Implement environment variable loading with proper prefixes
+6. Add documentation for each configuration option
+7. Test by creating a sample .env file and verifying settings are loaded correctly
 
-## 3. Refactor GitHub service to infrastructure layer [pending]
-### Dependencies: 1.1
-### Description: Move the GitHub service to the infrastructure layer and implement the domain interface
+<info added on 2025-04-28T00:21:41.895Z>
+# Implementation Details for Settings Class
+
+## Code Structure
+```python
+from pydantic import BaseSettings, Field, validator
+from typing import Optional, List
+import os
+
+class Settings(BaseSettings):
+    # GitHub API configuration
+    github_token: str = Field(..., description="GitHub Personal Access Token")
+    github_username: Optional[str] = Field(None, description="GitHub username for API requests")
+    
+    # Application settings
+    log_level: str = Field("INFO", description="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)")
+    cache_dir: str = Field("~/.repo_organizer/cache", description="Directory for caching data")
+    max_repos: int = Field(100, description="Maximum number of repositories to process")
+    
+    # Feature flags
+    enable_analytics: bool = Field(False, description="Enable usage analytics")
+    debug_mode: bool = Field(False, description="Enable debug mode with additional logging")
+    
+    @validator('github_token')
+    def validate_github_token(cls, v):
+        if not v or len(v) < 10:
+            raise ValueError("GitHub token is required and must be valid")
+        return v
+    
+    class Config:
+        env_prefix = "REPO_ORGANIZER_"
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+        case_sensitive = False
+```
+
+## Usage Example
+```python
+# Example usage in application
+from infrastructure.config.settings import Settings
+
+def initialize_app():
+    settings = Settings()
+    print(f"Using GitHub token: {settings.github_token[:4]}...")
+    print(f"Cache directory: {settings.cache_dir}")
+    return settings
+
+# Access settings throughout the application
+settings = initialize_app()
+```
+
+## Testing Strategy
+1. Create a test file with different environment configurations
+2. Test missing required fields (should raise validation errors)
+3. Test default values when not specified
+4. Test environment variable overrides
+5. Test .env file loading
+
+## Error Handling
+- Add custom error messages for common configuration issues
+- Implement a configuration validation function that can be called at startup
+- Consider adding a `get_settings()` factory function for dependency injection in FastAPI
+</info added on 2025-04-28T00:21:41.895Z>
+
+## 3. Set up logging configuration and directory initialization [done]
+### Dependencies: 1.2
+### Description: Configure the logging system and implement automatic creation of required directories for logs and output files.
 ### Details:
-Create the directory structure `infrastructure/source_control/` if it doesn't exist. Move `services/github_service.py` to `infrastructure/source_control/github_service.py`. Update the class to implement the `SourceControlInterface` from the domain layer. Add the necessary imports at the top of the file. Ensure the implementation satisfies all the interface requirements. Make sure any GitHub-specific functionality is properly encapsulated while still adhering to the interface contract.
+1. Create `infrastructure/logging/logger.py`
+2. Configure logging with different levels (DEBUG, INFO, ERROR)
+3. Set up log formatting with timestamps and log levels
+4. Implement file and console handlers
+5. Create a function to initialize required directories (logs/, output/)
+6. Add error handling for directory creation
+7. Test by writing logs to both console and file, verifying directories are created
 
-## 4. Update service references throughout the codebase [pending]
+## 4. Implement rate limiters for external APIs [done]
 ### Dependencies: 1.2, 1.3
-### Description: Update all imports and references to the moved services in the entire codebase
+### Description: Create rate limiting utilities for GitHub and LLM APIs to prevent exceeding usage limits.
 ### Details:
-Use a tool like grep or your IDE's search functionality to find all imports of the old service paths (`from services.llm_service import` and `from services.github_service import`). Update these imports to reference the new paths (`from infrastructure.analysis.llm_service import` and `from infrastructure.source_control.github_service import`). For any direct instantiation of these services, consider whether to use dependency injection instead, injecting the interface rather than the concrete implementation. Run all tests to ensure the refactoring hasn't broken any functionality. Update any affected documentation or configuration files.
+1. Create `infrastructure/rate_limiting/` directory
+2. Implement a base RateLimiter class with configurable limits
+3. Create specific implementations for GitHub API (GitHubRateLimiter)
+4. Create specific implementations for LLM API (LLMRateLimiter)
+5. Add retry logic with exponential backoff
+6. Implement rate limit tracking and persistence
+7. Test by simulating rapid API calls and verifying rate limiting behavior
+
+## 5. Set up error handling and project dependencies [done]
+### Dependencies: 1.1, 1.2, 1.3, 1.4
+### Description: Implement error handling utilities and define project dependencies in requirements.txt.
+### Details:
+1. Create `infrastructure/errors/` directory
+2. Implement custom exception classes for different error types
+3. Create error handling utilities (try-except wrappers, error loggers)
+4. Create requirements.txt with all necessary dependencies and version constraints
+5. Add setup.py for package installation
+6. Document installation process in README.md
+7. Test by installing dependencies in a fresh virtual environment and verifying error handling works
 

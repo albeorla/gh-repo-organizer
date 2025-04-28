@@ -1,31 +1,18 @@
 # Task ID: 6
-# Title: Implement Configuration Validation
+# Title: Create CLI interface with Typer and Rich
 # Status: pending
-# Dependencies: 1
-# Priority: low
-# Description: Add validation for environment variables and configuration settings
+# Dependencies: 5
+# Priority: medium
+# Description: Implement the command-line interface with rich formatting for user interaction and progress visualization.
 # Details:
-Create a configuration validation mechanism for environment variables. Implement clear error messages for missing or invalid configuration. Create a configuration service that provides validated configuration values to other components. Consider using a library like Pydantic for validation if appropriate.
+1. Set up Typer CLI application structure
+2. Implement 'analyze' command with options for repository selection and analysis
+3. Create 'cleanup' command for housekeeping
+4. Implement progress visualization using Rich library
+5. Add color coding for different actions and outputs
+6. Create help documentation for commands
+7. Implement command-line argument parsing
+8. Add environment variable handling for configuration
 
 # Test Strategy:
-Write unit tests with various configuration scenarios (valid, missing required values, invalid formats). Test error handling and messaging for configuration issues.
-
-# Subtasks:
-## 1. Define configuration schema and requirements [pending]
-### Dependencies: None
-### Description: Create a schema that defines all required environment variables and configuration settings with their types and constraints
-### Details:
-Create a schema definition (using Pydantic models or similar approach) that specifies all environment variables and configuration settings needed by the application. For each configuration item, define: name, data type, whether it's required, default value (if any), and validation rules (e.g., min/max values, string patterns). Document the purpose of each configuration item. Group related configuration items logically (e.g., database settings, API settings, etc.). This schema will serve as the foundation for validation in subsequent steps.
-
-## 2. Implement configuration loading and validation mechanism [pending]
-### Dependencies: 6.1
-### Description: Create a mechanism to load configuration from environment variables and validate against the defined schema
-### Details:
-Implement a configuration loader that reads environment variables and configuration files. Integrate Pydantic (or similar validation library) to validate the loaded configuration against the schema defined in subtask 1. Implement comprehensive error handling that provides clear, actionable error messages when validation fails (e.g., 'DATABASE_URL is required but not provided'). The validation should check for missing required values, type mismatches, and constraint violations. Include functionality to handle different environments (development, testing, production) if needed.
-
-## 3. Create configuration service for application-wide access [pending]
-### Dependencies: 6.2
-### Description: Develop a service that provides validated configuration values to other components in the application
-### Details:
-Create a ConfigurationService class that acts as a centralized provider of validated configuration values. This service should load and validate configuration at startup using the mechanism developed in subtask 2. Implement methods to access configuration values in a type-safe manner. Add caching if appropriate to avoid repeated validation. Ensure the service is easily injectable into other components that need configuration values. Write unit tests to verify the service correctly handles valid configurations and properly reports validation errors for invalid configurations. Document usage patterns for other developers.
-
+Test CLI commands with mock application layer. Verify command-line argument parsing. Test progress visualization with different repository counts. Ensure help documentation is complete and accurate. Validate environment variable handling.

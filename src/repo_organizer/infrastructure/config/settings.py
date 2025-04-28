@@ -9,11 +9,12 @@ multiple sources (environment variables, config files, etc).
 import os
 from typing import Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
 
 
-class Settings(BaseModel):
+class Settings(BaseSettings):
     """Application settings using Pydantic for validation.
 
     This class follows the Repository pattern for configuration management,
@@ -22,15 +23,15 @@ class Settings(BaseModel):
 
     # API keys
     anthropic_api_key: str = Field(..., description="Anthropic API key")
-    github_token: Optional[str] = Field(None, description="GitHub token for API access")
+    github_token: str = Field(..., description="GitHub Personal Access Token")
 
     # GitHub configuration
-    github_username: str = Field(..., description="GitHub username")
+    github_username: Optional[str] = Field(None, description="GitHub username for API requests")
 
     # Repository organizer settings
     output_dir: str = Field(".out/repos", description="Directory for output files")
     logs_dir: str = Field(".logs", description="Directory for log files")
-    max_repos: int = Field(100, description="Maximum number of repositories to analyze")
+    max_repos: int = Field(100, description="Maximum number of repositories to process")
 
     # LLM settings
     llm_model: str = Field("claude-3-7-sonnet-latest", description="LLM model to use")
@@ -49,7 +50,21 @@ class Settings(BaseModel):
     debug_logging: bool = Field(False, description="Enable debug logging")
     quiet_mode: bool = Field(False, description="Minimize console output")
 
-    @field_validator("output_dir", "logs_dir")
+    # Application settings
+    log_level: str = Field("INFO", description="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)")
+    cache_dir: str = Field("~/.repo_organizer/cache", description="Directory for caching data")
+
+    # Feature flags
+    enable_analytics: bool = Field(False, description="Enable usage analytics")
+    debug_mode: bool = Field(False, description="Enable debug mode with additional logging")
+
+    @validator('github_token')
+    def validate_github_token(cls, v):
+        if not v or len(v) < 10:
+            raise ValueError("GitHub token is required and must be valid")
+        return v
+
+    @validator("output_dir", "logs_dir")
     def create_directory(cls, v: str) -> str:  # noqa: D401
         """Return a fully-qualified path and guarantee the directory exists.
 
@@ -77,6 +92,12 @@ class Settings(BaseModel):
 
         return abs_path
 
+    class Config:
+        env_prefix = "REPO_ORGANIZER_"
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+        case_sensitive = False
+
 
 def load_settings(env_file: Optional[str] = None) -> Settings:
     """Load settings from environment or .env file.
@@ -102,8 +123,8 @@ def load_settings(env_file: Optional[str] = None) -> Settings:
     # variables are not provided so existing behaviour is preserved.
     settings_dict = {
         "anthropic_api_key": os.getenv("ANTHROPIC_API_KEY", ""),
-        "github_token": os.getenv("GITHUB_TOKEN"),
-        "github_username": os.getenv("GITHUB_USERNAME", ""),
+        "github_token": os.getenv("GITHUB_TOKEN", ""),
+        "github_username": os.getenv("GITHUB_USERNAME"),
         "output_dir": os.getenv("OUTPUT_DIR", ".out/repos"),
         "logs_dir": os.getenv("LOGS_DIR", ".logs"),
         "max_repos": int(os.getenv("MAX_REPOS", "100")),
@@ -118,6 +139,12 @@ def load_settings(env_file: Optional[str] = None) -> Settings:
         "llm_thinking_enabled": os.getenv("LLM_THINKING_ENABLED", "true").lower()
         == "true",
         "llm_thinking_budget": int(os.getenv("LLM_THINKING_BUDGET", "16000")),
+        # Application settings
+        "log_level": os.getenv("LOG_LEVEL", "INFO"),
+        "cache_dir": os.getenv("CACHE_DIR", "~/.repo_organizer/cache"),
+        # Feature flags
+        "enable_analytics": os.getenv("ENABLE_ANALYTICS", "false").lower() == "true",
+        "debug_mode": os.getenv("DEBUG_MODE", "false").lower() == "true",
     }
 
     # Create and validate settings
