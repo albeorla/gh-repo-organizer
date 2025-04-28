@@ -80,3 +80,5 @@ README-task-master.md
 # Task files
 tasks.json
 tasks/ 
+**/__pycache__
+**/__pycache__/*

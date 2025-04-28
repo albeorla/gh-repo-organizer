@@ -15,3 +15,23 @@
 
 # Test Strategy:
 Test report generation with sample repository data. Verify markdown formatting. Test categorization logic with various repository characteristics. Validate executive summary creation. Ensure report caching works correctly with timestamp comparison.
+
+# Subtasks:
+## 1. Implement base report generators for individual repositories and summaries [pending]
+### Dependencies: None
+### Description: Create the core reporting system with markdown generation for individual repository reports and basic summary reports with categorization capabilities
+### Details:
+Develop a ReportGenerator class with methods for generating individual repository reports in markdown format. Implement the basic structure for repository analysis including metrics, activity data, and categorization logic. Create a SummaryReportGenerator class that can aggregate data across repositories and categorize them by value and activity. Both generators should have a consistent interface and support basic formatting. Include unit tests for the report generation logic.
+
+## 2. Add enhanced report content and formatting [pending]
+### Dependencies: 7.1
+### Description: Extend the report generators to include strengths, weaknesses, recommendations, and repository grouping by recommended action
+### Details:
+Enhance the ReportGenerator to include sections for strengths, weaknesses, and actionable recommendations based on repository analysis. Implement special formatting for these sections to highlight important information. Add logic to group repositories by recommended actions (e.g., 'maintain', 'invest', 'deprecate') in the summary reports. Create an ExecutiveSummaryGenerator that produces a high-level portfolio overview with key metrics and insights. Update unit tests to cover the new functionality.
+
+## 3. Implement report management system [pending]
+### Dependencies: 7.1, 7.2
+### Description: Create a system for report caching, timestamp comparison, and directory management
+### Details:
+Develop a ReportManager class to handle the storage and retrieval of generated reports. Implement a caching mechanism to avoid regenerating unchanged reports. Add timestamp tracking to enable comparison between report generations. Create directory management functionality to organize reports by date, repository, or category. Include configuration options for report storage locations and retention policies. Implement automated cleanup of outdated reports. Add integration tests to verify the complete reporting workflow from generation to storage and retrieval.
+

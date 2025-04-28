@@ -15,3 +15,44 @@
 
 # Test Strategy:
 Unit test domain models with various data scenarios. Verify action recommendation logic with different repository characteristics. Test domain services with mock dependencies. Ensure protocols are properly defined with required methods.
+
+# Subtasks:
+## 1. Implement Repository and RepoAnalysis domain models with value objects [pending]
+### Dependencies: None
+### Description: Create the core domain models for Repository and RepoAnalysis with their associated value objects following Domain-Driven Design principles.
+### Details:
+Create the following domain entities and value objects:
+1. Repository entity with properties for metadata (name, description, URL), primary language, commit history, and contributor information
+2. RepoAnalysis entity with properties for strengths, weaknesses, and a collection of recommendations
+3. Value objects for Language, Commit, Contributor, Recommendation, and AssessmentResult
+4. Ensure all domain objects have proper validation, immutability where appropriate, and follow DDD patterns
+5. Implement domain events for significant state changes (e.g., RepositoryAnalyzedEvent)
+6. Define interfaces for repositories that will be needed for persistence
+
+## 2. Implement AnalysisService for repository evaluation [pending]
+### Dependencies: 4.1
+### Description: Create the core domain service responsible for analyzing repositories and determining their value and activity levels.
+### Details:
+Implement the AnalysisService with the following functionality:
+1. Methods to calculate repository activity based on commit frequency and recency
+2. Logic to determine repository value based on usage patterns, contributor count, and code quality metrics
+3. Ability to generate strengths and weaknesses based on the analysis
+4. Creation of a complete RepoAnalysis entity with assessment results
+5. Follow DDD service patterns by focusing on domain logic without infrastructure concerns
+6. Define clear interfaces for any external dependencies needed for analysis
+7. Raise appropriate domain events when analysis is completed
+
+## 3. Implement ActionRecommendationService with recommendation logic [pending]
+### Dependencies: 4.1, 4.2
+### Description: Create the domain service responsible for generating specific action recommendations (DELETE/ARCHIVE/EXTRACT/KEEP/PIN) based on repository analysis.
+### Details:
+Implement the ActionRecommendationService with the following functionality:
+1. Logic to determine appropriate recommendations (DELETE/ARCHIVE/EXTRACT/KEEP/PIN) based on repository analysis results
+2. Rules engine or decision tree for recommendation generation
+3. Methods to prioritize recommendations based on potential impact
+4. Integration with the AnalysisService to access repository assessment data
+5. Creation of detailed recommendation objects with justifications
+6. Implementation of domain events for when recommendations change
+7. Define interfaces for infrastructure adapters needed to execute recommendations
+8. Include extension points for future recommendation types
+

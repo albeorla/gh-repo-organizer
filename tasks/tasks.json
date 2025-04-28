@@ -73,7 +73,7 @@
       "id": 2,
       "title": "Implement GitHub API integration",
       "description": "Create a GitHub REST API adapter to fetch repository data including metadata, languages, commit history, and contributor information.",
-      "status": "pending",
+      "status": "done",
       "dependencies": [
         1
       ],
@@ -85,7 +85,7 @@
       "id": 3,
       "title": "Create LangChain Claude AI integration",
       "description": "Implement the LangChain Claude Adapter for AI-powered repository analysis with extended thinking capabilities.",
-      "status": "pending",
+      "status": "done",
       "dependencies": [
         1
       ],
@@ -103,7 +103,38 @@
       ],
       "priority": "high",
       "details": "1. Create Repository domain model with metadata, languages, commits, and contributors\n2. Implement RepoAnalysis domain model with strengths, weaknesses, and recommendations\n3. Create AnalysisService for determining repository value and activity\n4. Implement ActionRecommendationService for generating DELETE/ARCHIVE/EXTRACT/KEEP/PIN recommendations\n5. Define interfaces/protocols for infrastructure adapters\n6. Create value objects for recommendations, actions, and assessment results\n7. Implement domain events for significant state changes",
-      "testStrategy": "Unit test domain models with various data scenarios. Verify action recommendation logic with different repository characteristics. Test domain services with mock dependencies. Ensure protocols are properly defined with required methods."
+      "testStrategy": "Unit test domain models with various data scenarios. Verify action recommendation logic with different repository characteristics. Test domain services with mock dependencies. Ensure protocols are properly defined with required methods.",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Implement Repository and RepoAnalysis domain models with value objects",
+          "description": "Create the core domain models for Repository and RepoAnalysis with their associated value objects following Domain-Driven Design principles.",
+          "status": "pending",
+          "dependencies": [],
+          "details": "Create the following domain entities and value objects:\n1. Repository entity with properties for metadata (name, description, URL), primary language, commit history, and contributor information\n2. RepoAnalysis entity with properties for strengths, weaknesses, and a collection of recommendations\n3. Value objects for Language, Commit, Contributor, Recommendation, and AssessmentResult\n4. Ensure all domain objects have proper validation, immutability where appropriate, and follow DDD patterns\n5. Implement domain events for significant state changes (e.g., RepositoryAnalyzedEvent)\n6. Define interfaces for repositories that will be needed for persistence"
+        },
+        {
+          "id": 2,
+          "title": "Implement AnalysisService for repository evaluation",
+          "description": "Create the core domain service responsible for analyzing repositories and determining their value and activity levels.",
+          "status": "pending",
+          "dependencies": [
+            1
+          ],
+          "details": "Implement the AnalysisService with the following functionality:\n1. Methods to calculate repository activity based on commit frequency and recency\n2. Logic to determine repository value based on usage patterns, contributor count, and code quality metrics\n3. Ability to generate strengths and weaknesses based on the analysis\n4. Creation of a complete RepoAnalysis entity with assessment results\n5. Follow DDD service patterns by focusing on domain logic without infrastructure concerns\n6. Define clear interfaces for any external dependencies needed for analysis\n7. Raise appropriate domain events when analysis is completed"
+        },
+        {
+          "id": 3,
+          "title": "Implement ActionRecommendationService with recommendation logic",
+          "description": "Create the domain service responsible for generating specific action recommendations (DELETE/ARCHIVE/EXTRACT/KEEP/PIN) based on repository analysis.",
+          "status": "pending",
+          "dependencies": [
+            1,
+            2
+          ],
+          "details": "Implement the ActionRecommendationService with the following functionality:\n1. Logic to determine appropriate recommendations (DELETE/ARCHIVE/EXTRACT/KEEP/PIN) based on repository analysis results\n2. Rules engine or decision tree for recommendation generation\n3. Methods to prioritize recommendations based on potential impact\n4. Integration with the AnalysisService to access repository assessment data\n5. Creation of detailed recommendation objects with justifications\n6. Implementation of domain events for when recommendations change\n7. Define interfaces for infrastructure adapters needed to execute recommendations\n8. Include extension points for future recommendation types"
+        }
+      ]
     },
     {
       "id": 5,
@@ -117,7 +148,37 @@
       ],
       "priority": "high",
       "details": "1. Create ApplicationRunner to coordinate the analysis process\n2. Implement AnalyzeRepositoriesUseCase to connect source control with analysis\n3. Create ApplicationFactory for dependency injection\n4. Implement progress tracking and reporting\n5. Add cross-cutting concerns like error handling\n6. Create caching mechanism for previously analyzed repositories\n7. Implement report generation coordination",
-      "testStrategy": "Test application runner with mock domain services. Verify use case execution flow. Test progress tracking with different repository counts. Validate caching mechanism with repeated analysis requests. Ensure proper error propagation and handling."
+      "testStrategy": "Test application runner with mock domain services. Verify use case execution flow. Test progress tracking with different repository counts. Validate caching mechanism with repeated analysis requests. Ensure proper error propagation and handling.",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Implement core application services and factory",
+          "description": "Create the fundamental application layer components including ApplicationFactory for dependency injection and the ApplicationRunner to coordinate the repository analysis workflow",
+          "status": "pending",
+          "dependencies": [],
+          "details": "1. Create ApplicationFactory class to handle dependency injection of all required services\n2. Implement ApplicationRunner class with the main orchestration flow\n3. Define interfaces for all required dependencies (repositories, analyzers, etc.)\n4. Implement basic error handling strategy with appropriate exceptions\n5. Create initial unit tests for the application services"
+        },
+        {
+          "id": 2,
+          "title": "Implement repository analysis use cases",
+          "description": "Create the core use cases that connect source control systems with analysis services and implement the business logic for repository analysis",
+          "status": "pending",
+          "dependencies": [
+            1
+          ],
+          "details": "1. Implement AnalyzeRepositoriesUseCase class to coordinate between source control and analysis services\n2. Add support for analyzing single and multiple repositories\n3. Implement progress tracking mechanism with events or callbacks\n4. Create caching layer for previously analyzed repositories\n5. Add validation logic for repository inputs\n6. Write unit tests for the use cases with mock dependencies"
+        },
+        {
+          "id": 3,
+          "title": "Implement report generation and output coordination",
+          "description": "Create the components responsible for generating reports from analysis results and coordinating the output process",
+          "status": "pending",
+          "dependencies": [
+            2
+          ],
+          "details": "1. Implement ReportGenerationCoordinator to manage the report creation process\n2. Create adapters between analysis results and report formats\n3. Add support for different report output formats (JSON, HTML, etc.)\n4. Implement configurable report templates\n5. Create progress notification system for long-running report generation\n6. Add caching for generated reports\n7. Write integration tests for the full workflow from analysis to report generation"
+        }
+      ]
     },
     {
       "id": 6,
@@ -129,7 +190,38 @@
       ],
       "priority": "medium",
       "details": "1. Set up Typer CLI application structure\n2. Implement 'analyze' command with options for repository selection and analysis\n3. Create 'cleanup' command for housekeeping\n4. Implement progress visualization using Rich library\n5. Add color coding for different actions and outputs\n6. Create help documentation for commands\n7. Implement command-line argument parsing\n8. Add environment variable handling for configuration",
-      "testStrategy": "Test CLI commands with mock application layer. Verify command-line argument parsing. Test progress visualization with different repository counts. Ensure help documentation is complete and accurate. Validate environment variable handling."
+      "testStrategy": "Test CLI commands with mock application layer. Verify command-line argument parsing. Test progress visualization with different repository counts. Ensure help documentation is complete and accurate. Validate environment variable handling.",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Set up Typer application structure with basic commands",
+          "description": "Establish the foundational CLI structure using Typer and implement the basic command framework with argument parsing and environment variable handling.",
+          "status": "pending",
+          "dependencies": [],
+          "details": "1. Install Typer and Rich libraries\n2. Create a main CLI application entry point\n3. Define the basic CLI app structure with Typer\n4. Implement the 'analyze' command skeleton with repository selection options\n5. Implement the 'cleanup' command skeleton\n6. Add command-line argument parsing for both commands\n7. Implement environment variable handling for configuration\n8. Create basic help documentation structure for commands"
+        },
+        {
+          "id": 2,
+          "title": "Implement Rich formatting and progress visualization",
+          "description": "Enhance the CLI with Rich library to provide formatted output and progress visualization for long-running operations.",
+          "status": "pending",
+          "dependencies": [
+            1
+          ],
+          "details": "1. Set up Rich console for formatted output\n2. Implement progress bars for long-running operations\n3. Create spinners for operations with unknown duration\n4. Add tables for displaying structured data\n5. Implement progress visualization for the 'analyze' command\n6. Add basic status indicators for the 'cleanup' command\n7. Create consistent styling patterns for different types of output"
+        },
+        {
+          "id": 3,
+          "title": "Enhance CLI with color coding and comprehensive help documentation",
+          "description": "Finalize the CLI by adding color coding for different actions and outputs, and complete the help documentation for all commands.",
+          "status": "pending",
+          "dependencies": [
+            1,
+            2
+          ],
+          "details": "1. Define a color scheme for different types of messages (success, warning, error, info)\n2. Implement color coding for 'analyze' command outputs\n3. Add color highlights for 'cleanup' command actions\n4. Create styled headers and footers for command execution\n5. Complete comprehensive help documentation with examples\n6. Add detailed descriptions for all command options\n7. Implement '--verbose' flag for additional output\n8. Test the entire CLI interface for usability and completeness"
+        }
+      ]
     },
     {
       "id": 7,
@@ -142,7 +234,38 @@
       ],
       "priority": "medium",
       "details": "1. Implement markdown report generator for individual repositories\n2. Create summary report generator with categorization by value and activity\n3. Add formatting for strengths, weaknesses, and recommendations\n4. Implement repository grouping by recommended action\n5. Create executive summary with portfolio overview\n6. Add report caching and timestamp comparison\n7. Implement report directory management",
-      "testStrategy": "Test report generation with sample repository data. Verify markdown formatting. Test categorization logic with various repository characteristics. Validate executive summary creation. Ensure report caching works correctly with timestamp comparison."
+      "testStrategy": "Test report generation with sample repository data. Verify markdown formatting. Test categorization logic with various repository characteristics. Validate executive summary creation. Ensure report caching works correctly with timestamp comparison.",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Implement base report generators for individual repositories and summaries",
+          "description": "Create the core reporting system with markdown generation for individual repository reports and basic summary reports with categorization capabilities",
+          "status": "pending",
+          "dependencies": [],
+          "details": "Develop a ReportGenerator class with methods for generating individual repository reports in markdown format. Implement the basic structure for repository analysis including metrics, activity data, and categorization logic. Create a SummaryReportGenerator class that can aggregate data across repositories and categorize them by value and activity. Both generators should have a consistent interface and support basic formatting. Include unit tests for the report generation logic."
+        },
+        {
+          "id": 2,
+          "title": "Add enhanced report content and formatting",
+          "description": "Extend the report generators to include strengths, weaknesses, recommendations, and repository grouping by recommended action",
+          "status": "pending",
+          "dependencies": [
+            1
+          ],
+          "details": "Enhance the ReportGenerator to include sections for strengths, weaknesses, and actionable recommendations based on repository analysis. Implement special formatting for these sections to highlight important information. Add logic to group repositories by recommended actions (e.g., 'maintain', 'invest', 'deprecate') in the summary reports. Create an ExecutiveSummaryGenerator that produces a high-level portfolio overview with key metrics and insights. Update unit tests to cover the new functionality."
+        },
+        {
+          "id": 3,
+          "title": "Implement report management system",
+          "description": "Create a system for report caching, timestamp comparison, and directory management",
+          "status": "pending",
+          "dependencies": [
+            1,
+            2
+          ],
+          "details": "Develop a ReportManager class to handle the storage and retrieval of generated reports. Implement a caching mechanism to avoid regenerating unchanged reports. Add timestamp tracking to enable comparison between report generations. Create directory management functionality to organize reports by date, repository, or category. Include configuration options for report storage locations and retention policies. Implement automated cleanup of outdated reports. Add integration tests to verify the complete reporting workflow from generation to storage and retrieval."
+        }
+      ]
     },
     {
       "id": 8,
@@ -153,9 +276,40 @@
         4,
         7
       ],
-      "priority": "high",
+      "priority": "medium",
       "details": "1. Refine action recommendation algorithms based on repository characteristics\n2. Implement detailed reasoning generation for each recommendation\n3. Create priority assignment for recommendations (High/Medium/Low)\n4. Implement strength and weakness analysis based on repository data\n5. Add value assessment logic (High/Medium/Low)\n6. Create activity assessment based on commit history\n7. Implement tagging system for repository categorization",
-      "testStrategy": "Test recommendation logic with various repository scenarios. Verify reasoning generation for different actions. Test priority assignment algorithm. Validate strength and weakness analysis with different repository characteristics. Ensure value and activity assessments are consistent."
+      "testStrategy": "Test recommendation logic with various repository scenarios. Verify reasoning generation for different actions. Test priority assignment algorithm. Validate strength and weakness analysis with different repository characteristics. Ensure value and activity assessments are consistent.",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Implement core recommendation algorithms and reasoning engine",
+          "description": "Create the foundational logic to generate the five action types (DELETE/ARCHIVE/EXTRACT/KEEP/PIN) based on repository characteristics with reasoning generation.",
+          "status": "pending",
+          "dependencies": [],
+          "details": "Develop algorithms that analyze repository data to determine appropriate actions. Implement the core decision tree or rule-based system that evaluates repository characteristics (size, activity, content) to generate recommendations. Create functions that produce detailed reasoning for each recommendation type, explaining why a specific action is suggested. Include repository characteristic assessment (points 1 and 2 from the parent task) and implement the reasoning generation component that explains each recommendation with clear justification."
+        },
+        {
+          "id": 2,
+          "title": "Develop repository analysis components",
+          "description": "Implement the repository evaluation modules for strengths/weaknesses analysis, value assessment, and activity tracking.",
+          "status": "pending",
+          "dependencies": [
+            1
+          ],
+          "details": "Build on the core recommendation engine by adding specialized analysis components: 1) Create the strength and weakness analyzer that identifies positive and negative aspects of repositories; 2) Implement value assessment logic that categorizes repositories as High/Medium/Low value based on content, usage patterns, and potential utility; 3) Develop the activity assessment module that analyzes commit history, frequency of updates, and contributor patterns to determine repository activity levels. These components will feed data to the core recommendation engine to improve decision quality."
+        },
+        {
+          "id": 3,
+          "title": "Implement prioritization and categorization systems",
+          "description": "Create the priority assignment system and tagging mechanism to categorize repositories and prioritize recommendations.",
+          "status": "pending",
+          "dependencies": [
+            1,
+            2
+          ],
+          "details": "Finalize the recommendation system by implementing: 1) A priority assignment algorithm that evaluates recommendation importance as High/Medium/Low based on repository analysis data; 2) A tagging system that categorizes repositories by purpose, technology, domain, or other relevant attributes; 3) Integration logic that combines all components to deliver a complete recommendation with action type, detailed reasoning, priority level, and relevant tags. Implement unit tests to verify correct prioritization and categorization based on different repository characteristics."
+        }
+      ]
     },
     {
       "id": 9,
@@ -164,11 +318,42 @@
       "status": "pending",
       "dependencies": [
         2,
-        3
+        3,
+        "1"
       ],
       "priority": "medium",
       "details": "1. Implement configurable rate limiters for GitHub API (default: 30 calls/minute)\n2. Create rate limiters for LLM API (default: 10 calls/minute)\n3. Implement retry mechanisms with exponential backoff\n4. Add error categorization for different failure types\n5. Create graceful degradation paths for API failures\n6. Implement detailed logging for debugging\n7. Add user-friendly error messages for common issues",
-      "testStrategy": "Test rate limiting with rapid API requests. Verify retry behavior with simulated failures. Test error handling with various error scenarios. Validate logging output for different error types. Ensure graceful degradation works as expected."
+      "testStrategy": "Test rate limiting with rapid API requests. Verify retry behavior with simulated failures. Test error handling with various error scenarios. Validate logging output for different error types. Ensure graceful degradation works as expected.",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Implement rate limiters for GitHub and LLM APIs",
+          "description": "Create configurable rate limiting mechanisms to prevent API quota exhaustion for both GitHub and LLM APIs",
+          "status": "pending",
+          "dependencies": [],
+          "details": "1. Create a RateLimiter class that can be configured with different limits\n2. Implement GitHub API rate limiter with default 30 calls/minute\n3. Implement LLM API rate limiter with default 10 calls/minute\n4. Add configuration options to adjust these limits via environment variables\n5. Create middleware or decorator pattern to easily apply rate limiting to API calls\n6. Add queue mechanism to handle requests that exceed rate limits"
+        },
+        {
+          "id": 2,
+          "title": "Add retry mechanisms and error categorization",
+          "description": "Implement robust retry logic with exponential backoff and categorize different types of API errors",
+          "status": "pending",
+          "dependencies": [
+            1
+          ],
+          "details": "1. Create a RetryHandler class that implements exponential backoff\n2. Define error categories (rate limit errors, authentication errors, server errors, etc.)\n3. Implement error detection and categorization logic\n4. Configure which error types should trigger retries\n5. Set maximum retry attempts and backoff parameters\n6. Add jitter to prevent thundering herd problems\n7. Implement timeout handling for API calls"
+        },
+        {
+          "id": 3,
+          "title": "Implement graceful degradation and error reporting",
+          "description": "Create fallback mechanisms for API failures and comprehensive error logging and reporting",
+          "status": "pending",
+          "dependencies": [
+            2
+          ],
+          "details": "1. Define graceful degradation paths for different failure scenarios\n2. Implement detailed logging system with different log levels\n3. Create user-friendly error messages for common issues\n4. Add context information to error logs for debugging\n5. Implement metrics collection for API failures\n6. Create a dashboard or reporting mechanism for API health\n7. Add circuit breaker pattern to prevent cascading failures"
+        }
+      ]
     },
     {
       "id": 10,
@@ -184,7 +369,37 @@
       ],
       "priority": "low",
       "details": "1. Set up pytest testing framework\n2. Create mock objects for GitHub and LLM APIs\n3. Implement unit tests for domain models and services\n4. Create integration tests for application layer\n5. Implement test fixtures with sample repository data\n6. Add test coverage reporting\n7. Create CI configuration for automated testing\n8. Implement performance benchmarks for critical operations",
-      "testStrategy": "Verify test coverage across all components. Ensure mocks accurately simulate API behavior. Test both success and failure paths. Validate integration tests with end-to-end scenarios. Measure performance benchmarks for baseline metrics."
+      "testStrategy": "Verify test coverage across all components. Ensure mocks accurately simulate API behavior. Test both success and failure paths. Validate integration tests with end-to-end scenarios. Measure performance benchmarks for baseline metrics.",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Set up pytest framework with mock objects",
+          "description": "Initialize the pytest testing framework and create necessary mock objects for external dependencies",
+          "status": "pending",
+          "dependencies": [],
+          "details": "1. Install pytest and required plugins (pytest-cov, pytest-mock)\n2. Create a tests/ directory structure\n3. Implement mock objects for GitHub API interactions\n4. Implement mock objects for LLM API interactions\n5. Create basic test configuration (pytest.ini or conftest.py)\n6. Set up test fixtures for dependency injection"
+        },
+        {
+          "id": 2,
+          "title": "Implement core unit and integration tests",
+          "description": "Create the initial set of unit and integration tests for core functionality",
+          "status": "pending",
+          "dependencies": [
+            1
+          ],
+          "details": "1. Write unit tests for domain models (Repository, Issue, PR, etc.)\n2. Write unit tests for core services\n3. Implement integration tests for application layer\n4. Create test fixtures with sample repository data\n5. Ensure tests cover happy paths and common error cases\n6. Organize tests to match the application structure"
+        },
+        {
+          "id": 3,
+          "title": "Configure test automation and reporting",
+          "description": "Set up test coverage reporting and CI integration for automated testing",
+          "status": "pending",
+          "dependencies": [
+            2
+          ],
+          "details": "1. Configure pytest-cov for test coverage reporting\n2. Set coverage thresholds (aim for at least 80%)\n3. Create CI configuration for GitHub Actions or similar\n4. Implement performance benchmarks for critical operations\n5. Configure test reports in a format compatible with CI\n6. Document testing approach and how to run tests locally"
+        }
+      ]
     }
   ],
   "metadata": {

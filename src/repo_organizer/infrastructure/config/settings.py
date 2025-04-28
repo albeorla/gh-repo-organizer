@@ -58,13 +58,13 @@ class Settings(BaseSettings):
     enable_analytics: bool = Field(False, description="Enable usage analytics")
     debug_mode: bool = Field(False, description="Enable debug mode with additional logging")
 
-    @validator('github_token')
+    @field_validator('github_token')
     def validate_github_token(cls, v):
         if not v or len(v) < 10:
             raise ValueError("GitHub token is required and must be valid")
         return v
 
-    @validator("output_dir", "logs_dir")
+    @field_validator("output_dir", "logs_dir")
     def create_directory(cls, v: str) -> str:  # noqa: D401
         """Return a fully-qualified path and guarantee the directory exists.
 
@@ -92,11 +92,12 @@ class Settings(BaseSettings):
 
         return abs_path
 
-    class Config:
-        env_prefix = "REPO_ORGANIZER_"
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False
+    model_config = {
+        "env_prefix": "REPO_ORGANIZER_",
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": False
+    }
 
 
 def load_settings(env_file: Optional[str] = None) -> Settings:

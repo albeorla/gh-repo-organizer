@@ -1,6 +1,6 @@
 # Task ID: 2
 # Title: Implement GitHub API integration
-# Status: pending
+# Status: done
 # Dependencies: 1
 # Priority: high
 # Description: Create a GitHub REST API adapter to fetch repository data including metadata, languages, commit history, and contributor information.
