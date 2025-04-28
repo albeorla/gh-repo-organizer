@@ -65,7 +65,7 @@ class Logger:
 
         self._file_lock = Lock()
         self._console_lock = Lock()
-        
+
         # Ensure the log directory exists
         os.makedirs(os.path.dirname(log_file), exist_ok=True)
 
@@ -214,12 +214,12 @@ class Logger:
 
 def create_logger(settings: Settings) -> Logger:
     """Create a configured logger instance.
-    
+
     Factory function to create a logger with settings from the application configuration.
-    
+
     Args:
         settings: Application settings with log configuration
-        
+
     Returns:
         Configured Logger instance
     """
@@ -233,18 +233,18 @@ def create_logger(settings: Settings) -> Logger:
 
 def initialize_directories(settings: Settings) -> None:
     """Initialize required directories for the application.
-    
+
     Creates output and logs directories if they don't exist.
-    
+
     Args:
         settings: Application settings with directory paths
     """
     # Output directory
     os.makedirs(settings.output_dir, exist_ok=True)
-    
+
     # Logs directory
     os.makedirs(settings.logs_dir, exist_ok=True)
-    
+
     # Cache directory
     cache_dir = os.path.expanduser(os.path.expandvars(settings.cache_dir))
     os.makedirs(cache_dir, exist_ok=True)

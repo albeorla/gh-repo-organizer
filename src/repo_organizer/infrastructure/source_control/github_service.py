@@ -601,9 +601,7 @@ class GitHubService:
             }
         except Exception as e:
             if self.logger:
-                self.logger.log(
-                    f"Error fetching commit activity: {str(e)}", "warning"
-                )
+                self.logger.log(f"Error fetching commit activity: {str(e)}", "warning")
                 self.logger.update_stats("retries")
             raise APIError(f"Error fetching commit activity: {str(e)}") from e
 
@@ -661,7 +659,9 @@ class GitHubService:
                 return {"contributor_count": 0, "active_contributors": 0}
 
             # Process the contributor data
-            contributor_count = len(contributors_data) if isinstance(contributors_data, list) else 0
+            contributor_count = (
+                len(contributors_data) if isinstance(contributors_data, list) else 0
+            )
             active_contributors = 0
 
             # Count contributors with activity in the last 3 months
@@ -747,9 +747,7 @@ class GitHubService:
                             )
             except Exception as e:
                 if self.logger:
-                    self.logger.log(
-                        f"Error fetching {file_path}: {str(e)}", "debug"
-                    )
+                    self.logger.log(f"Error fetching {file_path}: {str(e)}", "debug")
 
         # Add a summary if any files were found
         if found_any:
@@ -773,7 +771,9 @@ class GitHubService:
                     ]
                     summary.append(f"Python project with {len(lines)} dependencies")
                 elif file == "pyproject.toml":
-                    summary.append("Python project using modern tooling (pyproject.toml)")
+                    summary.append(
+                        "Python project using modern tooling (pyproject.toml)"
+                    )
                 elif file == "go.mod":
                     summary.append("Go module")
                 elif file == "Cargo.toml":
@@ -783,4 +783,4 @@ class GitHubService:
 
             results["summary"] = ", ".join(summary)
 
-        return results 
+        return results

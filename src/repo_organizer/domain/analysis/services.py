@@ -1,22 +1,33 @@
 """
 Domain services for the analysis bounded context.
 
-This module contains pure domain logic for working with repository analyses.
+This module contains pure domain logic for evaluating repository activity and value.
 """
 
 from __future__ import annotations
 
-from typing import Sequence
+import logging
+from typing import Sequence, Dict, List, Optional
 
+from repo_organizer.domain.analysis.events import RepositoryAnalysisCompleted
 from repo_organizer.domain.analysis.models import RepoAnalysis, Recommendation
+from repo_organizer.domain.analysis.value_objects import (
+    RecommendedAction,
+    ActivityLevel,
+    ValueLevel,
+)
+from repo_organizer.domain.core.events import event_bus
+from repo_organizer.domain.source_control.models import Repository, Commit, Contributor
+
+logger = logging.getLogger(__name__)
 
 
 class AnalysisService:
     """
-    Service containing pure domain logic for working with repository analyses.
+    Service containing pure domain logic for repository analysis and evaluation.
 
-    This is a stateless domain service that contains business logic for working
-    with RepoAnalysis objects and determining actions based on analyses.
+    This is a stateless domain service that contains business logic for evaluating
+    repository activity, determining value, and filtering recommendations.
     """
 
     @staticmethod
@@ -48,24 +59,7 @@ class AnalysisService:
         Returns:
             True if the repository should be archived, False otherwise
         """
-        # If the model has the recommended_action field and it's set to ARCHIVE
-        if (
-            hasattr(analysis, "recommended_action")
-            and analysis.recommended_action == "ARCHIVE"
-        ):
-            return True
-
-        # Otherwise use a heuristic based on activity and value
-        activity_low = (
-            hasattr(analysis, "activity_assessment")
-            and "low" in analysis.activity_assessment.lower()
-        )
-        value_low = (
-            hasattr(analysis, "estimated_value")
-            and analysis.estimated_value.lower() == "low"
-        )
-
-        return activity_low and value_low
+        return analysis.recommended_action == RecommendedAction.ARCHIVE.value
 
     @staticmethod
     def should_be_deleted(analysis: RepoAnalysis) -> bool:
@@ -78,17 +72,10 @@ class AnalysisService:
         Returns:
             True if the repository should be deleted, False otherwise
         """
-        # Check for explicit DELETE recommendation
-        if (
-            hasattr(analysis, "recommended_action")
-            and analysis.recommended_action == "DELETE"
-        ):
-            return True
-
-        return False
+        return analysis.recommended_action == RecommendedAction.DELETE.value
 
     @staticmethod
-    def is_pinned(analysis: RepoAnalysis) -> bool:
+    def should_be_pinned(analysis: RepoAnalysis) -> bool:
         """
         Determine if a repository should be pinned based on analysis.
 
@@ -98,83 +85,218 @@ class AnalysisService:
         Returns:
             True if the repository should be pinned, False otherwise
         """
-        # Check for explicit PIN recommendation
-        if (
-            hasattr(analysis, "recommended_action")
-            and analysis.recommended_action == "PIN"
-        ):
-            return True
+        return analysis.recommended_action == RecommendedAction.PIN.value
 
-        # Also pin high value repositories
-        return (
-            hasattr(analysis, "estimated_value")
-            and analysis.estimated_value.lower() == "high"
-        )
-        
     @staticmethod
     def should_extract_value(analysis: RepoAnalysis) -> bool:
         """
         Determine if valuable parts should be extracted from repository before archiving/deleting.
-        
+
         Args:
             analysis: A repository analysis
-            
+
         Returns:
             True if the repository has valuable parts that should be extracted
         """
-        # Check for explicit EXTRACT recommendation
-        if (
-            hasattr(analysis, "recommended_action")
-            and analysis.recommended_action == "EXTRACT"
-        ):
-            return True
-            
-        return False
-        
+        return analysis.recommended_action == RecommendedAction.EXTRACT.value
+
     @staticmethod
-    def get_action_reasoning(analysis: RepoAnalysis) -> str:
+    def evaluate_activity(
+        repo: Repository, commits: Sequence[Commit], contributors: Sequence[Contributor]
+    ) -> ActivityLevel:
         """
-        Get the reasoning behind the recommended action.
-        
+        Evaluate the activity level of a repository based on commits and contributors.
+
         Args:
-            analysis: A repository analysis
-            
+            repo: The repository
+            commits: Recent commits
+            contributors: Contributors
+
         Returns:
-            The reasoning for the recommended action
+            Activity level assessment
         """
-        if hasattr(analysis, "action_reasoning"):
-            return analysis.action_reasoning
-            
-        return "No specific reasoning provided"
-    
+        # Simple heuristic-based activity assessment
+        # Could be enhanced with more sophisticated algorithm
+
+        # Check if archived already
+        if repo.is_archived:
+            return ActivityLevel.INACTIVE
+
+        # Check for recent commits
+        if not commits:
+            return ActivityLevel.INACTIVE
+
+        # Check number of contributors
+        if len(contributors) > 5:
+            return ActivityLevel.HIGH
+
+        # Check number of commits
+        if len(commits) > 20:
+            return ActivityLevel.HIGH
+        elif len(commits) > 5:
+            return ActivityLevel.MEDIUM
+        else:
+            return ActivityLevel.LOW
+
     @staticmethod
-    def categorize_by_action(analyses: Sequence[RepoAnalysis]) -> dict:
+    def evaluate_value(
+        repo: Repository,
+        languages: Optional[Sequence[str]] = None,
+        stars: Optional[int] = None,
+        forks: Optional[int] = None,
+    ) -> ValueLevel:
+        """
+        Evaluate the value/importance of a repository.
+
+        Args:
+            repo: The repository
+            languages: Programming languages used
+            stars: Number of stars (if not in repo)
+            forks: Number of forks (if not in repo)
+
+        Returns:
+            Value level assessment
+        """
+        # Use repo values if not provided separately
+        stars = stars if stars is not None else repo.stars
+        forks = forks if forks is not None else repo.forks
+
+        # High value indicators
+        if stars > 10 or forks > 5:
+            return ValueLevel.HIGH
+
+        # Medium value indicators
+        if stars > 3 or forks > 1:
+            return ValueLevel.MEDIUM
+
+        # Default to low value
+        return ValueLevel.LOW
+
+    @staticmethod
+    async def analyze_repositories(
+        repositories: Sequence[Repository],
+        analyzer_port,  # Using Protocol type
+        include_commits: bool = True,
+        include_contributors: bool = True,
+    ) -> List[RepoAnalysis]:
+        """
+        Analyze multiple repositories and generate assessments.
+
+        Args:
+            repositories: Repositories to analyze
+            analyzer_port: Implementation of AnalyzerPort protocol
+            include_commits: Whether to include commit data
+            include_contributors: Whether to include contributor data
+
+        Returns:
+            List of repository analyses
+        """
+        analyses = []
+
+        for repo in repositories:
+            try:
+                # Prepare data for analysis
+                repo_data = {
+                    "name": repo.name,
+                    "description": repo.description or "",
+                    "url": repo.url or "",
+                    "updated_at": repo.updated_at or "",
+                    "is_archived": repo.is_archived,
+                    "stars": repo.stars,
+                    "forks": repo.forks,
+                }
+
+                # Add language data if available
+                if repo.languages:
+                    repo_data["languages"] = {
+                        lb.language: lb.percentage for lb in repo.languages
+                    }
+
+                # Perform analysis
+                analysis = analyzer_port.analyze(repo_data)
+
+                # Publish domain event
+                await event_bus.dispatch(
+                    RepositoryAnalysisCompleted(
+                        aggregate_id=repo.name, analysis=analysis
+                    )
+                )
+
+                analyses.append(analysis)
+
+            except Exception as e:
+                logger.error(f"Error analyzing repository {repo.name}: {str(e)}")
+
+        return analyses
+
+    @staticmethod
+    def filter_by_tag(analyses: Sequence[RepoAnalysis], tag: str) -> List[RepoAnalysis]:
+        """
+        Filter analyses by a specific tag.
+
+        Args:
+            analyses: Sequence of analyses
+            tag: Tag to filter by
+
+        Returns:
+            List of analyses with the specified tag
+        """
+        return [
+            analysis
+            for analysis in analyses
+            if tag.lower() in [t.lower() for t in analysis.tags]
+        ]
+
+    @staticmethod
+    def filter_by_value(
+        analyses: Sequence[RepoAnalysis], min_value: ValueLevel = ValueLevel.LOW
+    ) -> List[RepoAnalysis]:
+        """
+        Filter analyses by minimum value level.
+
+        Args:
+            analyses: Sequence of analyses
+            min_value: Minimum value level
+
+        Returns:
+            List of analyses with at least the specified value
+        """
+        value_levels = {
+            ValueLevel.LOW: 0,
+            ValueLevel.MEDIUM: 1,
+            ValueLevel.HIGH: 2,
+        }
+
+        min_value_level = value_levels[min_value]
+
+        return [
+            analysis
+            for analysis in analyses
+            if value_levels[ValueLevel.from_string(analysis.estimated_value)]
+            >= min_value_level
+        ]
+
+    @staticmethod
+    def categorize_by_action(
+        analyses: Sequence[RepoAnalysis],
+    ) -> Dict[str, List[RepoAnalysis]]:
         """
         Categorize analyses by their recommended action.
-        
+
         Args:
             analyses: A sequence of repository analyses
-            
+
         Returns:
             Dictionary mapping action types to lists of analyses
         """
-        result = {
-            "DELETE": [],
-            "ARCHIVE": [],
-            "EXTRACT": [],
-            "KEEP": [],
-            "PIN": []
-        }
-        
+        result = {action.value: [] for action in RecommendedAction}
+
         for analysis in analyses:
-            action = "KEEP"  # default
-            if hasattr(analysis, "recommended_action") and analysis.recommended_action:
-                action = analysis.recommended_action.upper()
-                
+            action = analysis.recommended_action
             if action in result:
                 result[action].append(analysis)
             else:
                 # Default to KEEP for any unknown actions
-                result["KEEP"].append(analysis)
-                
+                result[RecommendedAction.KEEP.value].append(analysis)
+
         return result

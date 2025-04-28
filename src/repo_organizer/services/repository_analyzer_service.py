@@ -144,10 +144,10 @@ class RepositoryAnalyzerService:
             if self.analyzer:
                 # Convert to domain model
                 domain_analysis = self.analyzer.analyze(analysis_input)
-                
+
                 # Convert back to Pydantic model for backward compatibility
                 analysis = domain_analysis.to_pydantic()
-                
+
                 # Ensure the repository name in the analysis matches the real repository name.
                 # The LLM occasionally "corrects" or reformats the name, which causes issues
                 # with filename consistency

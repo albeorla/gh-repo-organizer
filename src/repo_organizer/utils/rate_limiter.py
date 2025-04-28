@@ -14,11 +14,11 @@ class RateLimiter:
     """Rate limiter for API calls to respect service limits."""
 
     def __init__(
-        self, 
-        calls_per_minute: int = 60, 
+        self,
+        calls_per_minute: int = 60,
         name: str = "API",
         max_wait_time: Optional[float] = None,
-        fail_on_limit: bool = False
+        fail_on_limit: bool = False,
     ):
         """Initialize rate limiter.
 
@@ -49,7 +49,7 @@ class RateLimiter:
 
         Returns:
             Time waited in seconds
-            
+
         Raises:
             RateLimitExceededError: If fail_on_limit is True and wait time exceeds max_wait_time
         """
@@ -60,7 +60,7 @@ class RateLimiter:
 
             if elapsed < self.interval:
                 wait_time = self.interval - elapsed
-                
+
                 # Check if wait time exceeds max_wait_time
                 if self.max_wait_time is not None and wait_time > self.max_wait_time:
                     if self.fail_on_limit:
@@ -80,7 +80,7 @@ class RateLimiter:
                                 f"Rate limit: Capping wait time to {wait_time:.2f}s for {self.name} API",
                                 level="warning" if debug else "info",
                             )
-                
+
                 if logger and debug:
                     logger.log(
                         f"Rate limit: Waiting {wait_time:.2f}s for {self.name} API",

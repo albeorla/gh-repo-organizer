@@ -93,12 +93,14 @@ class LLMService:
 
         # Add extended thinking if enabled
         if thinking_enabled:
-            kwargs["extra_body"] = {
+            # Add max_tokens parameter to be larger than thinking_budget (required by Claude API)
+            kwargs["max_tokens"] = thinking_budget + 4000
+            kwargs["model_kwargs"] = {
                 "thinking": {"type": "enabled", "budget_tokens": thinking_budget}
             }
             if logger and logger.debug_enabled:
                 logger.log(
-                    f"Enabling extended thinking with budget: {thinking_budget} tokens",
+                    f"Enabling extended thinking with budget: {thinking_budget} tokens and max_tokens: {thinking_budget + 4000}",
                     "debug",
                 )
 
@@ -388,4 +390,4 @@ class LLMService:
                 activity_assessment="Unknown (analysis failed)",
                 estimated_value="Unknown (analysis failed)",
                 tags=["error", "analysis-failed"],
-            ) 
+            )

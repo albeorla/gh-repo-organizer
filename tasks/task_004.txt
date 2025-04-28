@@ -1,6 +1,6 @@
 # Task ID: 4
 # Title: Develop core domain models and services
-# Status: pending
+# Status: done
 # Dependencies: 1
 # Priority: high
 # Description: Create the domain models and services for repository analysis and action recommendations following DDD principles.
@@ -17,7 +17,7 @@
 Unit test domain models with various data scenarios. Verify action recommendation logic with different repository characteristics. Test domain services with mock dependencies. Ensure protocols are properly defined with required methods.
 
 # Subtasks:
-## 1. Implement Repository and RepoAnalysis domain models with value objects [pending]
+## 1. Implement Repository and RepoAnalysis domain models with value objects [done]
 ### Dependencies: None
 ### Description: Create the core domain models for Repository and RepoAnalysis with their associated value objects following Domain-Driven Design principles.
 ### Details:
@@ -29,7 +29,7 @@ Create the following domain entities and value objects:
 5. Implement domain events for significant state changes (e.g., RepositoryAnalyzedEvent)
 6. Define interfaces for repositories that will be needed for persistence
 
-## 2. Implement AnalysisService for repository evaluation [pending]
+## 2. Implement AnalysisService for repository evaluation [done]
 ### Dependencies: 4.1
 ### Description: Create the core domain service responsible for analyzing repositories and determining their value and activity levels.
 ### Details:
@@ -42,7 +42,7 @@ Implement the AnalysisService with the following functionality:
 6. Define clear interfaces for any external dependencies needed for analysis
 7. Raise appropriate domain events when analysis is completed
 
-## 3. Implement ActionRecommendationService with recommendation logic [pending]
+## 3. Implement ActionRecommendationService with recommendation logic [done]
 ### Dependencies: 4.1, 4.2
 ### Description: Create the domain service responsible for generating specific action recommendations (DELETE/ARCHIVE/EXTRACT/KEEP/PIN) based on repository analysis.
 ### Details:

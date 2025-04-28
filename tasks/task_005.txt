@@ -1,6 +1,6 @@
 # Task ID: 5
 # Title: Implement application layer orchestration
-# Status: pending
+# Status: done
 # Dependencies: 2, 3, 4
 # Priority: high
 # Description: Create the application layer to orchestrate the repository analysis process and coordinate between domain services.
@@ -17,7 +17,7 @@
 Test application runner with mock domain services. Verify use case execution flow. Test progress tracking with different repository counts. Validate caching mechanism with repeated analysis requests. Ensure proper error propagation and handling.
 
 # Subtasks:
-## 1. Implement core application services and factory [pending]
+## 1. Implement core application services and factory [done]
 ### Dependencies: None
 ### Description: Create the fundamental application layer components including ApplicationFactory for dependency injection and the ApplicationRunner to coordinate the repository analysis workflow
 ### Details:
@@ -27,7 +27,7 @@ Test application runner with mock domain services. Verify use case execution flo
 4. Implement basic error handling strategy with appropriate exceptions
 5. Create initial unit tests for the application services
 
-## 2. Implement repository analysis use cases [pending]
+## 2. Implement repository analysis use cases [done]
 ### Dependencies: 5.1
 ### Description: Create the core use cases that connect source control systems with analysis services and implement the business logic for repository analysis
 ### Details:
@@ -38,7 +38,7 @@ Test application runner with mock domain services. Verify use case execution flo
 5. Add validation logic for repository inputs
 6. Write unit tests for the use cases with mock dependencies
 
-## 3. Implement report generation and output coordination [pending]
+## 3. Implement report generation and output coordination [done]
 ### Dependencies: 5.2
 ### Description: Create the components responsible for generating reports from analysis results and coordinating the output process
 ### Details:

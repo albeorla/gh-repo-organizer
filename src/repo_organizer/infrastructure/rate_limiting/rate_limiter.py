@@ -16,7 +16,7 @@ from repo_organizer.infrastructure.logging.logger import Logger
 
 class RateLimiter:
     """Rate limiter for API calls to respect service limits.
-    
+
     Implements a simple rate limiting mechanism based on time intervals
     between calls, with support for logging and statistics tracking.
     """
@@ -89,13 +89,13 @@ class RateLimiter:
 
 class GitHubRateLimiter(RateLimiter):
     """GitHub API-specific rate limiter.
-    
+
     Extends the base RateLimiter with GitHub-specific functionality.
     """
-    
+
     def __init__(self, calls_per_minute: int = 30):
         """Initialize GitHub rate limiter.
-        
+
         Args:
             calls_per_minute: Maximum number of calls allowed per minute
         """
@@ -104,13 +104,13 @@ class GitHubRateLimiter(RateLimiter):
 
 class LLMRateLimiter(RateLimiter):
     """LLM API-specific rate limiter.
-    
+
     Extends the base RateLimiter with LLM-specific functionality.
     """
-    
+
     def __init__(self, calls_per_minute: int = 10):
         """Initialize LLM rate limiter.
-        
+
         Args:
             calls_per_minute: Maximum number of calls allowed per minute
         """

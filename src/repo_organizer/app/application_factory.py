@@ -17,7 +17,9 @@ from repo_organizer.utils.rate_limiter import RateLimiter
 from repo_organizer.config.settings import load_settings
 
 # Import adapter implementation for AnalyzerPort
-from repo_organizer.infrastructure.analysis.langchain_claude_adapter import LangChainClaudeAdapter
+from repo_organizer.infrastructure.analysis.langchain_claude_adapter import (
+    LangChainClaudeAdapter,
+)
 
 
 class ApplicationFactory:

@@ -71,6 +71,8 @@ class RepoAnalysis:
     activity_assessment: str
     estimated_value: str
     tags: Sequence[str]
+    recommended_action: str = "KEEP"  # DELETE/ARCHIVE/EXTRACT/KEEP/PIN
+    action_reasoning: str = "No specific reasoning provided"
 
     # Conversion helpers -----------------------------------------------------
     @staticmethod
@@ -86,6 +88,8 @@ class RepoAnalysis:
             activity_assessment=pyd_obj.activity_assessment,
             estimated_value=pyd_obj.estimated_value,
             tags=list(pyd_obj.tags),
+            recommended_action=pyd_obj.recommended_action,
+            action_reasoning=pyd_obj.action_reasoning,
         )
 
     def to_pydantic(self) -> _RepoAnalysisPydantic:  # noqa: D401
@@ -98,8 +102,6 @@ class RepoAnalysis:
             activity_assessment=self.activity_assessment,
             estimated_value=self.estimated_value,
             tags=list(self.tags),
-            recommended_action=getattr(self, "recommended_action", "KEEP"),
-            action_reasoning=getattr(
-                self, "action_reasoning", "No specific reasoning provided"
-            ),
+            recommended_action=self.recommended_action,
+            action_reasoning=self.action_reasoning,
         )
