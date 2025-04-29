@@ -68,17 +68,10 @@ node_modules/
 *.njsproj
 *.sln
 *.sw?
-# OS specific
+
 .DS_Store
-.cursor/
-# Local-only files
 .cursor/
 .windsurfrules
 README-task-master.md
-
-# Added by Claude Task Master
-# Task files
-tasks.json
-tasks/ 
 **/__pycache__
 **.py[cod]

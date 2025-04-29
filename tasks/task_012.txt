@@ -1,0 +1,111 @@
+# Task ID: 12
+# Title: Audit and Consolidate Directory Structure in src/repo_organizer
+# Status: in-progress
+# Dependencies: None
+# Priority: medium
+# Description: Investigate and resolve the redundancy among src/repo_organizer/{app,application,bootstrap} directories to simplify the codebase architecture.
+# Details:
+This task involves a thorough code audit to determine the purpose and current usage of the three potentially redundant directories in the src/repo_organizer path. The developer should:
+
+1. Examine the contents and imports of files in each directory (app, application, bootstrap)
+2. Create a dependency graph to understand how these components interact with the rest of the codebase
+3. Determine the historical reason for these directories by reviewing git history (git log for these paths)
+4. Confirm if 'app' was indeed converted to 'bootstrap' as suspected
+5. Document the current purpose of each directory
+6. Propose a consolidation plan that outlines:
+   - Which directories should be kept
+   - Which should be removed
+   - How to migrate any necessary code
+   - How to update imports throughout the codebase
+7. Implement the consolidation with appropriate refactoring
+8. Update documentation to reflect the new structure
+
+The goal is to simplify the architecture while ensuring all functionality remains intact. Special attention should be paid to maintaining backward compatibility or providing clear migration paths if breaking changes are necessary.
+
+# Test Strategy:
+Testing should verify that the consolidation doesn't break existing functionality:
+
+1. Before making changes, create a comprehensive test suite that covers functionality dependent on these directories
+2. Document all import paths that will be affected by the consolidation
+3. Run the existing test suite as a baseline
+4. After implementing changes, verify:
+   - All tests pass with the new structure
+   - The application starts and runs correctly
+   - All CLI commands continue to work as expected
+   - No new import errors appear
+5. Perform a manual review of the consolidated code structure
+6. Create a test case that specifically verifies any migrated functionality works identically to before
+7. Test edge cases where the old directory structure might have been referenced
+8. Verify documentation is updated to reflect the new structure
+9. Have another team member review the changes and test independently
+
+If the consolidation involves deprecating certain paths, ensure appropriate warnings are in place and test that they appear when expected.
+
+# Subtasks:
+## 1. Analyze Directory Structure and Create Dependency Graph [in-progress]
+### Dependencies: None
+### Description: Examine the contents of src/repo_organizer/{app,application,bootstrap} directories and create a comprehensive dependency graph to understand relationships between these components and the rest of the codebase.
+### Details:
+Implementation steps:
+1. Create a file inventory of each directory (app, application, bootstrap) listing all files and their primary purposes
+2. Use static analysis tools (like `import-graph` or custom scripts) to track all import/export relationships
+3. Generate a visual dependency graph showing how files in these directories are connected to each other and the rest of the codebase
+4. Identify any circular dependencies or unusual import patterns
+5. Document the current responsibility of each directory based on file contents and usage patterns
+6. Testing approach: Verify the completeness of the dependency graph by cross-checking with manual inspection of import statements in key files
+
+## 2. Research Directory Evolution Through Git History [done]
+### Dependencies: 12.1
+### Description: Investigate the git history to understand how these directories evolved over time, particularly to confirm if 'app' was converted to 'bootstrap' as suspected.
+### Details:
+Implementation steps:
+1. Use `git log --follow` on each directory to trace their complete history
+2. Identify when each directory was created and significant changes made to them
+3. Look for commit messages or pull requests that explain the reasoning behind the current structure
+4. Examine if there were any major refactoring efforts that moved code between these directories
+5. Document findings in a timeline format showing the evolution of these directories
+6. Pay special attention to commits that might indicate 'app' was converted to 'bootstrap'
+7. Testing approach: Validate findings by checking out key historical commits to confirm directory state at those points in time
+
+## 3. Develop Consolidation Plan with Impact Analysis [in-progress]
+### Dependencies: 12.1, 12.2
+### Description: Based on the analysis from previous subtasks, create a detailed consolidation plan that outlines which directories to keep, which to remove, and how to handle the migration.
+### Details:
+Implementation steps:
+1. Create a proposal document that clearly states which directories should be kept or removed with justification
+2. List all files that need to be migrated and their destination paths
+3. Identify all import statements throughout the codebase that will need updating
+4. Estimate the impact on different parts of the codebase using the dependency graph
+5. Develop a phased migration approach if the changes are extensive
+6. Consider backward compatibility options (e.g., temporary re-export patterns)
+7. Document any potential breaking changes and how they should be communicated
+8. Testing approach: Review the plan with other developers to identify any missed dependencies or potential issues
+
+## 4. Implement Directory Consolidation and Update Imports [done]
+### Dependencies: 12.3
+### Description: Execute the consolidation plan by migrating files to their new locations and updating all import references throughout the codebase.
+### Details:
+Implementation steps:
+1. Create backup branches before starting implementation
+2. Implement the directory restructuring in small, testable increments
+3. Move files to their new locations according to the consolidation plan
+4. Update all import statements throughout the codebase to reflect the new structure
+5. If necessary, add re-export files to maintain backward compatibility
+6. Run the test suite after each significant change to catch issues early
+7. Address any compilation errors or test failures immediately
+8. Testing approach: Run comprehensive test suite after changes, manually verify key functionality, and check that the build process completes successfully
+
+## 5. Update Documentation and Finalize Migration [pending]
+### Dependencies: 12.4
+### Description: Update all documentation to reflect the new directory structure, remove references to deprecated directories, and ensure a smooth transition for all developers.
+### Details:
+Implementation steps:
+1. Update README files and other documentation to reflect the new directory structure
+2. Create a migration guide for other developers explaining the changes
+3. Update any architecture diagrams or developer onboarding materials
+4. Add comments to key files explaining the new organization
+5. Clean up any temporary compatibility layers if they were added
+6. Perform a final review of the codebase to ensure no references to old directories remain
+7. Create a pull request with comprehensive notes about the changes made
+8. Testing approach: Have other developers review the documentation for clarity and completeness, verify all CI/CD pipelines pass with the new structure
+

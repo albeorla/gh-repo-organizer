@@ -1,0 +1,141 @@
+# Task ID: 13
+# Title: Implement Single Repository Limitation Mode
+# Status: pending
+# Dependencies: 11, 14
+# Priority: medium
+# Description: Add functionality to limit the tool to process only a single repository while still generating both individual and overall reports.
+# Details:
+Modify the application to accept a parameter (command-line flag or configuration option) that restricts analysis to a single repository. This should:
+
+1. Add a new flag `--single-repo=REPO_NAME` or similar configuration option
+2. Update the repository scanning logic to filter for only the specified repository when this flag is active
+3. Ensure the individual report for the specified repository is still generated correctly
+4. Modify the overall report generation to clearly indicate it contains data for only one repository when running in this mode
+5. Include appropriate messaging in logs and output to indicate the tool is running in single-repository mode
+6. Maintain backward compatibility so the tool still processes all repositories when the flag isn't specified
+7. Update help documentation to explain this new functionality
+
+This feature will be useful for testing, debugging, and for users who want to focus on a specific repository's metrics.
+
+# Test Strategy:
+Testing should verify:
+
+1. Command-line parsing correctly recognizes the new single-repository flag
+2. When a valid repository name is provided, only that repository is processed
+3. When an invalid repository name is provided, appropriate error message is displayed
+4. The individual report for the single repository contains complete and accurate data
+5. The overall report correctly indicates it contains data for only one repository
+6. All existing functionality works normally when the flag is not specified
+7. Performance testing to verify processing a single repository is faster than processing all repositories
+8. Test with repositories of varying sizes to ensure the limitation works correctly in all scenarios
+9. Test that report formatting and structure remain consistent when in single-repository mode
+
+Create both unit tests for the repository filtering logic and integration tests that verify the end-to-end functionality.
+
+# Subtasks:
+## 1. Add command-line flag for single repository mode [pending]
+### Dependencies: None
+### Description: Implement a new command-line flag '--single-repo' that allows users to specify a single repository to analyze
+### Details:
+Implementation steps:
+1. Identify the appropriate command-line argument parsing mechanism in the codebase
+2. Add a new flag '--single-repo' that accepts a repository name as a parameter
+3. Update the help documentation to explain this new flag and its usage
+4. Implement validation to ensure the repository name provided is non-empty
+5. Connect the flag to the application's configuration system
+6. Add unit tests to verify the flag is correctly parsed and stored in configuration
+
+Testing approach:
+- Write unit tests for flag parsing with various inputs
+- Test help text output includes the new flag description
+- Test error handling for invalid inputs
+
+## 2. Modify repository scanning logic to filter for a single repository [pending]
+### Dependencies: 13.1
+### Description: Update the repository discovery and scanning mechanism to only process the specified repository when single-repo mode is active
+### Details:
+Implementation steps:
+1. Locate the repository discovery/scanning component in the codebase
+2. Add a conditional check that filters the list of repositories based on the '--single-repo' flag value
+3. If the flag is set, filter the repository list to only include the specified repository
+4. Add validation to check if the specified repository exists and provide a meaningful error message if not
+5. Maintain the existing scanning logic for all repositories when the flag is not set
+6. Add logging to indicate when the application is running in single-repository mode
+
+Testing approach:
+- Write unit tests to verify repository filtering works correctly
+- Test behavior when specified repository doesn't exist
+- Test the fallback to processing all repositories when flag isn't specified
+
+## 3. Update individual report generation for single-repo mode [pending]
+### Dependencies: 13.2
+### Description: Ensure the individual repository report is correctly generated when running in single-repository mode
+### Details:
+Implementation steps:
+1. Review the individual report generation code to ensure it works correctly with a single repository
+2. Verify that all metrics and data points are properly collected and displayed
+3. Add a marker or indicator in the report that shows it was generated in single-repository mode
+4. Ensure the report filename/path is correctly generated based on the repository name
+5. Add additional context or metadata to the report indicating it was generated in isolation
+
+Testing approach:
+- Create test fixtures for a sample repository
+- Compare reports generated in single-repo mode vs. normal mode to ensure consistency
+- Verify all expected sections and metrics appear correctly
+- Test with repositories of different sizes and characteristics
+
+## 4. Modify overall report generation for single-repo mode [pending]
+### Dependencies: 13.2, 13.3
+### Description: Update the overall report generation to clearly indicate when it contains data for only one repository
+### Details:
+Implementation steps:
+1. Identify the overall report generation component in the codebase
+2. Add conditional logic to modify the report title, introduction, or summary when in single-repo mode
+3. Add a prominent notice or banner indicating that the report contains data for only one repository
+4. Remove or adapt any comparative analyses that would normally compare multiple repositories
+5. Adjust any summary statistics or visualizations to make sense in the context of a single repository
+6. Consider adding a note about how the single-repo report differs from a multi-repo report
+
+Testing approach:
+- Generate test reports in both modes and compare differences
+- Verify the single-repo indication is clear and prominent
+- Test that all sections adapt appropriately to the single-repository context
+- Ensure no misleading comparisons or statistics remain in the report
+
+## 5. Implement logging and user feedback for single-repo mode [pending]
+### Dependencies: 13.1, 13.2
+### Description: Add appropriate messaging in logs and console output to indicate the tool is running in single-repository mode
+### Details:
+Implementation steps:
+1. Identify key logging points throughout the application execution flow
+2. Add log messages at the start of execution indicating single-repo mode is active
+3. Include the name of the repository being processed in log messages
+4. Add progress indicators that reflect the single-repository context
+5. Update any summary messages at the end of execution to mention single-repo mode
+6. Ensure console output clearly communicates the limited scope of the analysis
+
+Testing approach:
+- Capture and analyze log output during test runs
+- Verify log messages accurately reflect the single-repo state
+- Test that appropriate warnings or errors are logged for edge cases
+- Ensure the user experience is clear about what mode the tool is running in
+
+## 6. Write comprehensive documentation and examples for single-repo mode [pending]
+### Dependencies: 13.1, 13.2, 13.3, 13.4, 13.5
+### Description: Update all documentation to explain the new single-repository mode functionality, including examples and use cases
+### Details:
+Implementation steps:
+1. Update the main README.md to document the '--single-repo' flag
+2. Add example commands showing how to use the single-repo mode
+3. Document any differences in report output when using single-repo mode
+4. Add a section explaining use cases (testing, debugging, focused analysis)
+5. Update any configuration file documentation to include the single-repo option
+6. Create or update any developer documentation about the implementation
+7. Add screenshots or examples of reports in single-repo mode if applicable
+
+Testing approach:
+- Review documentation for clarity and completeness
+- Verify all examples work as described
+- Test following the documentation as a new user would
+- Ensure all command-line options and configurations are accurately documented
+

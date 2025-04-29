@@ -1,0 +1,100 @@
+# Task ID: 14
+# Title: Consolidate Directory Structure in src/repo_organizer
+# Status: done
+# Dependencies: 12
+# Priority: high
+# Description: Implement the refactor plan produced by Task 12; move files, update imports, docs, and tests.
+# Details:
+
+
+# Test Strategy:
+
+
+# Subtasks:
+## 1. Create a directory migration plan document [done]
+### Dependencies: None
+### Description: Create a detailed migration plan document that outlines the current directory structure and the target structure. Identify all files that need to be moved, renamed, or modified.
+### Details:
+Implementation steps:
+1. Review the refactor plan from Task 12
+2. Create a spreadsheet or document that lists:
+   - Each file's current location
+   - Each file's target location
+   - Required import changes
+   - Tests that need updating
+   - Documentation that needs updating
+3. Identify potential circular dependencies that might arise
+4. Document any special considerations for specific modules
+5. Create a rollback plan in case of issues
+
+Testing approach: Have the document reviewed by team members to ensure completeness and accuracy.
+
+## 2. Create new directory structure [done]
+### Dependencies: 14.1
+### Description: Create the new directory structure according to the migration plan, without moving files yet. This includes creating new directories and placeholder files to ensure the structure is correct.
+### Details:
+Implementation steps:
+1. Based on the migration plan, create all new directories in the src/repo_organizer folder
+2. Create __init__.py files in each directory as needed
+3. Add placeholder README.md files in each directory explaining its purpose
+4. Document the directory structure in project documentation
+5. Verify the structure matches the migration plan
+
+Testing approach: Manually verify all directories exist and have proper initialization files. Run the application to ensure it still works with the empty directory structure in place.
+
+## 3. Move and update core files with minimal dependencies [done]
+### Dependencies: 14.2
+### Description: Move the files with minimal dependencies to their new locations and update their imports. This includes utility files, constants, and base classes that don't depend on many other modules.
+### Details:
+Implementation steps:
+1. Identify files with minimal dependencies from the migration plan
+2. Move these files to their new locations
+3. Update import statements within these files
+4. Update any relative imports that reference these files in other modules
+5. Run tests to ensure these files work correctly in their new locations
+
+Testing approach: Run unit tests for each moved file. Verify that imports work correctly by running the application and checking for import errors.
+
+## 4. Move and update complex modules and their dependencies [done]
+### Dependencies: 14.3
+### Description: Move the more complex modules to their new locations and update all import statements. Handle circular dependencies and ensure all modules can find their dependencies.
+### Details:
+Implementation steps:
+1. Move complex modules according to the migration plan
+2. Update import statements in these modules
+3. Update any modules that import these complex modules
+4. Resolve any circular dependencies that arise
+5. Refactor code as needed to maintain functionality
+6. Run tests after moving each module to catch issues early
+
+Testing approach: Run unit tests and integration tests after moving each module. Test the application functionality to ensure it works with the new structure.
+
+## 5. Update and fix tests to work with new directory structure [done]
+### Dependencies: 14.3, 14.4
+### Description: Update all test files to work with the new directory structure. This includes updating imports, test fixtures, and test paths.
+### Details:
+Implementation steps:
+1. Identify all test files that need updating
+2. Update import statements in test files
+3. Update test fixtures that reference file paths
+4. Update any test configuration files
+5. Fix any broken tests resulting from the directory changes
+6. Run the full test suite to ensure all tests pass
+
+Testing approach: Run the full test suite and verify all tests pass. Check test coverage to ensure it remains the same or improves.
+
+## 6. Update documentation and finalize the refactoring [done]
+### Dependencies: 14.5
+### Description: Update all documentation to reflect the new directory structure, including README files, API documentation, and developer guides. Perform final testing and cleanup.
+### Details:
+Implementation steps:
+1. Update the main README.md file with the new directory structure
+2. Update API documentation to reflect new import paths
+3. Update developer guides and contribution guidelines
+4. Update any diagrams or visual representations of the codebase
+5. Remove any temporary files or placeholders created during migration
+6. Perform a final cleanup of unused imports or dead code
+7. Run a full application test to ensure everything works correctly
+
+Testing approach: Perform full application testing, including all features. Have team members review the updated documentation for accuracy and completeness.
+
