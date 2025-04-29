@@ -112,6 +112,12 @@ def analyze(
         help="Maximum number of repositories to analyze (deprecated, use --limit).",
     ),
     owner: str = typer.Option(None, "--owner", help="GitHub owner/user to analyze."),
+    single_repo: Optional[str] = typer.Option(
+        None,
+        "--single-repo",
+        "-s",
+        help="Process only a single repository by name.",
+    ),
     debug: bool = typer.Option(False, "--debug", "-d", help="Enable debug logging."),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize console output."),
     username: Optional[str] = None,  # Added by with_auth_option, manually included here for clarity
@@ -138,6 +144,12 @@ def analyze(
     from pathlib import Path
 
     settings = load_settings()
+    
+    # Apply single repository option to settings if provided via command line
+    if single_repo:
+        settings.single_repo = single_repo
+        if not quiet:
+            console.print(f"[cyan]Single repository mode: Will only process [bold]{single_repo}[/][/]")
 
     # Resolve owner
     if owner is None:
@@ -215,9 +227,12 @@ def analyze(
 
         try:
             if not quiet:
-                console.print(f"[cyan]Fetching repositories for [bold]{owner}[/]...")
+                if settings.single_repo:
+                    console.print(f"[cyan]Fetching repository [bold]{settings.single_repo}[/] for [bold]{owner}[/]...")
+                else:
+                    console.print(f"[cyan]Fetching repositories for [bold]{owner}[/]...")
 
-            analyses = analyze_repositories(owner, github, llm, limit=limit)
+            analyses = analyze_repositories(owner, github, llm, limit=limit, single_repo=settings.single_repo)
             progress.update(
                 fetch_task,
                 completed=1,
@@ -291,11 +306,24 @@ def analyze(
             # Create summary report
             summary_path = output_path / "repositories_report.md"
             with open(summary_path, "w") as f:
-                f.write("# Repository Analysis Summary\n\n")
+                # Add single repo mode indicator if applicable
+                if settings.single_repo:
+                    f.write("# Single Repository Analysis Report\n\n")
+                    f.write(f"*This report contains analysis for a single repository: **{settings.single_repo}**.*\n\n")
+                else:
+                    f.write("# Repository Analysis Summary\n\n")
+                
                 f.write("## Overview\n\n")
                 f.write(f"- **Total Repositories**: {len(analyses)}\n")
                 f.write(f"- **Successfully Analyzed**: {success_count}\n")
-                f.write(f"- **Failed Analyses**: {fail_count}\n\n")
+                f.write(f"- **Failed Analyses**: {fail_count}\n")
+                
+                # Add mode information
+                if settings.single_repo:
+                    f.write(f"- **Mode**: Single repository analysis of **{settings.single_repo}**\n")
+                else:
+                    f.write("- **Mode**: Full repository analysis\n")
+                f.write("\n")
 
                 f.write("## Repositories\n\n")
 
@@ -322,10 +350,22 @@ def analyze(
             # Show final results
             if not quiet:
                 console.print("\n[bold green]Analysis complete![/]")
+                
+                # Create content for panel with mode information
+                panel_content = f"Total Repositories: {len(analyses)}\nSuccessfully Analyzed: {success_count}\nFailed Analyses: {fail_count}"
+                
+                # Add mode information
+                if settings.single_repo:
+                    panel_content += f"\nMode: Single repository analysis of [bold]{settings.single_repo}[/]"
+                    panel_title = "Single Repository Analysis"
+                else:
+                    panel_content += "\nMode: Full repository analysis"
+                    panel_title = "Repository Analysis Summary"
+                
                 console.print(
                     Panel(
-                        f"Total Repositories: {len(analyses)}\nSuccessfully Analyzed: {success_count}\nFailed Analyses: {fail_count}",
-                        title="Repository Analysis Summary",
+                        panel_content,
+                        title=panel_title,
                         border_style="green",
                         expand=False,
                     )

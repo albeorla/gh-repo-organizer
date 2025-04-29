@@ -1,6 +1,6 @@
 # Task ID: 13
 # Title: Implement Single Repository Limitation Mode
-# Status: pending
+# Status: in-progress
 # Dependencies: 11, 14
 # Priority: medium
 # Description: Add functionality to limit the tool to process only a single repository while still generating both individual and overall reports.
@@ -33,7 +33,7 @@ Testing should verify:
 Create both unit tests for the repository filtering logic and integration tests that verify the end-to-end functionality.
 
 # Subtasks:
-## 1. Add command-line flag for single repository mode [pending]
+## 1. Add command-line flag for single repository mode [done]
 ### Dependencies: None
 ### Description: Implement a new command-line flag '--single-repo' that allows users to specify a single repository to analyze
 ### Details:
@@ -50,7 +50,7 @@ Testing approach:
 - Test help text output includes the new flag description
 - Test error handling for invalid inputs
 
-## 2. Modify repository scanning logic to filter for a single repository [pending]
+## 2. Modify repository scanning logic to filter for a single repository [done]
 ### Dependencies: 13.1
 ### Description: Update the repository discovery and scanning mechanism to only process the specified repository when single-repo mode is active
 ### Details:
@@ -67,7 +67,7 @@ Testing approach:
 - Test behavior when specified repository doesn't exist
 - Test the fallback to processing all repositories when flag isn't specified
 
-## 3. Update individual report generation for single-repo mode [pending]
+## 3. Update individual report generation for single-repo mode [done]
 ### Dependencies: 13.2
 ### Description: Ensure the individual repository report is correctly generated when running in single-repository mode
 ### Details:
@@ -84,7 +84,7 @@ Testing approach:
 - Verify all expected sections and metrics appear correctly
 - Test with repositories of different sizes and characteristics
 
-## 4. Modify overall report generation for single-repo mode [pending]
+## 4. Modify overall report generation for single-repo mode [done]
 ### Dependencies: 13.2, 13.3
 ### Description: Update the overall report generation to clearly indicate when it contains data for only one repository
 ### Details:
@@ -102,7 +102,7 @@ Testing approach:
 - Test that all sections adapt appropriately to the single-repository context
 - Ensure no misleading comparisons or statistics remain in the report
 
-## 5. Implement logging and user feedback for single-repo mode [pending]
+## 5. Implement logging and user feedback for single-repo mode [done]
 ### Dependencies: 13.1, 13.2
 ### Description: Add appropriate messaging in logs and console output to indicate the tool is running in single-repository mode
 ### Details:
@@ -120,7 +120,7 @@ Testing approach:
 - Test that appropriate warnings or errors are logged for edge cases
 - Ensure the user experience is clear about what mode the tool is running in
 
-## 6. Write comprehensive documentation and examples for single-repo mode [pending]
+## 6. Write comprehensive documentation and examples for single-repo mode [in-progress]
 ### Dependencies: 13.1, 13.2, 13.3, 13.4, 13.5
 ### Description: Update all documentation to explain the new single-repository mode functionality, including examples and use cases
 ### Details:

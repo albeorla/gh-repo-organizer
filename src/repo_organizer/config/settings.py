@@ -65,6 +65,11 @@ class Settings(BaseSettings):
     debug_mode: bool = Field(
         False, description="Enable debug mode with additional logging"
     )
+    
+    # Single repository mode
+    single_repo: Optional[str] = Field(
+        None, description="Process only this specific repository (if specified)"
+    )
 
     @field_validator("github_token")
     def validate_github_token(cls, v):
@@ -154,6 +159,8 @@ def load_settings(env_file: Optional[str] = None) -> Settings:
         # Feature flags
         "enable_analytics": os.getenv("ENABLE_ANALYTICS", "false").lower() == "true",
         "debug_mode": os.getenv("DEBUG_MODE", "false").lower() == "true",
+        # Single repository mode
+        "single_repo": os.getenv("SINGLE_REPO", None),
     }
 
     # Create and validate settings

@@ -28,6 +28,7 @@ def analyze_repositories(
     analyzer: AnalyzerPort,
     *,
     limit: int | None = None,
+    single_repo: str | None = None,
 ) -> Sequence[RepoAnalysis]:
     """Return analyses for repositories owned by *owner*.
 
@@ -36,9 +37,36 @@ def analyze_repositories(
         source_control: Implementation of SourceControlPort.
         analyzer: Implementation of AnalyzerPort.
         limit: Optional maximum number of repos.
+        single_repo: If specified, only analyze this specific repository.
     """
-
+    # Get repos from source control
     repos: Sequence[Repository] = source_control.list_repositories(owner, limit=limit)
+    
+    # Filter for single repository if specified
+    if single_repo:
+        # Log the filter operation
+        if hasattr(source_control, "logger") and source_control.logger:
+            source_control.logger.log(f"Filtering repositories to only include: {single_repo}")
+            
+        filtered_repos = [repo for repo in repos if repo.name == single_repo]
+        
+        # Check if the specified repo was found
+        if not filtered_repos:
+            if hasattr(source_control, "logger") and source_control.logger:
+                source_control.logger.log(
+                    f"Repository '{single_repo}' not found in list of {len(repos)} repositories", 
+                    level="error"
+                )
+                if repos:
+                    source_control.logger.log(
+                        f"Available repositories: {', '.join(repo.name for repo in repos[:10])}...", 
+                        level="info"
+                    )
+            
+            # Use empty list if repo not found
+            return []
+            
+        repos = filtered_repos
 
     results: list[RepoAnalysis] = []
     for repo in repos:
