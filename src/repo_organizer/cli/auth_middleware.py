@@ -12,6 +12,8 @@ from rich.console import Console
 
 from repo_organizer.domain.core.auth_config import AuthConfig, get_default_config
 from repo_organizer.domain.core.auth_service import AuthService
+from repo_organizer.infrastructure.logging.auth_logger import AuthLogger
+from repo_organizer.utils.logger import Logger
 
 
 # Create console for rich output to match CLI app
@@ -22,6 +24,7 @@ def authenticate_command(
     operation_name: str,
     auth_service: Optional[AuthService] = None,
     auth_config: Optional[AuthConfig] = None,
+    auth_logger: Optional[AuthLogger] = None,
 ) -> Callable:
     """
     Decorator to validate authentication before executing a CLI command.
@@ -30,6 +33,7 @@ def authenticate_command(
         operation_name: Name of the operation to authenticate
         auth_service: Optional custom auth service instance
         auth_config: Optional custom auth configuration
+        auth_logger: Optional custom authentication logger
         
     Returns:
         Decorator function that wraps command functions
@@ -46,6 +50,9 @@ def authenticate_command(
         """
         # Use provided auth_service or create one with the provided auth_config
         service = auth_service or AuthService(auth_config=auth_config)
+        
+        # Create auth logger or use provided one
+        logger = auth_logger or AuthLogger(console=console)
         
         # This is needed to preserve the Typer command's parameters and help text
         typer_callback = getattr(func, "__typer_callback__", None)
@@ -70,6 +77,20 @@ def authenticate_command(
             # Validate the operation - ensure username is str or None
             username_str: Optional[str] = username if username is None else str(username)
             is_valid, error_message = service.validate_operation(operation_name, username_str)
+            
+            # Log the authentication attempt
+            metadata = {
+                "command": func.__name__,
+                "args_count": len(args),
+                "kwargs_keys": ",".join(kwargs.keys())
+            }
+            logger.log_authentication_attempt(
+                operation_name=operation_name,
+                username=username_str,
+                success=is_valid,
+                error_message=error_message if not is_valid else None,
+                metadata=metadata
+            )
             
             # If authentication fails, display error and exit
             if not is_valid:
@@ -96,6 +117,8 @@ def with_auth_option(app: typer.Typer) -> None:
     Add a global username option to all commands in a Typer app.
     
     This function patches the Typer app to add a --username option to all commands.
+    The username is now required for all commands to ensure proper authentication
+    and attribution of actions.
     
     Args:
         app: Typer app instance to modify
@@ -129,28 +152,23 @@ def with_auth_option(app: typer.Typer) -> None:
             Returns:
                 Decorated function with authentication options
             """
-            # Add username parameter to the command
+            # Add username parameter to the command - now required
             # We need to use a different approach to add the option
             username_option = typer.Option(
-                None,
+                ...,  # ... means required in Typer
                 "--username",
                 "-u",
-                help="GitHub username for authentication"
+                help="GitHub username for authentication and action attribution (required)"
             )
             
             # Create a new function with the username parameter
             # This uses Typer's standard approach for adding options to functions
             if hasattr(func, "__annotations__"):
-                func.__annotations__["username"] = Optional[str]
+                func.__annotations__["username"] = str  # No longer Optional
             else:
-                func.__annotations__ = {"username": Optional[str]}
+                func.__annotations__ = {"username": str}
                 
-            # Set default value for username in signature
-            if not hasattr(func, "__defaults__") or func.__defaults__ is None:
-                func.__defaults__ = (None,)
-            else:
-                func.__defaults__ = func.__defaults__ + (None,)
-                
+            # No default value since it's required
             # Store the option information for typer to use
             if not hasattr(func, "__typer_params__"):
                 func.__typer_params__ = {}
@@ -173,6 +191,8 @@ def validate_command_auth(
     command_name: str,
     username: Optional[str] = None,
     exit_on_failure: bool = True,
+    logger: Optional[Logger] = None,
+    auth_logger: Optional[AuthLogger] = None,
 ) -> bool:
     """
     Standalone function to validate authentication for a command outside the decorator pattern.
@@ -181,6 +201,8 @@ def validate_command_auth(
         command_name: Name of the command to validate
         username: Username to validate
         exit_on_failure: Whether to exit the program on authentication failure
+        logger: Optional standard logger for general output
+        auth_logger: Optional authentication logger for security events
         
     Returns:
         True if authentication is valid, False otherwise
@@ -191,9 +213,25 @@ def validate_command_auth(
     # Create auth service
     service = AuthService()
     
+    # Create auth logger if not provided
+    auth_log = auth_logger or AuthLogger(console=console, logger=logger)
+    
     # Validate the operation - ensure username is str or None
     username_str: Optional[str] = username if username is None else str(username)
     is_valid, error_message = service.validate_operation(command_name, username_str)
+    
+    # Log the authentication attempt
+    metadata = {
+        "command": command_name,
+        "validation_type": "standalone"
+    }
+    auth_log.log_authentication_attempt(
+        operation_name=command_name,
+        username=username_str,
+        success=is_valid,
+        error_message=error_message if not is_valid else None,
+        metadata=metadata
+    )
     
     # If authentication fails and exit_on_failure is True, display error and exit
     if not is_valid and exit_on_failure:

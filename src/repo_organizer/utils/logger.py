@@ -30,6 +30,7 @@ class Logger:
         debug_enabled: Whether to print debug-level logs to console
         stats: Dictionary of runtime statistics
         quiet_mode: Whether to minimize console output
+        username: Username for tracking and attribution
     """
 
     def __init__(
@@ -38,6 +39,7 @@ class Logger:
         console: Optional[Console] = None,
         debug_enabled: bool = False,
         quiet_mode: bool = False,
+        username: Optional[str] = None,
     ):
         """Initialize the logger.
 
@@ -46,11 +48,13 @@ class Logger:
             console: Optional Rich console for output
             debug_enabled: Whether to print debug-level logs to console
             quiet_mode: Whether to minimize console output
+            username: Optional username for tracking and attribution
         """
         self.log_file = log_file
         self.console = console or Console()
         self.debug_enabled = debug_enabled
         self.quiet_mode = quiet_mode
+        self.username = username
         self.stats = {
             "start_time": time.time(),
             "repos_analyzed": 0,
@@ -67,13 +71,27 @@ class Logger:
         self._file_lock = Lock()
         self._console_lock = Lock()
 
-    def log(self, message: str, level: str = "info") -> None:
+    def set_username(self, username: str) -> None:
+        """Set the username for logging and tracking.
+        
+        Args:
+            username: Username to associate with log entries
+        """
+        self.username = username
+        self.log(f"Username set to {username}", level="debug")
+
+    def log(self, message: str, level: str = "info", username: Optional[str] = None) -> None:
         """Log a message to both console and log file.
 
         Args:
             message: Message to log
             level: Log level (info, warning, error, success, debug)
+            username: Optional username to associate with this specific log entry,
+                      overrides the logger's default username
         """
+        # Use the provided username or the default one
+        effective_username = username or self.username
+        
         # Only print to console if:
         # 1. Not in quiet mode, or level is error/warning
         # 2. Level is not debug or debug is enabled
@@ -109,7 +127,9 @@ class Logger:
             elif level == "debug":
                 log_message = f"[blue]DEBUG: {message}[/blue]"
 
-        formatted_log_message = f"[{timestamp}] {log_message}"
+        # Add username to console output if available
+        user_prefix = f"[{effective_username}] " if effective_username else ""
+        formatted_log_message = f"[{timestamp}] {user_prefix}{log_message}"
 
         # Get terminal width to truncate long messages if needed
         try:
@@ -127,7 +147,7 @@ class Logger:
                     log_message = f"[green]{message_ellipsis}[/green]"
                 elif level == "debug":
                     log_message = f"[blue]DEBUG: {message_ellipsis}[/blue]"
-                formatted_log_message = f"[{timestamp}] {log_message}"
+                formatted_log_message = f"[{timestamp}] {user_prefix}{log_message}"
         except (OSError, AttributeError):
             # Terminal size might not be available in all environments
             pass
@@ -141,8 +161,9 @@ class Logger:
                 if not formatted_log_message.endswith("\n"):
                     self.console.print("", end="\n")
 
-        # Strip Rich markup for plain text log file
-        plain_message = f"[{timestamp}] [{level.upper()}] {message}"
+        # Strip Rich markup for plain text log file and add username if available
+        user_log_prefix = f"[{effective_username}] " if effective_username else ""
+        plain_message = f"[{timestamp}] [{level.upper()}] {user_log_prefix}{message}"
 
         # Ensure only one thread writes to the log file at a time.
         with self._file_lock:
