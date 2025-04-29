@@ -35,6 +35,9 @@ poetry run repo-analyzer analyze
 # Analyze repositories with specific options
 poetry run repo-analyzer analyze --owner <username> --limit 10
 
+# Analyze a single repository
+poetry run repo-analyzer analyze --single-repo my-repository-name
+
 # Force re-analysis of repositories
 poetry run repo-analyzer analyze --force
 
@@ -63,6 +66,7 @@ The `analyze` command supports the following options:
 
 - `--owner`, `-o`: GitHub owner/user to analyze (defaults to GITHUB_USERNAME)
 - `--limit`, `-l`: Maximum number of repositories to analyze
+- `--single-repo`: Analyze only the specified repository name
 - `--output-dir`: Directory for output files
 - `--force`, `-f`: Force re-analysis of all repositories
 - `--debug`, `-d`: Enable debug logging
@@ -150,6 +154,32 @@ poetry run ruff format .
 # Lint code
 poetry run ruff check .
 ```
+
+## Single Repository Mode
+
+The tool supports analyzing a single repository instead of the complete set of repositories owned by a user. This feature is useful for:
+
+- **Testing and Debugging**: Focus on a specific repository to test changes or debug issues
+- **Targeted Analysis**: Get detailed analysis for a repository of interest
+- **Performance**: Significantly faster when you only need information about one repository
+- **CI/CD Integration**: Use in continuous integration pipelines to analyze specific repositories
+
+### Usage
+
+```bash
+# Analyze a single repository by name
+poetry run repo-analyzer analyze --single-repo repository-name
+
+# Combine with other options
+poetry run repo-analyzer analyze --single-repo repository-name --force --debug
+```
+
+### Considerations
+
+- The summary report will indicate it contains data for only one repository
+- All analysis features work the same as in multi-repository mode
+- Repository name must match exactly (case-sensitive)
+- If the specified repository doesn't exist, an error will be shown
 
 ## Architecture
 

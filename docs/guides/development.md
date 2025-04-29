@@ -42,6 +42,9 @@ poetry run repo-analyzer analyze --debug
 # Force re-analysis of repositories
 poetry run repo-analyzer analyze --force
 
+# Analyze a single repository (useful for testing)
+poetry run repo-analyzer analyze --single-repo my-repository-name
+
 # Clean up report files
 poetry run repo-analyzer cleanup
 ```

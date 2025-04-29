@@ -554,7 +554,7 @@
       "description": "Add functionality to limit the tool to process only a single repository while still generating both individual and overall reports.",
       "details": "Modify the application to accept a parameter (command-line flag or configuration option) that restricts analysis to a single repository. This should:\n\n1. Add a new flag `--single-repo=REPO_NAME` or similar configuration option\n2. Update the repository scanning logic to filter for only the specified repository when this flag is active\n3. Ensure the individual report for the specified repository is still generated correctly\n4. Modify the overall report generation to clearly indicate it contains data for only one repository when running in this mode\n5. Include appropriate messaging in logs and output to indicate the tool is running in single-repository mode\n6. Maintain backward compatibility so the tool still processes all repositories when the flag isn't specified\n7. Update help documentation to explain this new functionality\n\nThis feature will be useful for testing, debugging, and for users who want to focus on a specific repository's metrics.",
       "testStrategy": "Testing should verify:\n\n1. Command-line parsing correctly recognizes the new single-repository flag\n2. When a valid repository name is provided, only that repository is processed\n3. When an invalid repository name is provided, appropriate error message is displayed\n4. The individual report for the single repository contains complete and accurate data\n5. The overall report correctly indicates it contains data for only one repository\n6. All existing functionality works normally when the flag is not specified\n7. Performance testing to verify processing a single repository is faster than processing all repositories\n8. Test with repositories of varying sizes to ensure the limitation works correctly in all scenarios\n9. Test that report formatting and structure remain consistent when in single-repository mode\n\nCreate both unit tests for the repository filtering logic and integration tests that verify the end-to-end functionality.",
-      "status": "in-progress",
+      "status": "done",
       "dependencies": [
         "11",
         "14"
@@ -628,7 +628,7 @@
             5
           ],
           "details": "Implementation steps:\n1. Update the main README.md to document the '--single-repo' flag\n2. Add example commands showing how to use the single-repo mode\n3. Document any differences in report output when using single-repo mode\n4. Add a section explaining use cases (testing, debugging, focused analysis)\n5. Update any configuration file documentation to include the single-repo option\n6. Create or update any developer documentation about the implementation\n7. Add screenshots or examples of reports in single-repo mode if applicable\n\nTesting approach:\n- Review documentation for clarity and completeness\n- Verify all examples work as described\n- Test following the documentation as a new user would\n- Ensure all command-line options and configurations are accurately documented",
-          "status": "in-progress",
+          "status": "done",
           "parentTaskId": 13
         }
       ]
