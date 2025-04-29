@@ -28,6 +28,7 @@ from rich.syntax import Syntax
 # This prevents relative import errors when running the CLI directly
 from repo_organizer.config.settings import load_settings
 from repo_organizer.cli.commands import execute_actions
+from repo_organizer.cli.auth_middleware import authenticate_command, with_auth_option
 
 
 # Define Enum for action types
@@ -48,6 +49,9 @@ app = typer.Typer(
     help="Analyze GitHub repositories and provide insights using AI.",
     add_completion=True,
 )
+
+# Add authentication option to all commands
+with_auth_option(app)
 
 # Create console for rich output
 console = Console()
@@ -84,6 +88,7 @@ def main(
 
 
 @app.command()
+@authenticate_command("analyze")
 def analyze(
     force: bool = typer.Option(
         False,
@@ -109,6 +114,7 @@ def analyze(
     owner: str = typer.Option(None, "--owner", help="GitHub owner/user to analyze."),
     debug: bool = typer.Option(False, "--debug", "-d", help="Enable debug logging."),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize console output."),
+    username: Optional[str] = None,  # Added by with_auth_option, manually included here for clarity
 ):
     """
     Analyze GitHub repositories and generate detailed reports.
@@ -346,6 +352,7 @@ def analyze(
 
 
 @app.command()
+@authenticate_command("cleanup")
 def cleanup(
     force: bool = typer.Option(
         False, "--force", "-f", help="Force removal of all files without confirmation."
@@ -357,6 +364,7 @@ def cleanup(
         help="Directory containing analysis results to clean up (default: .out/repos).",
     ),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize console output."),
+    username: Optional[str] = None,  # Added by with_auth_option, manually included here for clarity
 ):
     """
     Clean up generated repository analysis files.
@@ -656,11 +664,13 @@ def reports(
 
 
 @app.command()
+@authenticate_command("reset")
 def reset(
     force: bool = typer.Option(
         False, "--force", "-f", help="Force removal without confirmation."
     ),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize console output."),
+    username: Optional[str] = None,  # Added by with_auth_option, manually included here for clarity
 ):
     """
     Reset and clean up all analysis files, removing reports that don't match your GitHub repositories.
@@ -794,6 +804,7 @@ def reset(
 
 
 @app.command()
+@authenticate_command("execute_actions")
 def actions(
     action_type: ActionType = typer.Option(
         ActionType.ALL, "--type", "-t", help="Type of action to execute."
@@ -807,6 +818,7 @@ def actions(
     output_dir: Optional[str] = typer.Option(
         None, "--output-dir", "-o", help="Override the output directory."
     ),
+    username: Optional[str] = None,  # Added by with_auth_option, manually included here for clarity
 ):
     """
     Execute repository actions based on analysis results.
@@ -825,6 +837,7 @@ def actions(
             force=force,
             output_dir=output_dir,
             action_type=action,
+            username=username,
         )
     except Exception as e:
         console.print(f"[bold red]Error executing actions: {e}[/]")

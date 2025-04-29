@@ -102,6 +102,7 @@ def execute_actions(
     output_dir: Optional[str] = None,
     github_token: Optional[str] = None,
     action_type: Optional[str] = None,
+    username: Optional[str] = None,
 ):
     """
     Execute repository actions based on analysis results.
@@ -112,6 +113,7 @@ def execute_actions(
         output_dir: Output directory for analysis files
         github_token: GitHub token for authentication
         action_type: Type of action to execute (DELETE, ARCHIVE, EXTRACT, PIN)
+        username: GitHub username for authentication and action attribution
     """
     # Load settings
     settings = load_settings()
