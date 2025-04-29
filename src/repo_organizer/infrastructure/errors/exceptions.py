@@ -140,6 +140,12 @@ class CLIError(InterfaceError):
     pass
 
 
+class AuthenticationError(InterfaceError):
+    """Exception raised when user authentication fails."""
+
+    pass
+
+
 # File system exceptions
 class FileSystemError(InfrastructureError):
     """Base exception for file system errors."""
