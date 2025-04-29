@@ -175,6 +175,9 @@ class GitHubRestAdapter(SourceControlPort):
         url = f"https://api.github.com/repos/{self.github_username}/{repo_name}/readme"
 
         try:
+            if self.logger:
+                self.logger.log(f"Fetching README for {repo_name}", "info")
+                
             response = self._session.get(url, timeout=15)
 
             if response.status_code != 200:

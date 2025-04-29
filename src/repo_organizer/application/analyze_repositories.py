@@ -49,6 +49,32 @@ def analyze_repositories(
         except NotImplementedError:
             languages_str = "Unknown"
 
+        # Fetch README content (best-effort)
+        try:
+            readme_content = source_control.get_repository_readme(repo.name)
+            if not readme_content or readme_content.strip() == "":
+                readme_content = "No README content available"
+            
+            # Log the README content for debugging
+            if source_control.logger and getattr(source_control.logger, "debug_enabled", False):
+                source_control.logger.log(
+                    f"README content for {repo.name} (first 200 chars): {readme_content[:200]}...",
+                    "debug",
+                )
+        except Exception as e:
+            if source_control.logger:
+                source_control.logger.log(f"Error fetching README: {str(e)}", "error")
+            readme_content = "No README content available"
+            
+        # Get recent commits and activity info (best-effort)
+        try:
+            recent_commits = source_control.recent_commits(repo)
+            recent_commits_count = len(recent_commits)
+            activity_summary = f"{recent_commits_count} recent commits"
+        except Exception:
+            recent_commits_count = 0
+            activity_summary = "No activity data available"
+            
         repo_data: Mapping[str, object] = {
             "repo_name": repo.name,
             "repo_desc": repo.description or "No description",
@@ -58,6 +84,15 @@ def analyze_repositories(
             "stars": repo.stars,
             "forks": repo.forks,
             "languages": languages_str,
+            "readme_excerpt": readme_content,
+            "recent_commits_count": recent_commits_count,
+            "activity_summary": activity_summary,
+            # Default values for other expected fields
+            "open_issues": 0,
+            "closed_issues": 0,
+            "contributor_summary": "No contributor data available",
+            "dependency_info": "No dependency information available",
+            "dependency_context": ""
         }
 
         analysis = analyzer.analyze(repo_data)

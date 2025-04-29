@@ -93,6 +93,11 @@ class LLMService:
 
         # Add extended thinking if enabled
         if thinking_enabled:
+            # Important: When using extended thinking, we must remove temperature settings
+            # as it's not compatible with temperature modifications
+            if "temperature" in kwargs:
+                del kwargs["temperature"]
+                
             # Add max_tokens parameter to be larger than thinking_budget (required by Claude API)
             kwargs["max_tokens"] = thinking_budget + 4000
             kwargs["model_kwargs"] = {
@@ -100,7 +105,7 @@ class LLMService:
             }
             if logger and logger.debug_enabled:
                 logger.log(
-                    f"Enabling extended thinking with budget: {thinking_budget} tokens and max_tokens: {thinking_budget + 4000}",
+                    f"Enabling extended thinking with budget: {thinking_budget} tokens, max_tokens: {thinking_budget + 4000}",
                     "debug",
                 )
 
@@ -184,10 +189,11 @@ class LLMService:
             
             Dependencies:
             - {dependency_info}
-            - {dependency_context}
             
             README Content:
+            ```markdown
             {readme_excerpt}
+            ```
 
             Based on this information, you will generate a detailed analysis. Before writing the final report, conduct a thorough evaluation inside your thinking block:
 
@@ -304,8 +310,30 @@ class LLMService:
                     f"Analyzing repo {repo_data.get('repo_name', 'unknown')}",
                     level="info",
                 )
+                
+            # Print debug info about what repo_data contains
+            if self.logger and getattr(self.logger, "debug_enabled", False):
+                self.logger.log(
+                    f"Analysis data keys: {list(repo_data.keys())}", 
+                    level="debug"
+                )
+                if "readme_excerpt" in repo_data:
+                    self.logger.log(
+                        f"README excerpt (first 200 chars): {repo_data.get('readme_excerpt', '')[:200]}...",
+                        level="debug"
+                    )
+                if "repo_name" in repo_data:
+                    self.logger.log(
+                        f"Repo name: {repo_data.get('repo_name', 'unknown')}",
+                        level="debug"
+                    )
 
             result = chain.invoke(repo_data)
+
+            # Ensure the repository name is correct (override any LLM-generated name)
+            if hasattr(result, "repo_name") and repo_data.get("repo_name"):
+                # Force the repo_name to match what was passed in
+                result.repo_name = repo_data.get("repo_name")
 
             if self.logger:
                 self.logger.log(
@@ -381,6 +409,23 @@ class LLMService:
 
             # Create a placeholder analysis with error tag so that callers do
             # not break.  This mirrors the previous behaviour.
+            # Print debug info about what repo_data contained
+            if self.logger and getattr(self.logger, "debug_enabled", False):
+                self.logger.log(
+                    f"Error analyzing repo. Data keys: {list(repo_data.keys())}", 
+                    level="debug"
+                )
+                if "readme_excerpt" in repo_data:
+                    self.logger.log(
+                        f"README excerpt (first 200 chars): {repo_data.get('readme_excerpt', '')[:200]}...",
+                        level="debug"
+                    )
+                if "repo_name" in repo_data:
+                    self.logger.log(
+                        f"Repo name: {repo_data.get('repo_name', 'unknown')}",
+                        level="debug"
+                    )
+                    
             return RepoAnalysis(
                 repo_name=repo_data.get("repo_name", "unknown"),
                 summary=f"Error analyzing repository: {str(e)}",
