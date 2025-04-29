@@ -81,4 +81,4 @@ README-task-master.md
 tasks.json
 tasks/ 
 **/__pycache__
-**/__pycache__/*
+**.py[cod]
