@@ -13,9 +13,7 @@ from repo_organizer.infrastructure.analysis.pydantic_models import (
     RepoRecommendation,
 )
 from repo_organizer.infrastructure.analysis.llm_service import LLMService
-from repo_organizer.domain.analysis.services import (
-    RepositoryAnalyzerService,
-)
+from repo_organizer.domain.analysis import RepositoryAnalyzerService
 
 
 class TestRepositoryAnalysis(unittest.TestCase):
