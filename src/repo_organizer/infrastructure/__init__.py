@@ -6,7 +6,9 @@ directly from the specific adapter modules to avoid circular dependencies.
 
 Examples:
     from repo_organizer.infrastructure.github_rest import GitHubRestAdapter
-    from repo_organizer.infrastructure.langchain_claude import LangChainClaudeAdapter
+    from repo_organizer.infrastructure.analysis.langchain_claude_adapter import (
+        LangChainClaudeAdapter,
+    )
 """
 
 __all__ = []

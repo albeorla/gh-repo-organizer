@@ -1,0 +1,31 @@
+# Task ID: 22
+# Title: Remove duplicate CLI commands implementation
+# Status: pending
+# Dependencies: 14
+# Priority: medium
+# Description: Remove the duplicate CLI commands implementation in the interface directory
+# Details:
+The file src/repo_organizer/interface/cli/commands.py is a duplicate of src/repo_organizer/cli/commands.py. The CLI modules in the codebase import from cli/commands.py, not from interface/cli/commands.py. Remove the duplicate to simplify the codebase.
+
+# Test Strategy:
+
+
+# Subtasks:
+## 1. Verify CLI module imports [pending]
+### Dependencies: None
+### Description: Verify that all CLI-related modules import from src/repo_organizer/cli/commands.py and not from src/repo_organizer/interface/cli/commands.py
+### Details:
+Search through the entire codebase for imports related to CLI commands. Check all Python files that might import CLI command functionality. Confirm that they all import from 'repo_organizer.cli.commands' or similar paths, but not from 'repo_organizer.interface.cli.commands'. Document any files that would need to be modified if they're importing from the duplicate location.
+
+## 2. Compare files to ensure they are identical [pending]
+### Dependencies: 22.1
+### Description: Compare src/repo_organizer/cli/commands.py and src/repo_organizer/interface/cli/commands.py to confirm they are truly identical before removing one
+### Details:
+Use a diff tool or command like 'diff src/repo_organizer/cli/commands.py src/repo_organizer/interface/cli/commands.py' to verify the files are exact duplicates. If there are any differences, document them and determine if any unique functionality from the interface version needs to be preserved or merged into the main CLI commands file before deletion.
+
+## 3. Remove duplicate file and update imports if necessary [pending]
+### Dependencies: 22.1, 22.2
+### Description: Remove the duplicate file src/repo_organizer/interface/cli/commands.py and update any imports if needed
+### Details:
+After confirming no imports reference the duplicate file and verifying the files are identical (or after merging any unique functionality), safely delete src/repo_organizer/interface/cli/commands.py. If the verification in subtask 1 revealed any imports from the duplicate location, update those imports to reference src/repo_organizer/cli/commands.py instead. Run tests to ensure the application still functions properly after the removal.
+

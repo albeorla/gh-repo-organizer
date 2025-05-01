@@ -1,0 +1,31 @@
+# Task ID: 20
+# Title: Remove duplicate GitHub service implementation
+# Status: pending
+# Dependencies: 14
+# Priority: medium
+# Description: Remove the duplicate GitHub service implementation in the services directory
+# Details:
+The file src/repo_organizer/services/github_service.py is a duplicate of src/repo_organizer/infrastructure/source_control/github_service.py. According to the DDD architecture, the version in the infrastructure layer is the correct placement. Remove the duplicate to simplify the codebase.
+
+# Test Strategy:
+
+
+# Subtasks:
+## 1. Analyze code dependencies on the duplicate GitHub service [pending]
+### Dependencies: None
+### Description: Identify all modules and components that import or use the duplicate GitHub service in the services directory
+### Details:
+Search through the codebase for any imports of 'src/repo_organizer/services/github_service.py'. Create a list of all files that depend on this module. For each dependency, determine whether it's importing specific functions, classes, or the entire module. This information will be crucial for the refactoring process to ensure all dependencies are properly updated when the duplicate is removed.
+
+## 2. Update all imports to use the infrastructure implementation [pending]
+### Dependencies: 20.1
+### Description: Modify all imports to reference the correct GitHub service in the infrastructure layer
+### Details:
+Using the dependency list from subtask 1, update all import statements in dependent files to use 'src/repo_organizer/infrastructure/source_control/github_service.py' instead of 'src/repo_organizer/services/github_service.py'. Ensure that any specific imports (like 'from services.github_service import X') are properly translated to the corresponding path in the infrastructure layer. Run tests after each file update to catch any issues early.
+
+## 3. Remove the duplicate GitHub service file [pending]
+### Dependencies: 20.2
+### Description: Delete the duplicate GitHub service file from the services directory after all dependencies have been updated
+### Details:
+Once all imports have been updated and verified to work correctly, remove the duplicate file at 'src/repo_organizer/services/github_service.py'. Run the full test suite to ensure the application still works correctly without the duplicate file. Update any documentation that might reference the old file location. If the services directory becomes empty after this removal, consider whether it should also be removed according to the project's architecture guidelines.
+

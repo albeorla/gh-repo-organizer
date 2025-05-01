@@ -29,6 +29,7 @@ from rich.syntax import Syntax
 from repo_organizer.config.settings import load_settings
 from repo_organizer.cli.commands import execute_actions
 from repo_organizer.cli.auth_middleware import authenticate_command, with_auth_option
+from .dev import dev_app
 
 
 # Define Enum for action types
@@ -887,6 +888,9 @@ def actions(
         import traceback
         console.print(traceback.format_exc(), style="red")
         raise typer.Exit(code=1)
+
+
+app.add_typer(dev_app, name="dev")
 
 
 if __name__ == "__main__":

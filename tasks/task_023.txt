@@ -1,0 +1,31 @@
+# Task ID: 23
+# Title: Remove duplicate configuration settings module
+# Status: pending
+# Dependencies: 14
+# Priority: medium
+# Description: Remove the duplicate configuration settings module in the infrastructure directory
+# Details:
+The file src/repo_organizer/infrastructure/config/settings.py is a duplicate of src/repo_organizer/config/settings.py. Based on import patterns, the version in the config directory is actively used. Remove the duplicate to centralize configuration and reduce confusion.
+
+# Test Strategy:
+
+
+# Subtasks:
+## 1. Analyze import patterns to confirm primary settings module [pending]
+### Dependencies: None
+### Description: Analyze the codebase to confirm that src/repo_organizer/config/settings.py is the primary module and identify all files importing either settings module
+### Details:
+Use tools like grep, find, or an IDE search to identify all files that import from either 'src/repo_organizer/infrastructure/config/settings.py' or 'src/repo_organizer/config/settings.py'. Create a list of all files that need to be updated. Verify that the version in config directory is indeed the one primarily used throughout the codebase. Document any discrepancies between the two files to ensure nothing important is lost when removing the duplicate.
+
+## 2. Update import statements referencing the duplicate module [pending]
+### Dependencies: 23.1
+### Description: Modify all import statements that reference the duplicate settings module to point to the primary module
+### Details:
+For each file identified in subtask 1 that imports from 'src/repo_organizer/infrastructure/config/settings.py', update the import statements to reference 'src/repo_organizer/config/settings.py' instead. Be careful to maintain the correct relative or absolute import syntax. Test each modified file to ensure the imports work correctly after the change. This step ensures a smooth transition before removing the duplicate file.
+
+## 3. Remove the duplicate settings module and verify application functionality [pending]
+### Dependencies: 23.2
+### Description: Delete the duplicate settings module and run tests to ensure application functionality is maintained
+### Details:
+Once all import statements have been updated, remove the duplicate file at 'src/repo_organizer/infrastructure/config/settings.py'. Run the application's test suite to verify that removing the file doesn't break any functionality. If no formal tests exist, manually test the application's key features. Update any relevant documentation to reflect that configuration settings are now centralized in 'src/repo_organizer/config/settings.py'. Consider adding a comment in relevant files explaining the centralization of configuration settings.
+
