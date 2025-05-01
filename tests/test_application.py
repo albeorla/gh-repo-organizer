@@ -23,6 +23,7 @@ class _FakeSourceControl:
 
     def __init__(self, repos: Sequence[Repository]):
         self._repos = list(repos)
+        self.logger = None  # Add logger attribute
 
     # --- Port implementations --------------------------------------------
 
@@ -33,25 +34,32 @@ class _FakeSourceControl:
         return [LanguageBreakdown("Python", 100.0)]
 
     def recent_commits(self, repo: Repository, *, limit: int = 10):  # noqa: D401
-        raise NotImplementedError
+        return []  # Return empty list instead of raising NotImplementedError
 
     def contributors(self, repo: Repository):  # noqa: D401
-        raise NotImplementedError
+        return []  # Return empty list instead of raising NotImplementedError
+        
+    def get_repository_readme(self, repo_name: str):  # noqa: D401
+        """Get a fake README for the repository."""
+        return f"# {repo_name}\n\nThis is a test repository."
 
 
 class _FakeAnalyzer:
     """Produces a trivial RepoAnalysis for every repository."""
 
     def analyze(self, repo_data):  # noqa: D401 ANN001
+        repo_name = repo_data.get("repo_name") or repo_data.get("name", "unknown")
         return RepoAnalysis(
-            repo_name=repo_data["repo_name"],
-            summary="dummy",
-            strengths=["s"],
-            weaknesses=["w"],
+            repo_name=repo_name,
+            summary=f"Analysis of {repo_name}",
+            strengths=["Good documentation", "Active development"],
+            weaknesses=["Limited test coverage", "Few contributors"],
             recommendations=[],
-            activity_assessment="low",
-            estimated_value="low",
-            tags=["t"],
+            activity_assessment="medium",
+            estimated_value="medium",
+            tags=["test", "python"],
+            recommended_action="KEEP",
+            action_reasoning="Test repository with good activity",
         )
 
 

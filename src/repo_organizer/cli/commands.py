@@ -17,6 +17,7 @@ from repo_organizer.domain.analysis.models import RepoAnalysis
 from repo_organizer.domain.analysis.services import AnalysisService
 from repo_organizer.config.settings import Settings, load_settings
 from repo_organizer.utils.rate_limiter import RateLimiter
+from repo_organizer.utils.logger import Logger
 
 # Create console for rich output
 console = Console()

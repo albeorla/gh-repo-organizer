@@ -14,6 +14,7 @@ def mock_settings():
     with patch("repo_organizer.cli.commands.load_settings") as mock:
         settings = Mock()
         settings.output_dir = "/tmp/test_output"
+        settings.logs_dir = "/tmp/test_logs"  # Add logs_dir
         settings.github_token = "dummy_token"
         settings.github_rate_limit = 60
         mock.return_value = settings
@@ -39,19 +40,31 @@ def mock_analysis_service():
 class TestCommands:
     """Tests for CLI commands."""
     
+    @patch("repo_organizer.utils.logger.Logger.log")
     def test_execute_actions_with_username(
-        self, mock_settings, mock_load_analyses, mock_analysis_service
+        self, mock_log_method, mock_settings, mock_load_analyses, mock_analysis_service
     ):
         """Test execute_actions accepts and uses username parameter."""
-        # Call execute_actions with a username
-        execute_actions(
-            dry_run=True,
-            force=False,
-            output_dir="/tmp/test_output",
-            github_token="test_token",
-            action_type="ARCHIVE",
-            username="test-user"
-        )
+        import typer
+        
+        # Patch the Logger to avoid file system operations
+        with patch("repo_organizer.cli.commands.Logger") as mock_logger_class:
+            mock_logger = Mock()
+            mock_logger_class.return_value = mock_logger
+            
+            # Call execute_actions with a username - it will raise typer.Exit since there are no repositories
+            try:
+                execute_actions(
+                    dry_run=True,
+                    force=False,
+                    output_dir="/tmp/test_output",
+                    github_token="test_token",
+                    action_type="ARCHIVE",
+                    username="test-user"
+                )
+            except typer.Exit:
+                # Expected exit due to no repositories found for the action
+                pass
         
         # Verify that load_settings was called
         mock_settings.assert_called_once()

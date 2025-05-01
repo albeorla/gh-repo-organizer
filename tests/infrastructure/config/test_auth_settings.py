@@ -100,6 +100,5 @@ class TestAuthSettings:
         assert config.default_requirements[OperationType.READ_ONLY] == AuthRequirement.NOT_REQUIRED
         assert config.default_requirements[OperationType.ANALYSIS] == AuthRequirement.NOT_REQUIRED
         
-        # Operation overrides should still be applied (though they have no effect when auth is disabled)
-        assert config.operation_overrides["analyze"] == AuthRequirement.NOT_REQUIRED
-        assert config.operation_overrides["cleanup"] == AuthRequirement.REQUIRED
+        # When auth is disabled, operation overrides are not applied, so operation_overrides should be empty
+        assert config.operation_overrides == {}

@@ -65,6 +65,7 @@ class TestAuthMiddleware:
         """Test successful authentication with the decorator."""
         # Create a mock function
         mock_func = Mock(return_value="success")
+        mock_func.__name__ = "test_func"  # Add __name__ attribute for metadata
         
         # Apply decorator with test config
         decorated = authenticate_command("test_command", auth_config=test_auth_config)(mock_func)
@@ -80,6 +81,7 @@ class TestAuthMiddleware:
         """Test successful authentication with logging."""
         # Create a mock function
         mock_func = Mock(return_value="success")
+        mock_func.__name__ = "test_func"  # Add __name__ attribute for metadata
         
         # Apply decorator with test config and mock logger
         decorated = authenticate_command(
@@ -107,6 +109,7 @@ class TestAuthMiddleware:
         """Test failed authentication with the decorator."""
         # Create a mock function
         mock_func = Mock(return_value="success")
+        mock_func.__name__ = "test_func"  # Add __name__ attribute for metadata
         
         # Apply decorator with test config
         decorated = authenticate_command("test_command", auth_config=test_auth_config)(mock_func)
@@ -128,6 +131,7 @@ class TestAuthMiddleware:
         """Test failed authentication with logging."""
         # Create a mock function
         mock_func = Mock(return_value="success")
+        mock_func.__name__ = "test_func"  # Add __name__ attribute for metadata
         
         # Mock auth service to return failure with a specific error message
         mock_auth_service = Mock()
@@ -162,6 +166,7 @@ class TestAuthMiddleware:
         """Test command that doesn't require authentication."""
         # Create a mock function
         mock_func = Mock(return_value="success")
+        mock_func.__name__ = "test_func"  # Add __name__ attribute for metadata
         
         # Apply decorator with test config for a command that doesn't require auth
         decorated = authenticate_command("read_command", auth_config=test_auth_config)(mock_func)
