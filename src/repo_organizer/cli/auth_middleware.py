@@ -5,7 +5,7 @@ before executing CLI commands.
 """
 
 from collections.abc import Callable
-from typing import Any, Optional
+from typing import Any
 
 import typer
 from rich.console import Console
@@ -72,11 +72,10 @@ def authenticate_command(
             username = kwargs.get("username")
 
             # Validate the operation - ensure username is str or None
-            username_str: str | None = (
-                username if username is None else str(username)
-            )
+            username_str: str | None = username if username is None else str(username)
             is_valid, error_message = service.validate_operation(
-                operation_name, username_str,
+                operation_name,
+                username_str,
             )
 
             # Log the authentication attempt
@@ -162,11 +161,9 @@ def with_auth_option(app: typer.Typer) -> None:
             # Create a new function with the username parameter
             # This uses Typer's standard approach for adding options to functions
             if hasattr(func, "__annotations__"):
-                func.__annotations__["username"] = Optional[
-                    str
-                ]  # Make it optional for now
+                func.__annotations__["username"] = str | None  # Make it optional for now
             else:
-                func.__annotations__ = {"username": Optional[str]}
+                func.__annotations__ = {"username": str | None}
 
             # No default value since it's required
             # Store the option information for typer to use

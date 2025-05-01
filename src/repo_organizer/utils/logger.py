@@ -80,7 +80,10 @@ class Logger:
         self.log(f"Username set to {username}", level="debug")
 
     def log(
-        self, message: str, level: str = "info", username: str | None = None,
+        self,
+        message: str,
+        level: str = "info",
+        username: str | None = None,
     ) -> None:
         """Log a message to both console and log file.
 
@@ -96,9 +99,9 @@ class Logger:
         # Only print to console if:
         # 1. Not in quiet mode, or level is error/warning
         # 2. Level is not debug or debug is enabled
-        should_print_to_console = (
-            not self.quiet_mode or level in ["error", "warning"]
-        ) and (level != "debug" or self.debug_enabled)
+        should_print_to_console = (not self.quiet_mode or level in ["error", "warning"]) and (
+            level != "debug" or self.debug_enabled
+        )
 
         # Special handling for API rate limit debug messages - don't print these
         # to console unless they're over a certain threshold to reduce clutter
@@ -167,9 +170,8 @@ class Logger:
         plain_message = f"[{timestamp}] [{level.upper()}] {user_log_prefix}{message}"
 
         # Ensure only one thread writes to the log file at a time.
-        with self._file_lock:
-            with open(self.log_file, "a") as logf:
-                logf.write(plain_message + "\n")
+        with self._file_lock, open(self.log_file, "a") as logf:
+            logf.write(plain_message + "\n")
 
     def update_stats(self, key: str, value: Any = 1, increment: bool = True) -> None:
         """Update statistics.
@@ -199,7 +201,8 @@ class Logger:
 
         summary.add_row("Total Duration", f"{duration:.2f} seconds")
         summary.add_row(
-            "Repositories Analyzed", str(self.stats.get("repos_analyzed", 0)),
+            "Repositories Analyzed",
+            str(self.stats.get("repos_analyzed", 0)),
         )
         summary.add_row("Analysis Failures", str(self.stats.get("repos_failed", 0)))
         summary.add_row("Repositories Skipped", str(self.stats.get("repos_skipped", 0)))
@@ -211,7 +214,8 @@ class Logger:
             # Rate limiting statistics
             if rate_limiters:
                 rate_table = Table(
-                    title="API Rate Limiting Statistics", show_header=True,
+                    title="API Rate Limiting Statistics",
+                    show_header=True,
                 )
                 rate_table.add_column("API", style="cyan")
                 rate_table.add_column("Calls", justify="right")

@@ -88,7 +88,8 @@ class RepositoryAnalyzerService:
         # Skip if report already exists and we're not forcing reanalysis
         if os.path.exists(report_path) and not self.force_reanalyze:
             self.logger.log(
-                f"Skipping {repo_name} - report already exists", level="info",
+                f"Skipping {repo_name} - report already exists",
+                level="info",
             )
             return False
 
@@ -156,7 +157,8 @@ class RepositoryAnalyzerService:
 
                 return analysis
             self.logger.log(
-                f"Analyzer not available for {repo_name}", level="error",
+                f"Analyzer not available for {repo_name}",
+                level="error",
             )
             self.logger.update_stats("repos_failed")
 
@@ -255,9 +257,7 @@ class RepositoryAnalyzerService:
             or repo_info.get("stars", 0)
         )
         forks = (
-            repo_info.get("forkCount")
-            or repo_info.get("forks_count")
-            or repo_info.get("forks", 0)
+            repo_info.get("forkCount") or repo_info.get("forks_count") or repo_info.get("forks", 0)
         )
 
         is_archived = repo_info.get("isArchived")
@@ -265,9 +265,7 @@ class RepositoryAnalyzerService:
             is_archived = repo_info.get("archived", False)
 
         repo_url = (
-            repo_info.get("url")
-            or repo_info.get("html_url")
-            or repo_info.get("repo_url", "")
+            repo_info.get("url") or repo_info.get("html_url") or repo_info.get("repo_url", "")
         )
 
         # Format activity data
@@ -286,9 +284,7 @@ class RepositoryAnalyzerService:
         # Format contributor data
         contributor_summary = f"{contributor_data['count']} contributors"
         if contributor_data["count"] > 0:
-            contributor_summary += (
-                f" ({contributor_data['active_contributors']} active)"
-            )
+            contributor_summary += f" ({contributor_data['active_contributors']} active)"
 
         # Format dependency information
         dependency_summary = "No dependency files detected"
@@ -332,7 +328,9 @@ class RepositoryAnalyzerService:
         }
 
     def _write_single_report(
-        self, analysis: RepoAnalysis, repo_info: dict[str, Any],
+        self,
+        analysis: RepoAnalysis,
+        repo_info: dict[str, Any],
     ) -> None:
         """Write the markdown report for a single repository.
 
@@ -343,7 +341,8 @@ class RepositoryAnalyzerService:
         repo_name = analysis.repo_name
         repo_file_path = os.path.join(self.output_dir, f"{repo_name}.md")
         self.logger.log(
-            f"Saving report for {repo_name} to {repo_file_path}...", level="debug",
+            f"Saving report for {repo_name} to {repo_file_path}...",
+            level="debug",
         )
 
         try:
@@ -362,7 +361,8 @@ class RepositoryAnalyzerService:
                 )
                 # Handle both GraphQL and REST field names (see above)
                 updated_at = repo_info.get("updatedAt") or repo_info.get(
-                    "updated_at", "Unknown",
+                    "updated_at",
+                    "Unknown",
                 )
                 if isinstance(updated_at, str) and "T" in updated_at:
                     updated_at = updated_at.split("T")[0]
@@ -372,7 +372,8 @@ class RepositoryAnalyzerService:
                     is_archived = repo_info.get("archived", False)
 
                 stars = repo_info.get("stargazerCount") or repo_info.get(
-                    "stargazers_count", 0,
+                    "stargazers_count",
+                    0,
                 )
                 forks = repo_info.get("forkCount") or repo_info.get("forks_count", 0)
 
@@ -383,9 +384,7 @@ class RepositoryAnalyzerService:
 
                 f.write("## Analysis Summary\n\n")
                 # Process string fields to ensure newlines are properly formatted
-                summary = (
-                    analysis.summary.replace("\\n", "\n") if analysis.summary else ""
-                )
+                summary = analysis.summary.replace("\\n", "\n") if analysis.summary else ""
                 f.write(f"{summary}\n\n")
 
                 f.write("### Strengths\n\n")
@@ -403,9 +402,7 @@ class RepositoryAnalyzerService:
                 f.write("### Recommendations\n\n")
                 for rec in analysis.recommendations:
                     recommendation = (
-                        rec.recommendation.replace("\\n", "\n")
-                        if rec.recommendation
-                        else ""
+                        rec.recommendation.replace("\\n", "\n") if rec.recommendation else ""
                     )
                     reason = rec.reason.replace("\\n", "\n") if rec.reason else ""
                     f.write(f"- **{recommendation}** ({rec.priority} Priority)  \n")
@@ -427,9 +424,7 @@ class RepositoryAnalyzerService:
                 f.write(f"- **Estimated Value**: {value}\n")
 
                 # Process tags to ensure no escaped newlines
-                tags = [
-                    tag.replace("\\n", "\n") if tag else "" for tag in analysis.tags
-                ]
+                tags = [tag.replace("\\n", "\n") if tag else "" for tag in analysis.tags]
                 f.write(f"- **Tags**: {', '.join(tags)}\n\n")
 
                 f.write("## Action Items\n\n")
@@ -442,7 +437,8 @@ class RepositoryAnalyzerService:
                     )
 
             self.logger.log(
-                f"Successfully saved report for {repo_name}", level="success",
+                f"Successfully saved report for {repo_name}",
+                level="success",
             )
         except Exception as e:
             self.logger.log(
@@ -458,7 +454,9 @@ class RepositoryAnalyzerService:
                 )
 
     def generate_report(
-        self, repos: list[dict[str, Any]], analyses: list[RepoAnalysis],
+        self,
+        repos: list[dict[str, Any]],
+        analyses: list[RepoAnalysis],
     ) -> None:
         """Generate a summary report of all repository analyses.
 
@@ -479,20 +477,13 @@ class RepositoryAnalyzerService:
                 )
 
                 # Group repositories by value
-                high_value = [
-                    a for a in analyses if "high" in a.estimated_value.lower()
-                ]
-                medium_value = [
-                    a for a in analyses if "medium" in a.estimated_value.lower()
-                ]
+                high_value = [a for a in analyses if "high" in a.estimated_value.lower()]
+                medium_value = [a for a in analyses if "medium" in a.estimated_value.lower()]
                 low_value = [a for a in analyses if "low" in a.estimated_value.lower()]
                 other_value = [
                     a
                     for a in analyses
-                    if not any(
-                        x in a.estimated_value.lower()
-                        for x in ["high", "medium", "low"]
-                    )
+                    if not any(x in a.estimated_value.lower() for x in ["high", "medium", "low"])
                 ]
 
                 # Write high-value repositories

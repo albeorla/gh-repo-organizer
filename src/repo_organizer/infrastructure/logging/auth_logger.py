@@ -85,7 +85,8 @@ class AuthLogger:
 
         # Get IP information if available
         ip_address = os.environ.get(
-            "REMOTE_ADDR", "localhost",
+            "REMOTE_ADDR",
+            "localhost",
         )  # Will be localhost for CLI usage
 
         # Format the log entry
@@ -112,5 +113,6 @@ class AuthLogger:
             # Use appropriate log level
             level = "error" if not success else "debug"
             self.logger.log(
-                f"Authentication {status}: {user_str} - {operation_name}", level=level,
+                f"Authentication {status}: {user_str} - {operation_name}",
+                level=level,
             )

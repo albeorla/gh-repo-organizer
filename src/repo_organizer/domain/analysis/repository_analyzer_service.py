@@ -10,9 +10,8 @@ import asyncio
 import json
 import logging
 import os
-from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from repo_organizer.domain.analysis.action_recommendation_service import (
     ActionRecommendationService,
@@ -21,11 +20,15 @@ from repo_organizer.domain.analysis.events import (
     AnalysisError,
     RepositoryAnalysisCompleted,
 )
-from repo_organizer.domain.analysis.models import RepoAnalysis
-from repo_organizer.domain.analysis.protocols import AnalyzerPort
 from repo_organizer.domain.core.events import event_bus
-from repo_organizer.domain.source_control.models import Repository
-from repo_organizer.domain.source_control.protocols import SourceControlPort
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
+    from repo_organizer.domain.analysis.models import RepoAnalysis
+    from repo_organizer.domain.analysis.protocols import AnalyzerPort
+    from repo_organizer.domain.source_control.models import Repository
+    from repo_organizer.domain.source_control.protocols import SourceControlPort
 
 logger = logging.getLogger(__name__)
 
@@ -148,7 +151,9 @@ class RepositoryAnalyzerService:
             # Publish error event
             await event_bus.dispatch(
                 AnalysisError(
-                    aggregate_id=repo.name, repo_name=repo.name, error_message=error_msg,
+                    aggregate_id=repo.name,
+                    repo_name=repo.name,
+                    error_message=error_msg,
                 ),
             )
 
@@ -158,7 +163,10 @@ class RepositoryAnalyzerService:
             return None
 
     def prepare_analysis_data(
-        self, repo: Repository, commits: Sequence[Any], contributors: Sequence[Any],
+        self,
+        repo: Repository,
+        commits: Sequence[Any],
+        contributors: Sequence[Any],
     ) -> dict[str, Any]:
         """Prepare repository data for analysis.
 

@@ -1,5 +1,4 @@
-"""Tests for the repository analysis functionality.
-"""
+"""Tests for the repository analysis functionality."""
 
 import json
 import os

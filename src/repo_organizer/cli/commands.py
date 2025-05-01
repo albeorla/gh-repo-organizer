@@ -100,7 +100,7 @@ def execute_actions(
     output_dir: str | None = None,
     github_token: str | None = None,
     action_type: str | None = None,
-    username: str = None,  # Now required
+    username: str | None = None,  # Now required
 ):
     """Execute repository actions based on analysis results.
 
@@ -133,7 +133,7 @@ def execute_actions(
     logger.log(f"Action execution started by {username}", level="info")
 
     # Create rate limiter for statistics (not used directly)
-    rate_limiter = RateLimiter(settings.github_rate_limit, name="GitHub")
+    RateLimiter(settings.github_rate_limit, name="GitHub")
 
     # Load analyses
     analyses = _load_analyses(settings)
@@ -175,16 +175,16 @@ def execute_actions(
 
     console.print(table)
     logger.log(
-        f"Selected {len(filtered_analyses)} repositories for actions", level="info",
+        f"Selected {len(filtered_analyses)} repositories for actions",
+        level="info",
     )
 
     # Confirm execution
-    if not force and not dry_run:
-        if not typer.confirm("Execute these actions?"):
-            msg = "Operation cancelled by user"
-            logger.log(msg, level="info")
-            console.print(f"[yellow]{msg}[/]")
-            raise typer.Exit(code=0)
+    if not force and not dry_run and not typer.confirm("Execute these actions?"):
+        msg = "Operation cancelled by user"
+        logger.log(msg, level="info")
+        console.print(f"[yellow]{msg}[/]")
+        raise typer.Exit(code=0)
 
     # Execute actions
     with Progress(
@@ -195,7 +195,8 @@ def execute_actions(
         console=console,
     ) as progress:
         task = progress.add_task(
-            "[green]Executing actions", total=len(filtered_analyses),
+            "[green]Executing actions",
+            total=len(filtered_analyses),
         )
 
         success_count = 0

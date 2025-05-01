@@ -1,5 +1,4 @@
-"""Rate limiter for API calls to respect service limits.
-"""
+"""Rate limiter for API calls to respect service limits."""
 
 import time
 from statistics import mean

@@ -142,7 +142,8 @@ class LLMService:
         # can trigger a call to the LLM through OutputFixingParser.
         if self.rate_limiter:
             self.rate_limiter.wait(
-                self.logger, debug=getattr(self.logger, "debug_enabled", False),
+                self.logger,
+                debug=getattr(self.logger, "debug_enabled", False),
             )
 
         # Base parser for structured output
@@ -150,7 +151,8 @@ class LLMService:
 
         # Wrap with OutputFixingParser (may perform a validation-step LLM call)
         output_fixing_parser = OutputFixingParser.from_llm(
-            parser=pydantic_parser, llm=self.llm,
+            parser=pydantic_parser,
+            llm=self.llm,
         )
 
         # Create the prompt template using modern ChatPromptTemplate
@@ -252,14 +254,17 @@ class LLMService:
             "open_issues": lambda x: x.get("open_issues", 0),
             "closed_issues": lambda x: x.get("closed_issues", 0),
             "activity_summary": lambda x: x.get(
-                "activity_summary", "No activity data available",
+                "activity_summary",
+                "No activity data available",
             ),
             "recent_commits_count": lambda x: x.get("recent_commits_count", 0),
             "contributor_summary": lambda x: x.get(
-                "contributor_summary", "No contributor data available",
+                "contributor_summary",
+                "No contributor data available",
             ),
             "dependency_info": lambda x: x.get(
-                "dependency_info", "No dependency information available",
+                "dependency_info",
+                "No dependency information available",
             ),
             "dependency_context": lambda x: x.get("dependency_context", ""),
             "readme_excerpt": lambda x: x.get("readme_excerpt", ""),
@@ -288,7 +293,8 @@ class LLMService:
         """
         if self.rate_limiter:
             self.rate_limiter.wait(
-                self.logger, debug=getattr(self.logger, "debug_enabled", False),
+                self.logger,
+                debug=getattr(self.logger, "debug_enabled", False),
             )
 
         try:
@@ -342,7 +348,9 @@ class LLMService:
                         if json_match:
                             json_str = json_match.group(1)
                             if self.logger and getattr(
-                                self.logger, "debug_enabled", False,
+                                self.logger,
+                                "debug_enabled",
+                                False,
                             ):
                                 self.logger.log(
                                     f"Extracted JSON: {json_str[:500]}...",
@@ -355,7 +363,8 @@ class LLMService:
                             except json.JSONDecodeError as jde:
                                 if self.logger:
                                     self.logger.log(
-                                        f"JSON decode error: {jde}", level="error",
+                                        f"JSON decode error: {jde}",
+                                        level="error",
                                     )
 
                         # Try direct parsing as last resort
@@ -364,13 +373,15 @@ class LLMService:
                         except Exception as parse_err:
                             if self.logger:
                                 self.logger.log(
-                                    f"Validation error: {parse_err}", level="error",
+                                    f"Validation error: {parse_err}",
+                                    level="error",
                                 )
 
                 except Exception as fallback_err:
                     if self.logger:
                         self.logger.log(
-                            f"Fallback parsing failed: {fallback_err}", level="error",
+                            f"Fallback parsing failed: {fallback_err}",
+                            level="error",
                         )
 
             if self.logger:

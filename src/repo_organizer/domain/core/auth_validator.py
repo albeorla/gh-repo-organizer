@@ -32,18 +32,21 @@ def validate_username(username: str | None) -> ValidationResult:
     # Check if username is empty string or only whitespace
     if not username or username.strip() == "":
         return ValidationResult(
-            is_valid=False, error_message="Username cannot be empty",
+            is_valid=False,
+            error_message="Username cannot be empty",
         )
 
     # Check minimum and maximum length
     if len(username) < 3:
         return ValidationResult(
-            is_valid=False, error_message="Username must be at least 3 characters",
+            is_valid=False,
+            error_message="Username must be at least 3 characters",
         )
 
     if len(username) > 50:
         return ValidationResult(
-            is_valid=False, error_message="Username cannot exceed 50 characters",
+            is_valid=False,
+            error_message="Username cannot exceed 50 characters",
         )
 
     # Check username format (alphanumeric with optional hyphens, underscores)

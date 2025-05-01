@@ -1,5 +1,4 @@
-"""Test cases for the standalone domain events in the analysis bounded context.
-"""
+"""Test cases for the standalone domain events in the analysis bounded context."""
 
 import uuid
 from datetime import datetime
@@ -43,7 +42,8 @@ def repo_analysis():
 def test_repository_analysis_completed_event(repo_analysis):
     """Test creation and serialization of RepositoryAnalysisCompleted event."""
     event = RepositoryAnalysisCompleted(
-        aggregate_id="test-repo", analysis=repo_analysis,
+        aggregate_id="test-repo",
+        analysis=repo_analysis,
     )
 
     assert isinstance(event.event_id, uuid.UUID)
@@ -96,7 +96,9 @@ def test_high_priority_issue_identified_event():
     )
 
     event = HighPriorityIssueIdentified(
-        aggregate_id="test-repo", repo_name="test-repo", issue=issue,
+        aggregate_id="test-repo",
+        repo_name="test-repo",
+        issue=issue,
     )
 
     assert isinstance(event.event_id, uuid.UUID)
@@ -160,7 +162,8 @@ async def test_event_handler_integration():
     )
 
     event = RepositoryAnalysisCompleted(
-        aggregate_id="test-repo", analysis=repo_analysis,
+        aggregate_id="test-repo",
+        analysis=repo_analysis,
     )
 
     await event_bus.dispatch(event)

@@ -28,7 +28,8 @@ class Settings(BaseSettings):
 
     # GitHub configuration
     github_username: str | None = Field(
-        None, description="GitHub username for API requests",
+        None,
+        description="GitHub username for API requests",
     )
 
     # Repository organizer settings
@@ -40,7 +41,8 @@ class Settings(BaseSettings):
     llm_model: str = Field("claude-3-7-sonnet-latest", description="LLM model to use")
     llm_temperature: float = Field(0.2, description="LLM temperature (0.0-1.0)")
     llm_thinking_enabled: bool = Field(
-        True, description="Enable extended thinking for LLM",
+        True,
+        description="Enable extended thinking for LLM",
     )
     llm_thinking_budget: int = Field(16000, description="Token budget for LLM thinking")
 
@@ -55,31 +57,35 @@ class Settings(BaseSettings):
 
     # Application settings
     log_level: str = Field(
-        "INFO", description="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)",
+        "INFO",
+        description="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)",
     )
     cache_dir: str = Field(
-        "~/.repo_organizer/cache", description="Directory for caching data",
+        "~/.repo_organizer/cache",
+        description="Directory for caching data",
     )
 
     # Feature flags
     enable_analytics: bool = Field(False, description="Enable usage analytics")
     debug_mode: bool = Field(
-        False, description="Enable debug mode with additional logging",
+        False,
+        description="Enable debug mode with additional logging",
     )
 
     # Single repository mode
     single_repo: str | None = Field(
-        None, description="Process only this specific repository (if specified)",
+        None,
+        description="Process only this specific repository (if specified)",
     )
 
     @field_validator("github_token")
-    def validate_github_token(cls, v):
+    def validate_github_token(self, v):
         if not v or len(v) < 10:
             raise ValueError("GitHub token is required and must be valid")
         return v
 
     @field_validator("output_dir", "logs_dir")
-    def create_directory(cls, v: str) -> str:
+    def create_directory(self, v: str) -> str:
         """Return a fully-qualified path and guarantee the directory exists.
 
         The path supplied by the user may contain *nix style home
@@ -150,8 +156,7 @@ def load_settings(env_file: str | None = None) -> Settings:
         # LLM settings
         "llm_model": os.getenv("LLM_MODEL", "claude-3-7-sonnet-latest"),
         "llm_temperature": float(os.getenv("LLM_TEMPERATURE", "0.2")),
-        "llm_thinking_enabled": os.getenv("LLM_THINKING_ENABLED", "true").lower()
-        == "true",
+        "llm_thinking_enabled": os.getenv("LLM_THINKING_ENABLED", "true").lower() == "true",
         "llm_thinking_budget": int(os.getenv("LLM_THINKING_BUDGET", "16000")),
         # Application settings
         "log_level": os.getenv("LOG_LEVEL", "INFO"),

@@ -157,10 +157,9 @@ def execute_actions(
     console.print(table)
 
     # Confirm execution
-    if not force and not dry_run:
-        if not typer.confirm("Execute these actions?"):
-            console.print("[yellow]Operation cancelled[/]")
-            raise typer.Exit(code=0)
+    if not force and not dry_run and not typer.confirm("Execute these actions?"):
+        console.print("[yellow]Operation cancelled[/]")
+        raise typer.Exit(code=0)
 
     # Execute actions
     with Progress(
@@ -171,7 +170,8 @@ def execute_actions(
         console=console,
     ) as progress:
         task = progress.add_task(
-            "[green]Executing actions", total=len(filtered_analyses),
+            "[green]Executing actions",
+            total=len(filtered_analyses),
         )
 
         for analysis in filtered_analyses:

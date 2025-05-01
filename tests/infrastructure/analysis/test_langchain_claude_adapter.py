@@ -33,8 +33,6 @@ def mock_llm_service():
     # Create a sample pydantic model
     from repo_organizer.infrastructure.analysis.pydantic_models import (
         RepoAnalysis as PydanticRepoAnalysis,
-    )
-    from repo_organizer.infrastructure.analysis.pydantic_models import (
         RepoRecommendation,
     )
 
@@ -142,7 +140,10 @@ class TestLangChainClaudeAdapter:
         assert metrics["cache_misses"] == 1
 
     def test_analyze_rate_limit_error(
-        self, adapter, sample_repo_data, mock_llm_service,
+        self,
+        adapter,
+        sample_repo_data,
+        mock_llm_service,
     ):
         """Test handling of rate limit errors."""
         # Configure mock to raise rate limit error

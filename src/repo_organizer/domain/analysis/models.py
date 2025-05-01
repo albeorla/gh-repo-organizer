@@ -12,16 +12,17 @@ application & domain layers.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 # Import Pydantic models from the infrastructure layer
 from repo_organizer.infrastructure.analysis.pydantic_models import (
     RepoAnalysis as _RepoAnalysisPydantic,
-)
-from repo_organizer.infrastructure.analysis.pydantic_models import (
     RepoRecommendation as _RecommendationPydantic,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 # ---------------------------------------------------------------------------
 # Value Objects
@@ -81,9 +82,7 @@ class RepoAnalysis:
             summary=pyd_obj.summary,
             strengths=list(pyd_obj.strengths),
             weaknesses=list(pyd_obj.weaknesses),
-            recommendations=[
-                Recommendation.from_pydantic(r) for r in pyd_obj.recommendations
-            ],
+            recommendations=[Recommendation.from_pydantic(r) for r in pyd_obj.recommendations],
             activity_assessment=pyd_obj.activity_assessment,
             estimated_value=pyd_obj.estimated_value,
             tags=list(pyd_obj.tags),

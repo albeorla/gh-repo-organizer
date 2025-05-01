@@ -90,7 +90,10 @@ class RepoAssessment:
 
     @classmethod
     def from_strings(
-        cls, activity: str, value: str, reasoning: str,
+        cls,
+        activity: str,
+        value: str,
+        reasoning: str,
     ) -> RepoAssessment:
         """Create a RepoAssessment from string values."""
         return cls(

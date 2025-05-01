@@ -9,7 +9,7 @@ migrated to the new port we can clean up the inheritance relationship and use
 from __future__ import annotations
 
 import base64
-from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 import requests
 
@@ -21,6 +21,9 @@ from repo_organizer.domain.source_control.models import (
 )
 from repo_organizer.domain.source_control.protocols import SourceControlPort
 
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
 
 class GitHubRestAdapter(SourceControlPort):
     """Adapter that fulfils ``SourceControlPort`` using the GitHub REST API."""
@@ -28,7 +31,7 @@ class GitHubRestAdapter(SourceControlPort):
     def __init__(
         self,
         github_username: str,
-        github_token: str = None,
+        github_token: str | None = None,
         rate_limiter=None,
         logger=None,
     ):
@@ -137,16 +140,15 @@ class GitHubRestAdapter(SourceControlPort):
         if self.rate_limiter:
             self.rate_limiter.wait(self.logger)
 
-        url = (
-            f"https://api.github.com/repos/{self.github_username}/{repo_name}/languages"
-        )
+        url = f"https://api.github.com/repos/{self.github_username}/{repo_name}/languages"
 
         response = self._session.get(url, timeout=15)
 
         if response.status_code != 200:
             if self.logger:
                 self.logger.log(
-                    f"Error fetching languages: {response.status_code}", "error",
+                    f"Error fetching languages: {response.status_code}",
+                    "error",
                 )
             return {}
 
@@ -157,9 +159,7 @@ class GitHubRestAdapter(SourceControlPort):
         if total == 0:
             return {}
 
-        return {
-            lang: round((count / total) * 100, 1) for lang, count in languages.items()
-        }
+        return {lang: round((count / total) * 100, 1) for lang, count in languages.items()}
 
     def get_repository_readme(self, repo_name: str) -> str:
         """Get README content for a repository.
@@ -184,7 +184,8 @@ class GitHubRestAdapter(SourceControlPort):
             if response.status_code != 200:
                 if self.logger:
                     self.logger.log(
-                        f"Error fetching README: {response.status_code}", "warning",
+                        f"Error fetching README: {response.status_code}",
+                        "warning",
                     )
                 return ""
 
@@ -207,7 +208,10 @@ class GitHubRestAdapter(SourceControlPort):
             return ""
 
     def list_repositories(
-        self, owner: str, *, limit: int | None = None,
+        self,
+        owner: str,
+        *,
+        limit: int | None = None,
     ) -> Sequence[Repository]:
         """List repositories for the given owner.
 
@@ -219,11 +223,11 @@ class GitHubRestAdapter(SourceControlPort):
             Sequence of Repository domain objects
         """
         # Validate owner matches configured username
-        if owner != self.github_username:
-            if self.logger:
-                self.logger.log(
-                    f"Owner mismatch: {owner} != {self.github_username}", "warning",
-                )
+        if owner != self.github_username and self.logger:
+            self.logger.log(
+                f"Owner mismatch: {owner} != {self.github_username}",
+                "warning",
+            )
 
         # Use the get_repositories method we just implemented
         return self.get_repositories(limit=limit or 100)
@@ -268,7 +272,8 @@ class GitHubRestAdapter(SourceControlPort):
             if response.status_code != 200:
                 if self.logger:
                     self.logger.log(
-                        f"Error fetching commits: {response.status_code}", "warning",
+                        f"Error fetching commits: {response.status_code}",
+                        "warning",
                     )
                 return []
 
@@ -278,15 +283,9 @@ class GitHubRestAdapter(SourceControlPort):
             for commit_data in commits_data[:limit]:
                 commit = Commit(
                     hash=commit_data.get("sha", "")[:7],
-                    message=commit_data.get("commit", {})
-                    .get("message", "")
-                    .split("\n")[0],
-                    author=commit_data.get("commit", {})
-                    .get("author", {})
-                    .get("name", "Unknown"),
-                    date=commit_data.get("commit", {})
-                    .get("author", {})
-                    .get("date", ""),
+                    message=commit_data.get("commit", {}).get("message", "").split("\n")[0],
+                    author=commit_data.get("commit", {}).get("author", {}).get("name", "Unknown"),
+                    date=commit_data.get("commit", {}).get("author", {}).get("date", ""),
                 )
                 commits.append(commit)
 
@@ -338,6 +337,7 @@ class GitHubRestAdapter(SourceControlPort):
         except Exception as e:
             if self.logger:
                 self.logger.log(
-                    f"Error fetching contributors for {repo.name}: {e}", "error",
+                    f"Error fetching contributors for {repo.name}: {e}",
+                    "error",
                 )
             return []

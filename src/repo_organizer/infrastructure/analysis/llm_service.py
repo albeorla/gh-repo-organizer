@@ -150,7 +150,8 @@ class LLMService:
         # can trigger a call to the LLM through OutputFixingParser.
         if self.rate_limiter:
             self.rate_limiter.wait(
-                self.logger, debug=getattr(self.logger, "debug_enabled", False),
+                self.logger,
+                debug=getattr(self.logger, "debug_enabled", False),
             )
 
         # Base parser for structured output
@@ -158,14 +159,16 @@ class LLMService:
 
         # Wrap with OutputFixingParser (may perform a validation-step LLM call)
         output_fixing_parser = OutputFixingParser.from_llm(
-            parser=pydantic_parser, llm=self.llm,
+            parser=pydantic_parser,
+            llm=self.llm,
         )
 
         # Create a preprocessing function to prepare input data with strict validation
         def prepare_input_data(data_dict):
             if self.logger and self.logger.debug_enabled:
                 self.logger.log(
-                    f"Original data keys: {list(data_dict.keys())}", "debug",
+                    f"Original data keys: {list(data_dict.keys())}",
+                    "debug",
                 )
 
             # First, validate that the required fields are present and non-empty
@@ -196,24 +199,29 @@ class LLMService:
                 "stars": data_dict.get("stars", 0),
                 "forks": data_dict.get("forks", 0),
                 "languages": data_dict.get(
-                    "languages", "No language information available",
+                    "languages",
+                    "No language information available",
                 ),
                 "open_issues": data_dict.get("open_issues", 0),
                 "closed_issues": data_dict.get("closed_issues", 0),
                 "activity_summary": data_dict.get(
-                    "activity_summary", "No activity data available",
+                    "activity_summary",
+                    "No activity data available",
                 ),
                 "recent_commits_count": data_dict.get("recent_commits_count", 0),
                 "contributor_summary": data_dict.get(
-                    "contributor_summary", "No contributor data available",
+                    "contributor_summary",
+                    "No contributor data available",
                 ),
                 "dependency_info": data_dict.get(
-                    "dependency_info", "No dependency information available",
+                    "dependency_info",
+                    "No dependency information available",
                 ),
                 "dependency_context": data_dict.get("dependency_context", ""),
                 # Critical content field - ensure it has a meaningful default if missing
                 "readme_excerpt": data_dict.get(
-                    "readme_excerpt", "No README content available",
+                    "readme_excerpt",
+                    "No README content available",
                 ),
                 # Format instructions for the output parser
                 "format_instructions": pydantic_parser.get_format_instructions(),
@@ -222,17 +230,20 @@ class LLMService:
             # Log the prepared data for debugging
             if self.logger and self.logger.debug_enabled:
                 self.logger.log(
-                    f"Prepared data keys: {list(prepared_data.keys())}", "debug",
+                    f"Prepared data keys: {list(prepared_data.keys())}",
+                    "debug",
                 )
                 for key in ["repo_name", "repo_desc", "repo_url"]:
                     self.logger.log(
-                        f"Prepared {key}: {prepared_data.get(key)}", "debug",
+                        f"Prepared {key}: {prepared_data.get(key)}",
+                        "debug",
                     )
 
                 # Log README excerpt length for verification
                 readme_excerpt = prepared_data.get("readme_excerpt", "")
                 self.logger.log(
-                    f"README excerpt length: {len(readme_excerpt)}", "debug",
+                    f"README excerpt length: {len(readme_excerpt)}",
+                    "debug",
                 )
                 if readme_excerpt:
                     preview = (
@@ -349,7 +360,8 @@ class LLMService:
                 if self.logger and self.logger.debug_enabled:
                     if hasattr(data_dict, "keys"):
                         self.logger.log(
-                            f"{prefix} data keys: {list(data_dict.keys())}", "debug",
+                            f"{prefix} data keys: {list(data_dict.keys())}",
+                            "debug",
                         )
                     elif hasattr(data_dict, "content"):
                         content_preview = (
@@ -360,7 +372,8 @@ class LLMService:
                         self.logger.log(f"{prefix} content: {content_preview}", "debug")
                     else:
                         self.logger.log(
-                            f"{prefix} data type: {type(data_dict)}", "debug",
+                            f"{prefix} data type: {type(data_dict)}",
+                            "debug",
                         )
                 return data_dict
 
@@ -390,7 +403,8 @@ class LLMService:
         """
         if self.rate_limiter:
             self.rate_limiter.wait(
-                self.logger, debug=getattr(self.logger, "debug_enabled", False),
+                self.logger,
+                debug=getattr(self.logger, "debug_enabled", False),
             )
 
         try:
@@ -419,11 +433,10 @@ class LLMService:
                     if key in ["readme_excerpt"]:
                         # Special handling for long text fields
                         val_str = str(value) if value is not None else "None"
-                        preview = (
-                            val_str[:200] + "..." if len(val_str) > 200 else val_str
-                        )
+                        preview = val_str[:200] + "..." if len(val_str) > 200 else val_str
                         self.logger.log(
-                            f"{key} (first 200 chars): {preview}", level="debug",
+                            f"{key} (first 200 chars): {preview}",
+                            level="debug",
                         )
                     else:
                         # Standard handling for other fields
@@ -512,9 +525,7 @@ class LLMService:
                     elif field == "is_archived":
                         data_for_chain[field] = False
                     else:  # Text fields
-                        data_for_chain[field] = (
-                            f"No {field.replace('_', ' ')} available"
-                        )
+                        data_for_chain[field] = f"No {field.replace('_', ' ')} available"
 
                     if self.logger and self.logger.debug_enabled:
                         self.logger.log(
@@ -531,7 +542,8 @@ class LLMService:
 
                 if self.logger.debug_enabled:
                     self.logger.log(
-                        f"Final data keys: {list(data_for_chain.keys())}", level="debug",
+                        f"Final data keys: {list(data_for_chain.keys())}",
+                        level="debug",
                     )
 
                     # Verify key field values
@@ -550,7 +562,8 @@ class LLMService:
                                     else str(value)
                                 )
                                 self.logger.log(
-                                    f"README preview: {preview}", level="debug",
+                                    f"README preview: {preview}",
+                                    level="debug",
                                 )
                         else:
                             self.logger.log(f"Final {field}: {value}", level="debug")
@@ -558,7 +571,8 @@ class LLMService:
             # Run the chain with fully validated data
             if self.logger:
                 self.logger.log(
-                    f"Sending data to LLM for analysis of {repo_name}", level="info",
+                    f"Sending data to LLM for analysis of {repo_name}",
+                    level="info",
                 )
 
             # The chain will apply further preprocessing via input_preprocessor
@@ -607,7 +621,9 @@ class LLMService:
                         if json_match:
                             json_str = json_match.group(1)
                             if self.logger and getattr(
-                                self.logger, "debug_enabled", False,
+                                self.logger,
+                                "debug_enabled",
+                                False,
                             ):
                                 self.logger.log(
                                     f"Extracted JSON: {json_str[:500]}...",
@@ -620,7 +636,8 @@ class LLMService:
                             except json.JSONDecodeError as jde:
                                 if self.logger:
                                     self.logger.log(
-                                        f"JSON decode error: {jde}", level="error",
+                                        f"JSON decode error: {jde}",
+                                        level="error",
                                     )
 
                         # Try direct parsing as last resort
@@ -629,13 +646,15 @@ class LLMService:
                         except Exception as parse_err:
                             if self.logger:
                                 self.logger.log(
-                                    f"Validation error: {parse_err}", level="error",
+                                    f"Validation error: {parse_err}",
+                                    level="error",
                                 )
 
                 except Exception as fallback_err:
                     if self.logger:
                         self.logger.log(
-                            f"Fallback parsing failed: {fallback_err}", level="error",
+                            f"Fallback parsing failed: {fallback_err}",
+                            level="error",
                         )
 
             if self.logger:

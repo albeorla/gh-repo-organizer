@@ -1,5 +1,4 @@
-"""Tests for the GitHub adapter implementation.
-"""
+"""Tests for the GitHub adapter implementation."""
 
 from unittest.mock import MagicMock, patch
 
@@ -34,7 +33,9 @@ class TestGitHubAdapter:
     @pytest.fixture
     def github_adapter(self, mock_logger, mock_rate_limiter):
         """Create GitHub adapter instance for tests."""
-        with patch("repo_organizer.infrastructure.source_control.github_adapter.GitHubService") as mock_service:
+        with patch(
+            "repo_organizer.infrastructure.source_control.github_adapter.GitHubService"
+        ) as mock_service:
             return GitHubAdapter(
                 github_service=mock_service(),
                 logger=mock_logger,
@@ -85,7 +86,8 @@ class TestGitHubAdapter:
         # Verify service call
         github_adapter.github_service.get_repos.assert_called_once_with(limit=10)
         mock_logger.log.assert_called_with(
-            "Fetching repositories for test-user", "info",
+            "Fetching repositories for test-user",
+            "info",
         )
 
     def test_list_repositories_wrong_owner(self, github_adapter, mock_logger):
@@ -115,7 +117,8 @@ class TestGitHubAdapter:
         # Assert
         assert len(repos) == 0
         mock_logger.log.assert_any_call(
-            "Error fetching repositories: API Error", "error",
+            "Error fetching repositories: API Error",
+            "error",
         )
 
     def test_fetch_languages(self, github_adapter, mock_logger):
@@ -176,7 +179,8 @@ class TestGitHubAdapter:
         # Assert
         assert len(languages) == 0
         mock_logger.log.assert_any_call(
-            "Error fetching languages for test-repo: API Error", "error",
+            "Error fetching languages for test-repo: API Error",
+            "error",
         )
 
     def test_recent_commits(self, github_adapter, mock_logger):

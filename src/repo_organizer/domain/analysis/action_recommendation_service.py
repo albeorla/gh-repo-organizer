@@ -8,13 +8,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from repo_organizer.domain.analysis.events import (
     HighPriorityIssueIdentified,
     RepositoryActionRecommended,
 )
-from repo_organizer.domain.analysis.models import RepoAnalysis
 from repo_organizer.domain.analysis.value_objects import (
     ActivityLevel,
     PriorityLevel,
@@ -23,7 +22,12 @@ from repo_organizer.domain.analysis.value_objects import (
     ValueLevel,
 )
 from repo_organizer.domain.core.events import event_bus
-from repo_organizer.domain.source_control.models import Repository
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from repo_organizer.domain.analysis.models import RepoAnalysis
+    from repo_organizer.domain.source_control.models import Repository
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +41,8 @@ class ActionRecommendationService:
 
     @staticmethod
     async def recommend_action(
-        repo: Repository, analysis: RepoAnalysis,
+        repo: Repository,
+        analysis: RepoAnalysis,
     ) -> RecommendedAction:
         """Determine the recommended action for a repository based on its analysis.
 
@@ -57,10 +62,15 @@ class ActionRecommendationService:
 
         # Apply business rules to determine the appropriate action
         action = ActionRecommendationService._apply_action_rules(
-            repo, analysis, assessment,
+            repo,
+            analysis,
+            assessment,
         )
         reasoning = ActionRecommendationService._generate_reasoning(
-            repo, analysis, assessment, action,
+            repo,
+            analysis,
+            assessment,
+            action,
         )
 
         # Publish domain event for the recommended action
@@ -84,7 +94,9 @@ class ActionRecommendationService:
         for recommendation in high_priority_recommendations:
             await event_bus.dispatch(
                 HighPriorityIssueIdentified(
-                    aggregate_id=repo.name, repo_name=repo.name, issue=recommendation,
+                    aggregate_id=repo.name,
+                    repo_name=repo.name,
+                    issue=recommendation,
                 ),
             )
 
@@ -92,7 +104,9 @@ class ActionRecommendationService:
 
     @staticmethod
     def _apply_action_rules(
-        repo: Repository, analysis: RepoAnalysis, assessment: RepoAssessment,
+        repo: Repository,
+        analysis: RepoAnalysis,
+        assessment: RepoAssessment,
     ) -> RecommendedAction:
         """Apply business rules to determine the recommended action.
 
@@ -129,10 +143,7 @@ class ActionRecommendationService:
                 action = RecommendedAction.ARCHIVE
             elif assessment.value == ValueLevel.HIGH:
                 # Low activity but high value - may need extraction
-                if any(
-                    "extract" in r.recommendation.lower()
-                    for r in analysis.recommendations
-                ):
+                if any("extract" in r.recommendation.lower() for r in analysis.recommendations):
                     action = RecommendedAction.EXTRACT
                 else:
                     action = RecommendedAction.KEEP
@@ -214,7 +225,8 @@ class ActionRecommendationService:
 
     @staticmethod
     async def batch_recommend_actions(
-        repositories: Sequence[Repository], analyses: Sequence[RepoAnalysis],
+        repositories: Sequence[Repository],
+        analyses: Sequence[RepoAnalysis],
     ) -> dict[str, RecommendedAction]:
         """Generate recommended actions for multiple repositories in parallel.
 

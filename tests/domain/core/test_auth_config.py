@@ -1,5 +1,4 @@
-"""Tests for the authentication configuration module.
-"""
+"""Tests for the authentication configuration module."""
 
 from repo_organizer.domain.core.auth_config import (
     AuthConfig,
@@ -19,20 +18,10 @@ class TestAuthConfig:
         config = get_default_config()
 
         # Verify default requirements
-        assert (
-            config.default_requirements[OperationType.READ_ONLY]
-            == AuthRequirement.OPTIONAL
-        )
-        assert (
-            config.default_requirements[OperationType.ANALYSIS]
-            == AuthRequirement.REQUIRED
-        )
-        assert (
-            config.default_requirements[OperationType.WRITE] == AuthRequirement.REQUIRED
-        )
-        assert (
-            config.default_requirements[OperationType.ADMIN] == AuthRequirement.REQUIRED
-        )
+        assert config.default_requirements[OperationType.READ_ONLY] == AuthRequirement.OPTIONAL
+        assert config.default_requirements[OperationType.ANALYSIS] == AuthRequirement.REQUIRED
+        assert config.default_requirements[OperationType.WRITE] == AuthRequirement.REQUIRED
+        assert config.default_requirements[OperationType.ADMIN] == AuthRequirement.REQUIRED
 
         # Verify operation categories exist
         assert "analyze" in config.operation_categories
@@ -42,9 +31,7 @@ class TestAuthConfig:
         # Verify categorization
         assert config.operation_categories["analyze"] == OperationType.ANALYSIS
         assert config.operation_categories["cleanup"] == OperationType.WRITE
-        assert (
-            config.operation_categories["list_repositories"] == OperationType.READ_ONLY
-        )
+        assert config.operation_categories["list_repositories"] == OperationType.READ_ONLY
 
     def test_is_authentication_required_default(self):
         """Test auth requirements using default configuration."""

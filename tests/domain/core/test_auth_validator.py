@@ -1,5 +1,4 @@
-"""Tests for the authentication validator module.
-"""
+"""Tests for the authentication validator module."""
 
 from repo_organizer.domain.core.auth_validator import validate_username
 

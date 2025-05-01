@@ -1,5 +1,4 @@
-"""Tests for CLI commands to ensure integration with authentication.
-"""
+"""Tests for CLI commands to ensure integration with authentication."""
 
 from unittest.mock import Mock, patch
 
@@ -42,7 +41,11 @@ class TestCommands:
 
     @patch("repo_organizer.utils.logger.Logger.log")
     def test_execute_actions_with_username(
-        self, mock_log_method, mock_settings, mock_load_analyses, mock_analysis_service,
+        self,
+        mock_log_method,
+        mock_settings,
+        mock_load_analyses,
+        mock_analysis_service,
     ):
         """Test execute_actions accepts and uses username parameter."""
         import typer

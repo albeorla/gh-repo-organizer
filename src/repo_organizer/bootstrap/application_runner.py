@@ -331,11 +331,7 @@ class ApplicationRunner:
             skipped_count = 0
 
             # Create progress tracker if callback provided, otherwise None
-            pbar = (
-                ProgressTracker(len(repos), progress_callback)
-                if progress_callback
-                else None
-            )
+            pbar = ProgressTracker(len(repos), progress_callback) if progress_callback else None
 
             for repo in repos:
                 repo_name = repo.get("name")
@@ -357,7 +353,10 @@ class ApplicationRunner:
                 # If not skipped, submit the analysis task
                 future_to_repo[
                     executor.submit(
-                        self.analyze_repo_task, repo, repository_analyzer, pbar,
+                        self.analyze_repo_task,
+                        repo,
+                        repository_analyzer,
+                        pbar,
                     )
                 ] = repo
 
@@ -376,7 +375,8 @@ class ApplicationRunner:
                         analyses.append(analysis_result)
                         # Write the individual report immediately after successful analysis
                         repository_analyzer._write_single_report(
-                            analysis_result, repo_info,
+                            analysis_result,
+                            repo_info,
                         )
                 except Exception as exc:
                     self.logger.log(

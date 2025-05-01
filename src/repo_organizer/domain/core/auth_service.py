@@ -4,7 +4,6 @@ This module provides a centralized service for authentication validation and che
 combining the validation logic with the configuration system.
 """
 
-
 from repo_organizer.domain.core.auth_config import (
     AuthConfig,
     get_default_config,
@@ -25,7 +24,9 @@ class AuthService:
         self.auth_config = auth_config or get_default_config()
 
     def validate_operation(
-        self, operation_name: str, username: str | None = None,
+        self,
+        operation_name: str,
+        username: str | None = None,
     ) -> tuple[bool, str | None]:
         """Validate whether an operation can proceed based on authentication requirements.
 
@@ -57,7 +58,9 @@ class AuthService:
         return True, None
 
     def is_operation_allowed(
-        self, operation_name: str, username: str | None = None,
+        self,
+        operation_name: str,
+        username: str | None = None,
     ) -> bool:
         """Check if an operation is allowed with the given authentication credentials.
 

@@ -20,24 +20,24 @@ from .value_objects import (
 )
 
 __all__ = [
-    # Models
-    "RepoAnalysis",
-    "Recommendation",
-    # Protocols
-    "AnalyzerPort",
+    "ActionRecommendationService",
+    "ActivityLevel",
+    "AnalysisError",
     # Services
     "AnalysisService",
-    "ActionRecommendationService",
-    "RepositoryAnalyzerService",
+    # Protocols
+    "AnalyzerPort",
+    "HighPriorityIssueIdentified",
+    "PriorityLevel",
+    "Recommendation",
     # Value Objects
     "RecommendedAction",
-    "ActivityLevel",
-    "ValueLevel",
-    "PriorityLevel",
+    # Models
+    "RepoAnalysis",
     "RepoAssessment",
+    "RepositoryActionRecommended",
     # Events
     "RepositoryAnalysisCompleted",
-    "RepositoryActionRecommended",
-    "HighPriorityIssueIdentified",
-    "AnalysisError",
+    "RepositoryAnalyzerService",
+    "ValueLevel",
 ]

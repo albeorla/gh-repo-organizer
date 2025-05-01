@@ -14,8 +14,11 @@ duplication.  In a later stage we may gradually migrate towards lightweight
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
 
 ###############################################################################
 # Value Objects

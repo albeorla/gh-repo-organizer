@@ -32,7 +32,8 @@ def check():
 
     print("\nChecking code formatting...")
     exit_code |= subprocess.run(
-        ["ruff", "format", ".", "--check"], check=False,
+        ["ruff", "format", ".", "--check"],
+        check=False,
     ).returncode
 
     print("\nRunning tests...")

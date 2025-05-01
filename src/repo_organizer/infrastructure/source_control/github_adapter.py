@@ -6,7 +6,7 @@ implementing the SourceControlPort protocol while delegating to the GitHubServic
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from repo_organizer.domain.source_control.models import (
     Commit,
@@ -14,10 +14,14 @@ from repo_organizer.domain.source_control.models import (
     LanguageBreakdown,
     Repository,
 )
-from repo_organizer.infrastructure.config.settings import Settings
-from repo_organizer.infrastructure.logging.logger import Logger
 from repo_organizer.infrastructure.rate_limiting.rate_limiter import GitHubRateLimiter
 from repo_organizer.infrastructure.source_control.github_service import GitHubService
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from repo_organizer.infrastructure.config.settings import Settings
+    from repo_organizer.infrastructure.logging.logger import Logger
 
 
 class GitHubAdapter:
@@ -57,7 +61,10 @@ class GitHubAdapter:
         self.logger = logger
 
     def list_repositories(
-        self, owner: str, *, limit: int | None = None,
+        self,
+        owner: str,
+        *,
+        limit: int | None = None,
     ) -> Sequence[Repository]:
         """Return public repositories owned by *owner*.
 
@@ -130,7 +137,8 @@ class GitHubAdapter:
         except Exception as e:
             if self.logger:
                 self.logger.log(
-                    f"Error fetching languages for {repo.name}: {e!s}", "error",
+                    f"Error fetching languages for {repo.name}: {e!s}",
+                    "error",
                 )
             return []
 
@@ -173,7 +181,8 @@ class GitHubAdapter:
         except Exception as e:
             if self.logger:
                 self.logger.log(
-                    f"Error fetching commits for {repo.name}: {e!s}", "error",
+                    f"Error fetching commits for {repo.name}: {e!s}",
+                    "error",
                 )
             return []
 
@@ -213,6 +222,7 @@ class GitHubAdapter:
         except Exception as e:
             if self.logger:
                 self.logger.log(
-                    f"Error fetching contributors for {repo.name}: {e!s}", "error",
+                    f"Error fetching contributors for {repo.name}: {e!s}",
+                    "error",
                 )
             return []

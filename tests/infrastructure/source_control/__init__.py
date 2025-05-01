@@ -1,2 +1,1 @@
-"""Tests for source control infrastructure.
-"""
+"""Tests for source control infrastructure."""

@@ -82,7 +82,9 @@ class TestAuthMiddleware:
         assert result == "success"
 
     def test_authenticate_command_with_logging_success(
-        self, test_auth_config, mock_auth_logger,
+        self,
+        test_auth_config,
+        mock_auth_logger,
     ):
         """Test successful authentication with logging."""
         # Create a mock function
@@ -91,7 +93,9 @@ class TestAuthMiddleware:
 
         # Apply decorator with test config and mock logger
         decorated = authenticate_command(
-            "test_command", auth_config=test_auth_config, auth_logger=mock_auth_logger,
+            "test_command",
+            auth_config=test_auth_config,
+            auth_logger=mock_auth_logger,
         )(mock_func)
 
         # Call with valid username
@@ -134,7 +138,10 @@ class TestAuthMiddleware:
         mock_console.print.assert_called()
 
     def test_authenticate_command_with_logging_failure(
-        self, test_auth_config, mock_console, mock_auth_logger,
+        self,
+        test_auth_config,
+        mock_console,
+        mock_auth_logger,
     ):
         """Test failed authentication with logging."""
         # Create a mock function
@@ -147,7 +154,9 @@ class TestAuthMiddleware:
 
         # Apply decorator with test config and mocks
         decorated = authenticate_command(
-            "test_command", auth_service=mock_auth_service, auth_logger=mock_auth_logger,
+            "test_command",
+            auth_service=mock_auth_service,
+            auth_logger=mock_auth_logger,
         )(mock_func)
 
         # Call with invalid username
@@ -198,7 +207,9 @@ class TestAuthMiddleware:
 
             # Call with valid username
             result = validate_command_auth(
-                "test_command", username="valid-user", exit_on_failure=False,
+                "test_command",
+                username="valid-user",
+                exit_on_failure=False,
             )
 
             # Should return True
@@ -206,7 +217,8 @@ class TestAuthMiddleware:
 
             # validate_operation should have been called
             mock_service.validate_operation.assert_called_once_with(
-                "test_command", "valid-user",
+                "test_command",
+                "valid-user",
             )
 
     def test_validate_command_auth_failure(self, test_auth_config, mock_console):
@@ -224,7 +236,9 @@ class TestAuthMiddleware:
 
             # Call with invalid username and exit_on_failure=False
             result = validate_command_auth(
-                "test_command", username=None, exit_on_failure=False,
+                "test_command",
+                username=None,
+                exit_on_failure=False,
             )
 
             # Should return False
@@ -232,7 +246,8 @@ class TestAuthMiddleware:
 
             # validate_operation should have been called
             mock_service.validate_operation.assert_called_once_with(
-                "test_command", None,
+                "test_command",
+                None,
             )
 
             # Console should not display error when exit_on_failure=False
@@ -241,7 +256,9 @@ class TestAuthMiddleware:
             # Call with invalid username and exit_on_failure=True
             with pytest.raises(typer.Exit) as excinfo:
                 validate_command_auth(
-                    "test_command", username=None, exit_on_failure=True,
+                    "test_command",
+                    username=None,
+                    exit_on_failure=True,
                 )
 
             # Typer should exit with code 1

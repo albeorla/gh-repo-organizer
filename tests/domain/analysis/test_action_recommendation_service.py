@@ -1,5 +1,4 @@
-"""Unit tests for the ActionRecommendationService.
-"""
+"""Unit tests for the ActionRecommendationService."""
 
 from unittest.mock import MagicMock, patch
 
@@ -100,12 +99,16 @@ class TestActionRecommendationService:
 
     @pytest.mark.asyncio
     async def test_recommend_delete_for_inactive_low_value(
-        self, inactive_repo, inactive_analysis, mock_event_bus,
+        self,
+        inactive_repo,
+        inactive_analysis,
+        mock_event_bus,
     ):
         """Test that an inactive repository with low value gets DELETE recommendation."""
         # Act
         action = await ActionRecommendationService.recommend_action(
-            inactive_repo, inactive_analysis,
+            inactive_repo,
+            inactive_analysis,
         )
 
         # Assert
@@ -114,12 +117,16 @@ class TestActionRecommendationService:
 
     @pytest.mark.asyncio
     async def test_recommend_archive_for_inactive_high_value(
-        self, valuable_repo, valuable_analysis, mock_event_bus,
+        self,
+        valuable_repo,
+        valuable_analysis,
+        mock_event_bus,
     ):
         """Test that an inactive repository with high value gets ARCHIVE recommendation."""
         # Act
         action = await ActionRecommendationService.recommend_action(
-            valuable_repo, valuable_analysis,
+            valuable_repo,
+            valuable_analysis,
         )
 
         # Assert
@@ -210,15 +217,14 @@ class TestActionRecommendationService:
 
         # Act
         results = await ActionRecommendationService.batch_recommend_actions(
-            repos, analyses,
+            repos,
+            analyses,
         )
 
         # Assert
         assert len(results) == 2
         assert results["repo1"] == RecommendedAction.ARCHIVE  # Low activity, low value
-        assert (
-            results["repo2"] == RecommendedAction.ARCHIVE
-        )  # Already archived, medium value
+        assert results["repo2"] == RecommendedAction.ARCHIVE  # Already archived, medium value
 
     @pytest.mark.asyncio
     async def test_batch_recommend_actions_with_error(self, mock_event_bus):
@@ -284,7 +290,8 @@ class TestActionRecommendationService:
         ):
             # Act
             results = await ActionRecommendationService.batch_recommend_actions(
-                repos, analyses,
+                repos,
+                analyses,
             )
 
             # Assert

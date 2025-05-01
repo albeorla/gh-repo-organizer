@@ -1,6 +1,4 @@
-"""Simple test for execute_actions parameter checking.
-"""
-
+"""Simple test for execute_actions parameter checking."""
 
 
 def test_execute_actions_signature():

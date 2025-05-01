@@ -42,9 +42,7 @@ class ProgressReporter:
     def __init__(self):
         """Initialize the progress reporter."""
         self._observers: list[ProgressObserver] = []
-        self._progress_callback: Callable[[int, int, str | None], None] | None = (
-            None
-        )
+        self._progress_callback: Callable[[int, int, str | None], None] | None = None
         self._current = 0
         self._total = 0
         self._status = None
@@ -68,7 +66,8 @@ class ProgressReporter:
             self._observers.remove(observer)
 
     def set_progress_callback(
-        self, callback: Callable[[int, int, str | None], None] | None,
+        self,
+        callback: Callable[[int, int, str | None], None] | None,
     ) -> None:
         """Set a callback function for progress updates.
 
@@ -78,7 +77,10 @@ class ProgressReporter:
         self._progress_callback = callback
 
     def update_progress(
-        self, current: int, total: int, status: str | None = None,
+        self,
+        current: int,
+        total: int,
+        status: str | None = None,
     ) -> None:
         """Update the progress and notify all observers.
 

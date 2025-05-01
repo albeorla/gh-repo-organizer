@@ -103,7 +103,10 @@ def analyze(
         help="Directory to output analysis results (default: .out/repos).",
     ),
     limit: int = typer.Option(
-        None, "--limit", "-l", help="Maximum number of repositories to analyze.",
+        None,
+        "--limit",
+        "-l",
+        help="Maximum number of repositories to analyze.",
     ),
     max_repos: int | None = typer.Option(
         None,
@@ -181,7 +184,8 @@ def analyze(
         console.print("")  # Add a blank line for better output formatting
 
     with console.status(
-        "[bold green]Starting repository analysis...[/]", spinner="dots",
+        "[bold green]Starting repository analysis...[/]",
+        spinner="dots",
     ):
         # Create the output directory
         output_path.mkdir(parents=True, exist_ok=True)
@@ -227,7 +231,10 @@ def analyze(
         get_time=None,
     ) as progress:
         fetch_task = progress.add_task(
-            "[cyan]Fetching repositories", total=1, status="Starting...", details="",
+            "[cyan]Fetching repositories",
+            total=1,
+            status="Starting...",
+            details="",
         )
 
         try:
@@ -242,7 +249,11 @@ def analyze(
                     )
 
             analyses = analyze_repositories(
-                owner, github, llm, limit=limit, single_repo=settings.single_repo,
+                owner,
+                github,
+                llm,
+                limit=limit,
+                single_repo=settings.single_repo,
             )
             progress.update(
                 fetch_task,
@@ -351,9 +362,7 @@ def analyze(
                         else "🟢"
                     )
                     status = (
-                        "✅"
-                        if "error" not in a.tags and "analysis-failed" not in a.tags
-                        else "❌"
+                        "✅" if "error" not in a.tags and "analysis-failed" not in a.tags else "❌"
                     )
 
                     f.write(f"### {a.repo_name} {value_icon} {status}\n\n")
@@ -371,7 +380,9 @@ def analyze(
 
                 # Add mode information
                 if settings.single_repo:
-                    panel_content += f"\nMode: Single repository analysis of [bold]{settings.single_repo}[/]"
+                    panel_content += (
+                        f"\nMode: Single repository analysis of [bold]{settings.single_repo}[/]"
+                    )
                     panel_title = "Single Repository Analysis"
                 else:
                     panel_content += "\nMode: Full repository analysis"
@@ -410,7 +421,10 @@ def analyze(
 @authenticate_command("cleanup")
 def cleanup(
     force: bool = typer.Option(
-        False, "--force", "-f", help="Force removal of all files without confirmation.",
+        False,
+        "--force",
+        "-f",
+        help="Force removal of all files without confirmation.",
     ),
     output_dir: str | None = typer.Option(
         None,
@@ -421,8 +435,7 @@ def cleanup(
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize console output."),
     username: str | None = None,  # Added by with_auth_option, manually included here for clarity
 ):
-    """Clean up generated repository analysis files.
-    """
+    """Clean up generated repository analysis files."""
     # Get settings directly from the config module
     settings = load_settings()
     output_dir = output_dir or settings.output_dir
@@ -443,7 +456,8 @@ def cleanup(
     # Ask for confirmation if not forced
     if not force and not quiet:
         delete_confirmed = typer.confirm(
-            f"Delete {len(files)} analysis files from {output_path}?", default=False,
+            f"Delete {len(files)} analysis files from {output_path}?",
+            default=False,
         )
         if not delete_confirmed:
             console.print("[yellow]Operation cancelled.[/]")
@@ -477,17 +491,25 @@ def cleanup(
 @app.command()
 def logs(
     latest: bool = typer.Option(
-        True, "--latest", "-l", help="Show only the latest log file.",
+        True,
+        "--latest",
+        "-l",
+        help="Show only the latest log file.",
     ),
     all_logs: bool = typer.Option(
-        False, "--all", "-a", help="Show a list of all available log files.",
+        False,
+        "--all",
+        "-a",
+        help="Show a list of all available log files.",
     ),
     log_file: str | None = typer.Option(
-        None, "--file", "-f", help="Specific log file to display.",
+        None,
+        "--file",
+        "-f",
+        help="Specific log file to display.",
     ),
 ):
-    """View analysis log files.
-    """
+    """View analysis log files."""
     # Get logs directory from settings
     settings = load_settings()
     logs_dir = settings.logs_dir
@@ -499,7 +521,8 @@ def logs(
 
     # Get all log files
     log_files = sorted(
-        [f for f in os.listdir(logs_dir) if f.startswith("analysis_log_")], reverse=True,
+        [f for f in os.listdir(logs_dir) if f.startswith("analysis_log_")],
+        reverse=True,
     )
 
     if not log_files:
@@ -590,17 +613,25 @@ def logs(
 @app.command()
 def reports(
     summary: bool = typer.Option(
-        True, "--summary", "-s", help="Show the summary report of all repositories.",
+        True,
+        "--summary",
+        "-s",
+        help="Show the summary report of all repositories.",
     ),
     repository: str | None = typer.Option(
-        None, "--repo", "-r", help="Show the report for a specific repository.",
+        None,
+        "--repo",
+        "-r",
+        help="Show the report for a specific repository.",
     ),
     list_reports: bool = typer.Option(
-        False, "--list", "-l", help="List all available repository reports.",
+        False,
+        "--list",
+        "-l",
+        help="List all available repository reports.",
     ),
 ):
-    """View repository analysis reports.
-    """
+    """View repository analysis reports."""
     # Get output directory from settings
     settings = load_settings()
     output_dir = settings.output_dir
@@ -719,13 +750,15 @@ def reports(
 @authenticate_command("reset")
 def reset(
     force: bool = typer.Option(
-        False, "--force", "-f", help="Force removal without confirmation.",
+        False,
+        "--force",
+        "-f",
+        help="Force removal without confirmation.",
     ),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize console output."),
     username: str | None = None,  # Added by with_auth_option, manually included here for clarity
 ):
-    """Reset and clean up all analysis files, removing reports that don't match your GitHub repositories.
-    """
+    """Reset and clean up all analysis files, removing reports that don't match your GitHub repositories."""
     # Get settings directly from the config module
     settings = load_settings()
     output_dir = settings.output_dir
@@ -775,7 +808,7 @@ def reset(
 
         # Use the adapter to get repositories
         repos = github.get_repositories(limit=settings.max_repos)
-        repo_names = set(repo.name for repo in repos)
+        repo_names = {repo.name for repo in repos}
 
         # Identify reports that don't belong to the user's repositories
         invalid_reports = []
@@ -806,7 +839,8 @@ def reset(
         # Ask for confirmation
         if not force and not quiet:
             delete_confirmed = typer.confirm(
-                f"Delete these {len(invalid_reports)} files?", default=False,
+                f"Delete these {len(invalid_reports)} files?",
+                default=False,
             )
             if not delete_confirmed:
                 console.print("[yellow]Operation cancelled.[/]")
@@ -858,16 +892,28 @@ def reset(
 @authenticate_command("execute_actions")
 def actions(
     action_type: ActionType = typer.Option(
-        ActionType.ALL, "--type", "-t", help="Type of action to execute.",
+        ActionType.ALL,
+        "--type",
+        "-t",
+        help="Type of action to execute.",
     ),
     dry_run: bool = typer.Option(
-        True, "--dry-run", "-d", help="Perform a dry run without making changes.",
+        True,
+        "--dry-run",
+        "-d",
+        help="Perform a dry run without making changes.",
     ),
     force: bool = typer.Option(
-        False, "--force", "-f", help="Skip confirmation prompts.",
+        False,
+        "--force",
+        "-f",
+        help="Skip confirmation prompts.",
     ),
     output_dir: str | None = typer.Option(
-        None, "--output-dir", "-o", help="Override the output directory.",
+        None,
+        "--output-dir",
+        "-o",
+        help="Override the output directory.",
     ),
     username: str | None = None,  # Added by with_auth_option, manually included here for clarity
 ):

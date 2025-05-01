@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     )
 
 
-def _breakdown_to_str(breakdown) -> str:  # noqa: ANN001 - helper for formatting
+def _breakdown_to_str(breakdown) -> str:
     return ", ".join(f"{lb.language}: {lb.percentage:.1f}%" for lb in breakdown)
 
 
@@ -44,10 +44,7 @@ def _filter_single_repo(
     matching_repos = [repo for repo in repos if repo.name == single_repo]
     if not matching_repos:
         if hasattr(source_control, "logger") and source_control.logger:
-            msg = (
-                f"Repository '{single_repo}' not found "
-                f"in {len(repos)} repositories"
-            )
+            msg = f"Repository '{single_repo}' not found in {len(repos)} repositories"
             source_control.logger.log(msg, level="error")
 
             if repos:
@@ -77,11 +74,7 @@ def _get_repo_readme(
     """
     try:
         readme_content = source_control.get_readme(owner, repo_name)
-        if (
-            hasattr(source_control, "logger")
-            and source_control.logger
-            and readme_content
-        ):
+        if hasattr(source_control, "logger") and source_control.logger and readme_content:
             preview = readme_content[:200]
             source_control.logger.log(
                 f"README content for {repo_name} (first 200 chars): {preview}...",
@@ -151,9 +144,7 @@ def analyze_repositories(
         repos = [
             repo
             for repo in repos
-            if all(
-                getattr(repo, key, None) == value for key, value in filters.items()
-            )
+            if all(getattr(repo, key, None) == value for key, value in filters.items())
         ]
 
     analyses = []

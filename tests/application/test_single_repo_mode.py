@@ -1,5 +1,4 @@
-"""Test the single repository limitation mode functionality.
-"""
+"""Test the single repository limitation mode functionality."""
 
 from unittest.mock import MagicMock
 
@@ -93,7 +92,8 @@ def test_analyze_repositories_normal_mode(mock_source_control, mock_analyzer):
 
     # Verify the list_repositories was called correctly
     mock_source_control.list_repositories.assert_called_once_with(
-        "testuser", limit=None,
+        "testuser",
+        limit=None,
     )
 
 
@@ -101,7 +101,10 @@ def test_analyze_repositories_single_repo_mode(mock_source_control, mock_analyze
     """Test analyze_repositories with single repository mode."""
     # Call the function with a single repository specified
     results = analyze_repositories(
-        "testuser", mock_source_control, mock_analyzer, single_repo="repo2",
+        "testuser",
+        mock_source_control,
+        mock_analyzer,
+        single_repo="repo2",
     )
 
     # Verify only the specified repository was processed
@@ -118,7 +121,10 @@ def test_analyze_repositories_single_repo_not_found(mock_source_control, mock_an
     """Test analyze_repositories with a non-existent repository."""
     # Call the function with a non-existent repository
     results = analyze_repositories(
-        "testuser", mock_source_control, mock_analyzer, single_repo="non-existent-repo",
+        "testuser",
+        mock_source_control,
+        mock_analyzer,
+        single_repo="non-existent-repo",
     )
 
     # Verify no repositories were processed

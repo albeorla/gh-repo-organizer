@@ -44,7 +44,8 @@ def retry_with_backoff(
             wait_time = initial_wait
 
             for attempt in range(
-                1, retries + 2,
+                1,
+                retries + 2,
             ):  # +2 because we want retries+1 total attempts
                 try:
                     return func(*args, **kwargs)
@@ -90,20 +91,16 @@ class RetryableError(Exception):
     """Base exception class for errors that should trigger a retry."""
 
 
-
 class RateLimitExceededError(RetryableError):
     """Exception raised when an API rate limit is exceeded."""
-
 
 
 class TemporaryAPIError(RetryableError):
     """Exception raised for temporary API errors (e.g., 5xx status codes)."""
 
 
-
 class NetworkError(RetryableError):
     """Exception raised for network connectivity issues."""
-
 
 
 class RetryWithChainedRateLimiters:

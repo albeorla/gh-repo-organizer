@@ -45,7 +45,7 @@ class _FakeSourceControl:
 class _FakeAnalyzer:
     """Produces a trivial RepoAnalysis for every repository."""
 
-    def analyze(self, repo_data):  # noqa: ANN001
+    def analyze(self, repo_data):
         repo_name = repo_data.get("repo_name") or repo_data.get("name", "unknown")
         return RepoAnalysis(
             repo_name=repo_name,

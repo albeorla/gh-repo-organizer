@@ -83,7 +83,8 @@ def get_default_config() -> AuthConfig:
 
 
 def is_authentication_required(
-    operation_name: str, config: AuthConfig | None = None,
+    operation_name: str,
+    config: AuthConfig | None = None,
 ) -> bool:
     """Check if authentication is required for the given operation.
 

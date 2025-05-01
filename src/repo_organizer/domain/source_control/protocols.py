@@ -6,10 +6,12 @@ adapters – firmly following the Dependency Inversion Principle.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
-from .models import Commit, Contributor, LanguageBreakdown, Repository
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from .models import Commit, Contributor, LanguageBreakdown, Repository
 
 
 class SourceControlPort(Protocol):
@@ -20,7 +22,10 @@ class SourceControlPort(Protocol):
     # ---------------------------------------------------------------------
 
     def list_repositories(
-        self, owner: str, *, limit: int | None = None,
+        self,
+        owner: str,
+        *,
+        limit: int | None = None,
     ) -> Sequence[Repository]:
         """Return public repositories owned by *owner*.
 

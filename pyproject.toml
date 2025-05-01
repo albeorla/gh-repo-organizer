@@ -77,27 +77,70 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
-line-length = 88
 target-version = "py312"
-extend-exclude = [".venv", "build", "dist"]
+line-length = 100
 
 [tool.ruff.lint]
-# Enable all rules by default, then configure specific rules
-select = ["ALL"]
-ignore = [
-    "D100",  # Missing docstring in public module
-    "D104",  # Missing docstring in public package
+# Start with essential rules
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "RUF", # ruff-specific rules
 ]
 
-[tool.ruff.lint.per-file-ignores]
-"tests/**/*" = [
-    "S101",   # Use of assert in tests is fine
-    "D103",   # Missing docstring in public function (for test functions)
-    "PLR2004", # Magic numbers in tests are fine
+# Add some additional useful rules
+extend-select = [
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+    "TCH", # flake8-type-checking
 ]
+
+# Ignore rules that are too strict or not relevant
+ignore = [
+    "D100",    # Missing docstring in public module
+    "D104",    # Missing docstring in public package
+    "FBT001",  # Boolean positional argument
+    "FBT002",  # Boolean default argument
+    "RUF001",  # String contains ambiguous unicode characters
+    "RUF002",  # Docstring contains ambiguous unicode characters
+    "RUF003",  # Comment contains ambiguous unicode characters
+    "RUF009",  # Do not perform function call in dataclass defaults
+    "B008",    # Do not perform function calls in argument defaults
+    "B904",    # Within an except clause, raise with from
+    "SIM105",  # Use contextlib.suppress instead of try-except-pass
+    "E501",    # Line too long
+]
+
+# Per-file-ignores
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "D100",    # Missing docstring in public module
+    "D101",    # Missing docstring in public class
+    "D102",    # Missing docstring in public method
+    "D103",    # Missing docstring in public function
+    "D104",    # Missing docstring in public package
+    "S101",    # Use of assert detected
+]
+"tests/debug_*.py" = [
+    "E402",    # Module level import not at top of file - needed for path modification
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+force-wrap-aliases = true
 
 [tool.ruff.lint.mccabe]
-max-complexity = 10
+max-complexity = 12
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

@@ -34,7 +34,9 @@ class RateLimiterProtocol(Protocol):
     """Interface for rate limiter implementations."""
 
     def wait(
-        self, logger: LoggerProtocol | None = None, debug: bool = False,
+        self,
+        logger: LoggerProtocol | None = None,
+        debug: bool = False,
     ) -> float:
         """Wait until next call is allowed according to rate limits."""
         ...

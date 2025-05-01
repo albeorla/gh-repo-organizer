@@ -11,8 +11,7 @@ from typing import Any
 # --- Base Domain Event ---
 @dataclass(frozen=True)
 class DomainEvent:
-    """Base class for all domain events in the system.
-    """
+    """Base class for all domain events in the system."""
 
     aggregate_id: str
     event_id: uuid.UUID = field(default_factory=uuid.uuid4)
@@ -39,12 +38,12 @@ AsyncHandlerFunc = Callable[[DomainEvent], Any]
 
 
 class EventDispatcher:
-    """Dispatches events to registered handlers. Supports both sync and async handlers.
-    """
+    """Dispatches events to registered handlers. Supports both sync and async handlers."""
 
     def __init__(self):
         self._handlers: dict[
-            type[DomainEvent], list[HandlerFunc | AsyncHandlerFunc],
+            type[DomainEvent],
+            list[HandlerFunc | AsyncHandlerFunc],
         ] = {}
         self._logger = logging.getLogger(__name__)
 
@@ -92,14 +91,15 @@ class EventDispatcher:
             else:
                 sync_tasks.append(handler(event))
         # Run synchronous handlers
-        for task in sync_tasks:
+        for _task in sync_tasks:
             pass  # Already executed
         # Run asynchronous handlers
         if async_tasks:
             await asyncio.gather(*async_tasks)
 
     def _get_handlers_for_event(
-        self, event: DomainEvent,
+        self,
+        event: DomainEvent,
     ) -> list[HandlerFunc | AsyncHandlerFunc]:
         """Get all handlers for an event, including parent class handlers."""
         event_type = type(event)

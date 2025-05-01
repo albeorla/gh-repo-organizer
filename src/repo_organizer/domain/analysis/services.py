@@ -6,17 +6,21 @@ This module contains pure domain logic for evaluating repository activity and va
 from __future__ import annotations
 
 import logging
-from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from repo_organizer.domain.analysis.events import RepositoryAnalysisCompleted
-from repo_organizer.domain.analysis.models import Recommendation, RepoAnalysis
 from repo_organizer.domain.analysis.value_objects import (
     ActivityLevel,
     RecommendedAction,
     ValueLevel,
 )
 from repo_organizer.domain.core.events import event_bus
-from repo_organizer.domain.source_control.models import Commit, Contributor, Repository
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from repo_organizer.domain.analysis.models import Recommendation, RepoAnalysis
+    from repo_organizer.domain.source_control.models import Commit, Contributor, Repository
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +99,9 @@ class AnalysisService:
 
     @staticmethod
     def evaluate_activity(
-        repo: Repository, commits: Sequence[Commit], contributors: Sequence[Contributor],
+        repo: Repository,
+        commits: Sequence[Commit],
+        contributors: Sequence[Contributor],
     ) -> ActivityLevel:
         """Evaluate the activity level of a repository based on commits and contributors.
 
@@ -197,9 +203,7 @@ class AnalysisService:
 
                 # Add language data if available
                 if repo.languages:
-                    repo_data["languages"] = {
-                        lb.language: lb.percentage for lb in repo.languages
-                    }
+                    repo_data["languages"] = {lb.language: lb.percentage for lb in repo.languages}
 
                 # Perform analysis
                 analysis = analyzer_port.analyze(repo_data)
@@ -207,7 +211,8 @@ class AnalysisService:
                 # Publish domain event
                 await event_bus.dispatch(
                     RepositoryAnalysisCompleted(
-                        aggregate_id=repo.name, analysis=analysis,
+                        aggregate_id=repo.name,
+                        analysis=analysis,
                     ),
                 )
 
@@ -230,14 +235,13 @@ class AnalysisService:
             List of analyses with the specified tag
         """
         return [
-            analysis
-            for analysis in analyses
-            if tag.lower() in [t.lower() for t in analysis.tags]
+            analysis for analysis in analyses if tag.lower() in [t.lower() for t in analysis.tags]
         ]
 
     @staticmethod
     def filter_by_value(
-        analyses: Sequence[RepoAnalysis], min_value: ValueLevel = ValueLevel.LOW,
+        analyses: Sequence[RepoAnalysis],
+        min_value: ValueLevel = ValueLevel.LOW,
     ) -> list[RepoAnalysis]:
         """Filter analyses by minimum value level.
 
@@ -259,8 +263,7 @@ class AnalysisService:
         return [
             analysis
             for analysis in analyses
-            if value_levels[ValueLevel.from_string(analysis.estimated_value)]
-            >= min_value_level
+            if value_levels[ValueLevel.from_string(analysis.estimated_value)] >= min_value_level
         ]
 
     @staticmethod

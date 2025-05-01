@@ -1,5 +1,4 @@
-"""Tests for the authentication service module.
-"""
+"""Tests for the authentication service module."""
 
 from repo_organizer.domain.core.auth_config import (
     AuthConfig,
@@ -17,9 +16,7 @@ class TestAuthService:
         # Create a custom config for testing
         config = AuthConfig()
         config.operation_categories["test_operation"] = OperationType.READ_ONLY
-        config.default_requirements[OperationType.READ_ONLY] = (
-            AuthRequirement.NOT_REQUIRED
-        )
+        config.default_requirements[OperationType.READ_ONLY] = AuthRequirement.NOT_REQUIRED
 
         # Create auth service with custom config
         auth_service = AuthService(auth_config=config)
@@ -56,7 +53,8 @@ class TestAuthService:
 
         # Operation should succeed with valid username
         is_valid, error_message = auth_service.validate_operation(
-            "test_operation", "valid-user",
+            "test_operation",
+            "valid-user",
         )
         assert is_valid is True
         assert error_message is None
@@ -88,7 +86,8 @@ class TestAuthService:
 
         # Test with invalid format
         is_valid, error_message = auth_service.validate_operation(
-            "any_operation", "user@domain",
+            "any_operation",
+            "user@domain",
         )
         assert is_valid is False
         assert "must start with" in error_message.lower()
@@ -98,9 +97,7 @@ class TestAuthService:
         # Create a custom config for testing
         config = AuthConfig()
         config.operation_categories["allowed_op"] = OperationType.READ_ONLY
-        config.default_requirements[OperationType.READ_ONLY] = (
-            AuthRequirement.NOT_REQUIRED
-        )
+        config.default_requirements[OperationType.READ_ONLY] = AuthRequirement.NOT_REQUIRED
 
         config.operation_categories["auth_op"] = OperationType.WRITE
         config.default_requirements[OperationType.WRITE] = AuthRequirement.REQUIRED

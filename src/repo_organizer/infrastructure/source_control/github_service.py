@@ -19,7 +19,7 @@ import json
 import os
 import re
 import subprocess
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import git
 import requests
@@ -32,8 +32,10 @@ from tenacity import (
 
 from repo_organizer.infrastructure.analysis.pydantic_models import Commit, Contributor
 from repo_organizer.utils.exceptions import APIError
-from repo_organizer.utils.logger import Logger
-from repo_organizer.utils.rate_limiter import RateLimiter
+
+if TYPE_CHECKING:
+    from repo_organizer.utils.logger import Logger
+    from repo_organizer.utils.rate_limiter import RateLimiter
 
 
 class GitHubService:
@@ -113,7 +115,8 @@ class GitHubService:
             # ------------------------------------------------------------------
             if self.rate_limiter:
                 self.rate_limiter.wait(
-                    self.logger, debug=getattr(self.logger, "debug_enabled", False),
+                    self.logger,
+                    debug=getattr(self.logger, "debug_enabled", False),
                 )
 
             params: dict[str, Any] = {
@@ -201,15 +204,14 @@ class GitHubService:
         # Apply rate limiting if available
         if self.rate_limiter:
             self.rate_limiter.wait(
-                self.logger, debug=getattr(self.logger, "debug_enabled", False),
+                self.logger,
+                debug=getattr(self.logger, "debug_enabled", False),
             )
 
         if self.logger:
             self.logger.log(f"Fetching languages for {repo_name}…", "debug")
 
-        url = (
-            f"https://api.github.com/repos/{self.github_username}/{repo_name}/languages"
-        )
+        url = f"https://api.github.com/repos/{self.github_username}/{repo_name}/languages"
 
         try:
             response = self._session.get(url, timeout=15)
@@ -245,9 +247,7 @@ class GitHubService:
             return {}
 
         total_bytes = sum(languages_bytes.values()) or 1  # avoid ZeroDivision
-        return {
-            lang: (cnt / total_bytes) * 100 for lang, cnt in languages_bytes.items()
-        }
+        return {lang: (cnt / total_bytes) * 100 for lang, cnt in languages_bytes.items()}
 
     # ------------------------------------------------------------------
     # README extraction helpers
@@ -278,7 +278,8 @@ class GitHubService:
         """
         if self.rate_limiter:
             self.rate_limiter.wait(
-                self.logger, debug=getattr(self.logger, "debug_enabled", False),
+                self.logger,
+                debug=getattr(self.logger, "debug_enabled", False),
             )
 
         if self.logger:
@@ -318,9 +319,7 @@ class GitHubService:
 
         # Collapse excessive whitespace that does not add much signal to the
         # language model while still preserving separate paragraphs.
-        readme_content = "\n".join(
-            line.rstrip() for line in readme_content.splitlines()
-        )
+        readme_content = "\n".join(line.rstrip() for line in readme_content.splitlines())
 
         return readme_content
 
@@ -357,7 +356,8 @@ class GitHubService:
         except Exception as e:
             if self.logger:
                 self.logger.log(
-                    f"Error getting commits for {repo_path}: {e!s}", "warning",
+                    f"Error getting commits for {repo_path}: {e!s}",
+                    "warning",
                 )
             return []
 
@@ -378,7 +378,8 @@ class GitHubService:
                 ["git", "shortlog", "-sn", "--no-merges"],
                 capture_output=True,
                 text=True,
-                cwd=repo_path, check=False,
+                cwd=repo_path,
+                check=False,
             )
 
             contributors = []
@@ -391,7 +392,8 @@ class GitHubService:
                             count, name = parts
                             contributors.append(
                                 Contributor(
-                                    name=name.strip(), commits=int(count.strip()),
+                                    name=name.strip(),
+                                    commits=int(count.strip()),
                                 ),
                             )
 
@@ -399,7 +401,8 @@ class GitHubService:
         except Exception as e:
             if self.logger:
                 self.logger.log(
-                    f"Error getting contributors for {repo_path}: {e!s}", "warning",
+                    f"Error getting contributors for {repo_path}: {e!s}",
+                    "warning",
                 )
             return []
 
@@ -419,16 +422,15 @@ class GitHubService:
         """
         if self.rate_limiter:
             self.rate_limiter.wait(
-                self.logger, debug=getattr(self.logger, "debug_enabled", False),
+                self.logger,
+                debug=getattr(self.logger, "debug_enabled", False),
             )
 
         if self.logger:
             self.logger.log(f"Fetching issues for {repo_name}…", "debug")
 
         # Get open issues count
-        open_url = (
-            f"https://api.github.com/repos/{self.github_username}/{repo_name}/issues"
-        )
+        open_url = f"https://api.github.com/repos/{self.github_username}/{repo_name}/issues"
         params = {"state": "open", "per_page": 1}
 
         try:
@@ -471,7 +473,9 @@ class GitHubService:
                         "direction": "desc",
                     }
                     recent_response = self._session.get(
-                        open_url, params=recent_params, timeout=15,
+                        open_url,
+                        params=recent_params,
+                        timeout=15,
                     )
                     if recent_response.status_code == 200:
                         recent_issues = recent_response.json()
@@ -492,9 +496,7 @@ class GitHubService:
 
             # Get closed issues count - approximate using repo stats
             closed_count = 0
-            stats_url = (
-                f"https://api.github.com/repos/{self.github_username}/{repo_name}"
-            )
+            stats_url = f"https://api.github.com/repos/{self.github_username}/{repo_name}"
 
             try:
                 stats_response = self._session.get(stats_url, timeout=15)
@@ -536,13 +538,16 @@ class GitHubService:
         """
         if self.rate_limiter:
             self.rate_limiter.wait(
-                self.logger, debug=getattr(self.logger, "debug_enabled", False),
+                self.logger,
+                debug=getattr(self.logger, "debug_enabled", False),
             )
 
         if self.logger:
             self.logger.log(f"Fetching commit activity for {repo_name}…", "debug")
 
-        url = f"https://api.github.com/repos/{self.github_username}/{repo_name}/stats/commit_activity"
+        url = (
+            f"https://api.github.com/repos/{self.github_username}/{repo_name}/stats/commit_activity"
+        )
 
         try:
             response = self._session.get(url, timeout=20)
@@ -618,7 +623,8 @@ class GitHubService:
         """
         if self.rate_limiter:
             self.rate_limiter.wait(
-                self.logger, debug=getattr(self.logger, "debug_enabled", False),
+                self.logger,
+                debug=getattr(self.logger, "debug_enabled", False),
             )
 
         if self.logger:
@@ -656,9 +662,7 @@ class GitHubService:
                 return {"contributor_count": 0, "active_contributors": 0}
 
             # Process the contributor data
-            contributor_count = (
-                len(contributors_data) if isinstance(contributors_data, list) else 0
-            )
+            contributor_count = len(contributors_data) if isinstance(contributors_data, list) else 0
             active_contributors = 0
 
             # Count contributors with activity in the last 3 months
@@ -677,7 +681,8 @@ class GitHubService:
         except Exception as e:
             if self.logger:
                 self.logger.log(
-                    f"Error fetching contributor stats: {e!s}", "warning",
+                    f"Error fetching contributor stats: {e!s}",
+                    "warning",
                 )
                 self.logger.update_stats("retries")
             raise APIError(f"Error fetching contributor stats: {e!s}") from e
@@ -698,7 +703,8 @@ class GitHubService:
         """
         if self.rate_limiter:
             self.rate_limiter.wait(
-                self.logger, debug=getattr(self.logger, "debug_enabled", False),
+                self.logger,
+                debug=getattr(self.logger, "debug_enabled", False),
             )
 
         if self.logger:
@@ -740,7 +746,8 @@ class GitHubService:
                     except Exception as e:
                         if self.logger:
                             self.logger.log(
-                                f"Error parsing {file_path} content: {e}", "debug",
+                                f"Error parsing {file_path} content: {e}",
+                                "debug",
                             )
             except Exception as e:
                 if self.logger:

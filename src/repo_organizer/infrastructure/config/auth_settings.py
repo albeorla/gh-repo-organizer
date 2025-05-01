@@ -20,7 +20,8 @@ class AuthSettings(Settings):
 
     # Authentication settings
     auth_enabled: bool = Field(
-        True, description="Whether authentication is globally enabled",
+        True,
+        description="Whether authentication is globally enabled",
     )
 
     auth_default_requirements: dict[str, str] = Field(
