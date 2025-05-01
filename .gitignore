@@ -75,3 +75,5 @@ node_modules/
 README-task-master.md
 **/__pycache__
 **.py[cod]
+
+**/.claude/settings.local.json

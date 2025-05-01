@@ -1,6 +1,6 @@
 # Task ID: 13
 # Title: Implement Single Repository Limitation Mode
-# Status: in-progress
+# Status: done
 # Dependencies: 11, 14
 # Priority: medium
 # Description: Add functionality to limit the tool to process only a single repository while still generating both individual and overall reports.
@@ -120,7 +120,7 @@ Testing approach:
 - Test that appropriate warnings or errors are logged for edge cases
 - Ensure the user experience is clear about what mode the tool is running in
 
-## 6. Write comprehensive documentation and examples for single-repo mode [in-progress]
+## 6. Write comprehensive documentation and examples for single-repo mode [done]
 ### Dependencies: 13.1, 13.2, 13.3, 13.4, 13.5
 ### Description: Update all documentation to explain the new single-repository mode functionality, including examples and use cases
 ### Details:

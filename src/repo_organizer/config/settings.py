@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     # API keys
     anthropic_api_key: str = Field(..., description="Anthropic API key")
     github_token: str = Field(..., description="GitHub Personal Access Token")
+    
+    # Application information
+    version: str = Field("1.0.0", description="Application version")
 
     # GitHub configuration
     github_username: Optional[str] = Field(
@@ -163,5 +166,8 @@ def load_settings(env_file: Optional[str] = None) -> Settings:
         "single_repo": os.getenv("SINGLE_REPO", None),
     }
 
+    # Add version information
+    settings_dict["version"] = os.getenv("APP_VERSION", "1.0.0")
+    
     # Create and validate settings
     return Settings(**settings_dict)

@@ -100,9 +100,11 @@ class LLMService:
                 
             # Add max_tokens parameter to be larger than thinking_budget (required by Claude API)
             kwargs["max_tokens"] = thinking_budget + 4000
-            kwargs["model_kwargs"] = {
-                "thinking": {"type": "enabled", "budget_tokens": thinking_budget}
-            }
+            
+            # Pass thinking parameter directly to LangChain
+            # This is the correct way to enable thinking in newer versions of langchain_anthropic
+            kwargs["thinking"] = {"type": "enabled", "budget_tokens": thinking_budget}
+            
             if logger and logger.debug_enabled:
                 logger.log(
                     f"Enabling extended thinking with budget: {thinking_budget} tokens, max_tokens: {thinking_budget + 4000}",
@@ -161,12 +163,70 @@ class LLMService:
             parser=pydantic_parser, llm=self.llm
         )
 
-        # Create the prompt template using modern ChatPromptTemplate
+        # Create a preprocessing function to prepare input data with strict validation
+        def prepare_input_data(data_dict):
+            if self.logger and self.logger.debug_enabled:
+                self.logger.log(f"Original data keys: {list(data_dict.keys())}", "debug")
+                
+            # First, validate that the required fields are present and non-empty
+            required_fields = ["repo_name", "repo_desc", "repo_url", "updated_at", "readme_excerpt"]
+            missing_fields = [f for f in required_fields if not data_dict.get(f)]
+            
+            if missing_fields and self.logger:
+                self.logger.log(
+                    f"WARNING: Missing required fields for repository analysis: {', '.join(missing_fields)}",
+                    "warning"
+                )
+                
+            # Create a dictionary with all the required fields and default values for missing ones
+            prepared_data = {
+                # Critical fields - ensure these have meaningful defaults if missing
+                "repo_name": data_dict.get("repo_name", "Unknown Repository"),
+                "repo_desc": data_dict.get("repo_desc", "No description available"),
+                "repo_url": data_dict.get("repo_url", "No URL available"),
+                "updated_at": data_dict.get("updated_at", "Unknown"),
+                
+                # Secondary fields - provide defaults
+                "is_archived": data_dict.get("is_archived", False),
+                "stars": data_dict.get("stars", 0),
+                "forks": data_dict.get("forks", 0),
+                "languages": data_dict.get("languages", "No language information available"),
+                "open_issues": data_dict.get("open_issues", 0),
+                "closed_issues": data_dict.get("closed_issues", 0),
+                "activity_summary": data_dict.get("activity_summary", "No activity data available"),
+                "recent_commits_count": data_dict.get("recent_commits_count", 0),
+                "contributor_summary": data_dict.get("contributor_summary", "No contributor data available"),
+                "dependency_info": data_dict.get("dependency_info", "No dependency information available"),
+                "dependency_context": data_dict.get("dependency_context", ""),
+                
+                # Critical content field - ensure it has a meaningful default if missing
+                "readme_excerpt": data_dict.get("readme_excerpt", "No README content available"),
+                
+                # Format instructions for the output parser
+                "format_instructions": pydantic_parser.get_format_instructions()
+            }
+            
+            # Log the prepared data for debugging
+            if self.logger and self.logger.debug_enabled:
+                self.logger.log(f"Prepared data keys: {list(prepared_data.keys())}", "debug")
+                for key in ["repo_name", "repo_desc", "repo_url"]:
+                    self.logger.log(f"Prepared {key}: {prepared_data.get(key)}", "debug")
+                
+                # Log README excerpt length for verification
+                readme_excerpt = prepared_data.get("readme_excerpt", "")
+                self.logger.log(f"README excerpt length: {len(readme_excerpt)}", "debug")
+                if readme_excerpt:
+                    preview = readme_excerpt[:100] + "..." if len(readme_excerpt) > 100 else readme_excerpt
+                    self.logger.log(f"README preview: {preview}", "debug")
+            
+            return prepared_data
+            
+        # Create the prompt template using modern ChatPromptTemplate with explicit references
         prompt = ChatPromptTemplate.from_messages(
             [
                 HumanMessage(
                     content="""
-            You are an AI assistant specialized in analyzing GitHub repositories and generating detailed reports. Your task is to evaluate a repository based on its README content and provide valuable insights, recommendations, and a decision on the repository's future.
+            You are an AI assistant specialized in analyzing GitHub repositories and generating detailed reports. Your task is to evaluate the repository named "{repo_name}" based on its README content and provide valuable insights, recommendations, and a decision on the repository's future.
 
             First, carefully read and analyze the following repository information:
 
@@ -247,38 +307,37 @@ class LLMService:
                 )
             ]
         )
+            
+        # Use RunnablePassthrough for preprocessing input data
+        input_preprocessor = RunnablePassthrough(lambda x: prepare_input_data(x))
 
-        # Create the LCEL chain using modern pattern with fixed format instructions
-        chain_input = {
-            "repo_name": lambda x: x["repo_name"],
-            "repo_desc": lambda x: x["repo_desc"],
-            "repo_url": lambda x: x["repo_url"],
-            "updated_at": lambda x: x["updated_at"],
-            "is_archived": lambda x: x["is_archived"],
-            "stars": lambda x: x["stars"],
-            "forks": lambda x: x["forks"],
-            "languages": lambda x: x["languages"],
-            "open_issues": lambda x: x.get("open_issues", 0),
-            "closed_issues": lambda x: x.get("closed_issues", 0),
-            "activity_summary": lambda x: x.get(
-                "activity_summary", "No activity data available"
-            ),
-            "recent_commits_count": lambda x: x.get("recent_commits_count", 0),
-            "contributor_summary": lambda x: x.get(
-                "contributor_summary", "No contributor data available"
-            ),
-            "dependency_info": lambda x: x.get(
-                "dependency_info", "No dependency information available"
-            ),
-            "dependency_context": lambda x: x.get("dependency_context", ""),
-            "readme_excerpt": lambda x: x.get("readme_excerpt", ""),
-            "format_instructions": lambda _: pydantic_parser.get_format_instructions(),  # Use base parser instructions
-        }
-
-        # Add raw output logging step before the OutputFixingParser
+        # Add more validation and logging for the data being passed to the LLM
+        if self.logger and self.logger.debug_enabled:
+            self.logger.log("Building LLM chain with prompt parameters:", "debug")
+            # Log example of prepared data
+            example_data = prepare_input_data({"repo_name": "Example", "repo_desc": "Test repository"})
+            self.logger.log(f"Chain input keys: {list(example_data.keys())}", "debug")
+            
+        # Define a log function to verify data at each stage
+        def log_data_at_stage(prefix):
+            def _log_data(data_dict):
+                if self.logger and self.logger.debug_enabled:
+                    if hasattr(data_dict, "keys"):
+                        self.logger.log(f"{prefix} data keys: {list(data_dict.keys())}", "debug")
+                    elif hasattr(data_dict, "content"):
+                        content_preview = data_dict.content[:100] + "..." if len(data_dict.content) > 100 else data_dict.content
+                        self.logger.log(f"{prefix} content: {content_preview}", "debug")
+                    else:
+                        self.logger.log(f"{prefix} data type: {type(data_dict)}", "debug")
+                return data_dict
+            return _log_data
+            
+        # Add debug logging at each stage and raw output logging before parsing
         self._analysis_chain = (
-            chain_input
+            input_preprocessor 
+            | RunnablePassthrough(log_data_at_stage("After preprocessing"))
             | prompt
+            | RunnablePassthrough(log_data_at_stage("After prompt formatting"))
             | self.llm
             | RunnablePassthrough(self._log_raw_output)
             | output_fixing_parser
@@ -304,31 +363,118 @@ class LLMService:
             # Create the chain if not already created
             chain = self.create_analysis_chain()
 
-            # Run the chain
+            # Log repository analysis starting
+            repo_name = repo_data.get("repo_name", "unknown")
             if self.logger:
                 self.logger.log(
-                    f"Analyzing repo {repo_data.get('repo_name', 'unknown')}",
+                    f"Analyzing repo {repo_name}",
                     level="info",
                 )
+            
+            # First, ensure the data is a dictionary for safety
+            data_for_chain = dict(repo_data) if isinstance(repo_data, dict) else {}
                 
-            # Print debug info about what repo_data contains
+            # Print comprehensive debug info about repo_data
             if self.logger and getattr(self.logger, "debug_enabled", False):
                 self.logger.log(
-                    f"Analysis data keys: {list(repo_data.keys())}", 
+                    f"Analysis data keys for {repo_name}: {list(data_for_chain.keys())}", 
                     level="debug"
                 )
-                if "readme_excerpt" in repo_data:
-                    self.logger.log(
-                        f"README excerpt (first 200 chars): {repo_data.get('readme_excerpt', '')[:200]}...",
-                        level="debug"
-                    )
-                if "repo_name" in repo_data:
-                    self.logger.log(
-                        f"Repo name: {repo_data.get('repo_name', 'unknown')}",
-                        level="debug"
-                    )
+                # Log all field values with truncation for long values
+                for key, value in data_for_chain.items():
+                    if key in ['readme_excerpt']:
+                        # Special handling for long text fields
+                        val_str = str(value) if value is not None else "None"
+                        preview = val_str[:200] + "..." if len(val_str) > 200 else val_str
+                        self.logger.log(
+                            f"{key} (first 200 chars): {preview}",
+                            level="debug"
+                        )
+                    else:
+                        # Standard handling for other fields
+                        self.logger.log(
+                            f"{key}: {value}",
+                            level="debug"
+                        )
 
-            result = chain.invoke(repo_data)
+            # Validate all required and optional fields
+            required_fields = ["repo_name", "repo_desc", "repo_url", "updated_at", "readme_excerpt"]
+            optional_fields = [
+                "is_archived", "stars", "forks", "languages", "open_issues", 
+                "closed_issues", "activity_summary", "recent_commits_count", 
+                "contributor_summary", "dependency_info", "dependency_context"
+            ]
+            
+            # Check for missing required fields
+            missing_required = [f for f in required_fields if not data_for_chain.get(f)]
+            if missing_required and self.logger:
+                self.logger.log(
+                    f"WARNING: Repository {repo_name} missing critical fields: {', '.join(missing_required)}",
+                    level="warning"
+                )
+            
+            # Fill in missing required fields with meaningful defaults
+            for field in required_fields:
+                if not data_for_chain.get(field):
+                    if field == "repo_name":
+                        data_for_chain["repo_name"] = "Unknown Repository"
+                        if self.logger:
+                            self.logger.log(f"Added default value for missing required field: {field}", "debug")
+                    elif field == "repo_desc":
+                        data_for_chain["repo_desc"] = "No description available"
+                        if self.logger:
+                            self.logger.log(f"Added default value for missing required field: {field}", "debug")
+                    elif field == "repo_url":
+                        data_for_chain["repo_url"] = "No URL available"
+                        if self.logger:
+                            self.logger.log(f"Added default value for missing required field: {field}", "debug")
+                    elif field == "updated_at":
+                        data_for_chain["updated_at"] = "Unknown"
+                        if self.logger:
+                            self.logger.log(f"Added default value for missing required field: {field}", "debug")
+                    elif field == "readme_excerpt":
+                        data_for_chain["readme_excerpt"] = "No README content available"
+                        if self.logger:
+                            self.logger.log(f"Added default value for missing required field: {field}", "debug")
+            
+            # Add default values for all missing optional fields
+            for field in optional_fields:
+                if field not in data_for_chain or data_for_chain.get(field) is None:
+                    if field in ["stars", "forks", "open_issues", "closed_issues", "recent_commits_count"]:
+                        data_for_chain[field] = 0
+                    elif field == "is_archived":
+                        data_for_chain[field] = False
+                    else:  # Text fields
+                        data_for_chain[field] = f"No {field.replace('_', ' ')} available"
+                    
+                    if self.logger and self.logger.debug_enabled:
+                        self.logger.log(f"Added default value for missing optional field: {field}", "debug")
+                        
+            # Verify data is ready for analysis
+            if self.logger:
+                self.logger.log(f"Repository data prepared for analysis of {repo_name}", level="info")
+                
+                if self.logger.debug_enabled:
+                    self.logger.log(f"Final data keys: {list(data_for_chain.keys())}", level="debug")
+                    
+                    # Verify key field values
+                    for field in required_fields:
+                        value = data_for_chain.get(field)
+                        if field == "readme_excerpt":
+                            # Special handling for long text fields
+                            self.logger.log(f"README excerpt length: {len(str(value))}", level="debug")
+                            if value:
+                                preview = str(value)[:100] + "..." if len(str(value)) > 100 else str(value)
+                                self.logger.log(f"README preview: {preview}", level="debug")
+                        else:
+                            self.logger.log(f"Final {field}: {value}", level="debug")
+            
+            # Run the chain with fully validated data
+            if self.logger:
+                self.logger.log(f"Sending data to LLM for analysis of {repo_name}", level="info")
+                
+            # The chain will apply further preprocessing via input_preprocessor
+            result = chain.invoke(data_for_chain)
 
             # Ensure the repository name is correct (override any LLM-generated name)
             if hasattr(result, "repo_name") and repo_data.get("repo_name"):

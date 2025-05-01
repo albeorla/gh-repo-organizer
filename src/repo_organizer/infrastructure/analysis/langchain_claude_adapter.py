@@ -198,10 +198,92 @@ class LangChainClaudeAdapter(AnalyzerPort):
         retry_count = 0
         last_exception = None
         success = False
-        repo_name = repo_data.get("repo_name", "unknown")
+        
+        # Create a clean copy of the repo_data
+        data_dict = dict(repo_data)
+        repo_name = data_dict.get("repo_name", "unknown")
 
         # We'll track intermediate failures separately from the main metrics
         intermediate_failures = 0
+        
+        # Comprehensive validation of required and optional fields
+        required_fields = ["repo_name", "repo_desc", "repo_url", "updated_at", "readme_excerpt"]
+        optional_fields = [
+            "is_archived", "stars", "forks", "languages", "open_issues", 
+            "closed_issues", "activity_summary", "recent_commits_count", 
+            "contributor_summary", "dependency_info", "dependency_context"
+        ]
+        
+        # Check for missing required fields
+        missing_fields = [field for field in required_fields if not data_dict.get(field)]
+        
+        if missing_fields and self.logger:
+            self.logger.log(
+                f"Warning: Repository {repo_name} missing required fields: {', '.join(missing_fields)}",
+                "warning"
+            )
+            
+        # First ensure all required fields have values
+        for field in required_fields:
+            if not data_dict.get(field):
+                if field == "repo_name":
+                    data_dict["repo_name"] = "Unknown Repository"
+                elif field == "repo_desc":
+                    data_dict["repo_desc"] = "No description available"
+                elif field == "repo_url":
+                    data_dict["repo_url"] = "No URL available"
+                elif field == "updated_at":
+                    data_dict["updated_at"] = "Unknown"
+                elif field == "readme_excerpt":
+                    data_dict["readme_excerpt"] = "No README content available"
+                
+                if self.logger and hasattr(self.logger, "debug_enabled") and self.logger.debug_enabled:
+                    self.logger.log(
+                        f"Added default value for required field: {field}",
+                        "debug"
+                    )
+        
+        # Then ensure all optional fields have sensible defaults
+        for field in optional_fields:
+            if field not in data_dict or data_dict.get(field) is None:
+                if field in ["stars", "forks", "open_issues", "closed_issues", "recent_commits_count"]:
+                    data_dict[field] = 0
+                elif field == "is_archived":
+                    data_dict[field] = False
+                else:  # Text fields
+                    data_dict[field] = f"No {field.replace('_', ' ')} available"
+                
+                if self.logger and hasattr(self.logger, "debug_enabled") and self.logger.debug_enabled:
+                    self.logger.log(
+                        f"Added default value for optional field: {field}",
+                        "debug"
+                    )
+                    
+        # Validate critical content field - readme_excerpt
+        if not data_dict.get("readme_excerpt") or data_dict.get("readme_excerpt") == "No README content available":
+            if self.logger:
+                self.logger.log(
+                    f"Warning: Repository {repo_name} has no README content - analysis may be limited",
+                    "warning"
+                )
+            
+        # Log the data being sent for analysis (helpful for debugging)
+        if self.logger and hasattr(self.logger, "debug_enabled") and self.logger.debug_enabled:
+            self.logger.log(
+                f"Final repository data for analysis of {repo_name}:",
+                "debug"
+            )
+            self.logger.log(
+                f"Data keys: {list(data_dict.keys())}",
+                "debug"
+            )
+            for key, value in data_dict.items():
+                if key == "readme_excerpt":
+                    val_str = str(value) if value is not None else "None"
+                    preview = val_str[:150] + ("..." if len(val_str) > 150 else "")
+                    self.logger.log(f"- {key} ({len(val_str)} chars): {preview}", "debug")
+                else:
+                    self.logger.log(f"- {key}: {value}", "debug")
 
         # Use configurable base delay and max retries
         for attempt in range(self.max_retries + 1):
@@ -216,7 +298,8 @@ class LangChainClaudeAdapter(AnalyzerPort):
                 start_time = time.time()
 
                 # Use the LLM service to get a Pydantic model
-                pyd_model = self._llm_service.analyze_repository(dict(repo_data))
+                # Pass validated data_dict to ensure all fields are available in the correct format
+                pyd_model = self._llm_service.analyze_repository(data_dict)
 
                 # Track response time
                 response_time = time.time() - start_time
@@ -354,49 +437,87 @@ class LangChainClaudeAdapter(AnalyzerPort):
         Returns:
             A domain model RepoAnalysis object
         """
-        # Convert to dictionary if not already
+        # Convert to dictionary if not already to allow modifications
         repo_data_dict = dict(repo_data)
+        
+        # Get repository name or use a default
+        repo_name = repo_data_dict.get("repo_name", "unknown")
+        
+        # Log repository analysis initiation
+        if self.logger:
+            self.logger.log(f"Starting analysis of repository: {repo_name}", "info")
+            
+            if hasattr(self.logger, "debug_enabled") and self.logger.debug_enabled:
+                # Log comprehensive debug information about data
+                self.logger.log(f"Repository data keys: {list(repo_data_dict.keys())}", "debug")
+                
+                # Check for required fields
+                required_fields = ["repo_name", "repo_desc", "repo_url", "updated_at", "readme_excerpt"]
+                optional_fields = ["stars", "forks", "languages", "is_archived", "open_issues", 
+                                  "closed_issues", "activity_summary", "contributor_summary"]
+                
+                present_required = [f for f in required_fields if f in repo_data_dict and repo_data_dict.get(f)]
+                missing_required = [f for f in required_fields if f not in repo_data_dict or not repo_data_dict.get(f)]
+                present_optional = [f for f in optional_fields if f in repo_data_dict and repo_data_dict.get(f)]
+                
+                # Log field presence status
+                if present_required:
+                    self.logger.log(f"Present required fields: {present_required}", "debug")
+                if missing_required:
+                    self.logger.log(f"MISSING REQUIRED FIELDS: {missing_required}", "warning")
+                if present_optional:
+                    self.logger.log(f"Present optional fields: {present_optional}", "debug")
+                
+                # Log a preview of key fields to verify data integrity
+                for field in required_fields:
+                    value = repo_data_dict.get(field)
+                    if field == "readme_excerpt" and value:
+                        val_str = str(value)
+                        preview = val_str[:150] + "..." if len(val_str) > 150 else val_str
+                        self.logger.log(f"{field} ({len(val_str)} chars): {preview}", "debug")
+                    elif value:
+                        self.logger.log(f"{field}: {value}", "debug")
+                    else:
+                        self.logger.log(f"{field}: MISSING", "warning")
 
-        # Clean expired cache entries
+        # Handle caching
         if self.enable_caching:
+            # Clean expired cache entries first
             self._clean_expired_cache()
 
-            # Check cache first
+            # Check if we have a cache hit
             cache_key = self._get_cache_key(repo_data_dict)
             if cache_key in self._cache:
-                analysis, _ = self._cache[cache_key]
+                analysis, timestamp = self._cache[cache_key]
                 self._metrics["cache_hits"] += 1
 
-                if (
-                    self.logger
-                    and hasattr(self.logger, "debug_enabled")
-                    and self.logger.debug_enabled
-                ):
+                if self.logger:
+                    age = time.time() - timestamp
                     self.logger.log(
-                        f"Cache hit for {repo_data_dict.get('repo_name', 'unknown')}",
-                        "debug",
+                        f"Cache hit for {repo_name} (age: {age:.1f}s)",
+                        "info",
                     )
 
                 return analysis
 
+            # No cache hit
             self._metrics["cache_misses"] += 1
+            if self.logger and hasattr(self.logger, "debug_enabled") and self.logger.debug_enabled:
+                self.logger.log(f"Cache miss for {repo_name}", "debug")
 
         try:
-            # Execute with retry mechanism
+            # Execute analysis with retry logic
+            self.logger.log(f"Executing analysis for {repo_name} with retry logic", "info")
             analysis = self._execute_with_retry(repo_data_dict)
 
-            # Cache the result if caching is enabled
+            # Cache successful result if caching is enabled
             if self.enable_caching:
                 cache_key = self._get_cache_key(repo_data_dict)
                 self._cache[cache_key] = (analysis, time.time())
 
-                if (
-                    self.logger
-                    and hasattr(self.logger, "debug_enabled")
-                    and self.logger.debug_enabled
-                ):
+                if self.logger and hasattr(self.logger, "debug_enabled") and self.logger.debug_enabled:
                     self.logger.log(
-                        f"Cached analysis for {repo_data_dict.get('repo_name', 'unknown')}",
+                        f"Cached analysis result for {repo_name}",
                         "debug",
                     )
 

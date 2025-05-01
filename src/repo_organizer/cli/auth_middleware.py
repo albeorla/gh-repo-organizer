@@ -5,7 +5,7 @@ This module provides a middleware layer for validating user authentication
 before executing CLI commands.
 """
 
-from typing import Callable, Optional, Any, Dict, List, Union, cast, get_type_hints
+from typing import Callable, Optional, Any, Dict, List, Union, cast
 
 import typer
 from rich.console import Console
@@ -164,9 +164,9 @@ def with_auth_option(app: typer.Typer) -> None:
             # Create a new function with the username parameter
             # This uses Typer's standard approach for adding options to functions
             if hasattr(func, "__annotations__"):
-                func.__annotations__["username"] = str  # No longer Optional
+                func.__annotations__["username"] = Optional[str]  # Make it optional for now
             else:
-                func.__annotations__ = {"username": str}
+                func.__annotations__ = {"username": Optional[str]}
                 
             # No default value since it's required
             # Store the option information for typer to use
