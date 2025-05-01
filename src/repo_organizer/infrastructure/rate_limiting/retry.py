@@ -1,14 +1,14 @@
-"""
-Retry utility with exponential backoff for API calls.
+"""Retry utility with exponential backoff for API calls.
 
 This module provides a retry decorator that can be used to wrap
 API call functions with exponential backoff retry logic.
 """
 
-import time
-import random
 import functools
-from typing import Any, Callable, Optional, Type, List
+import random
+import time
+from collections.abc import Callable
+from typing import Any
 
 from repo_organizer.infrastructure.logging.logger import Logger
 
@@ -18,8 +18,8 @@ def retry_with_backoff(
     backoff_factor: float = 2.0,
     initial_wait: float = 1.0,
     max_wait: float = 60.0,
-    exceptions: List[Type[Exception]] = (Exception,),
-    logger: Optional[Logger] = None,
+    exceptions: list[type[Exception]] = (Exception,),
+    logger: Logger | None = None,
     jitter: bool = True,
 ):
     """Retry decorator with exponential backoff.
@@ -44,7 +44,7 @@ def retry_with_backoff(
             wait_time = initial_wait
 
             for attempt in range(
-                1, retries + 2
+                1, retries + 2,
             ):  # +2 because we want retries+1 total attempts
                 try:
                     return func(*args, **kwargs)
@@ -55,7 +55,7 @@ def retry_with_backoff(
                     if attempt > retries:
                         if logger:
                             logger.log(
-                                f"Failed after {retries + 1} attempts: {str(e)}",
+                                f"Failed after {retries + 1} attempts: {e!s}",
                                 level="error",
                             )
                         raise last_exception
@@ -69,7 +69,7 @@ def retry_with_backoff(
 
                     if logger:
                         logger.log(
-                            f"Retry {attempt}/{retries} after {wait_time:.2f}s due to: {str(e)}",
+                            f"Retry {attempt}/{retries} after {wait_time:.2f}s due to: {e!s}",
                             level="warning",
                         )
                         logger.update_stats("retries")
@@ -89,25 +89,21 @@ def retry_with_backoff(
 class RetryableError(Exception):
     """Base exception class for errors that should trigger a retry."""
 
-    pass
 
 
 class RateLimitExceededError(RetryableError):
     """Exception raised when an API rate limit is exceeded."""
 
-    pass
 
 
 class TemporaryAPIError(RetryableError):
     """Exception raised for temporary API errors (e.g., 5xx status codes)."""
 
-    pass
 
 
 class NetworkError(RetryableError):
     """Exception raised for network connectivity issues."""
 
-    pass
 
 
 class RetryWithChainedRateLimiters:
@@ -130,8 +126,8 @@ class RetryWithChainedRateLimiters:
 
     def __init__(
         self,
-        rate_limiters: List[Any],
-        logger: Optional[Logger] = None,
+        rate_limiters: list[Any],
+        logger: Logger | None = None,
         retries: int = 3,
         backoff_factor: float = 2.0,
         initial_wait: float = 1.0,
@@ -190,7 +186,7 @@ class RetryWithChainedRateLimiters:
         if self.retries <= 0:
             if self.logger:
                 self.logger.log(
-                    f"No more retries left for: {str(exc_val)}",
+                    f"No more retries left for: {exc_val!s}",
                     level="error",
                 )
             return False
@@ -203,7 +199,7 @@ class RetryWithChainedRateLimiters:
 
         if self.logger:
             self.logger.log(
-                f"Will retry after {wait_time:.2f}s due to: {str(exc_val)}",
+                f"Will retry after {wait_time:.2f}s due to: {exc_val!s}",
                 level="warning",
             )
             self.logger.update_stats("retries")

@@ -1,5 +1,4 @@
-"""
-Domain service for orchestrating repository analysis.
+"""Domain service for orchestrating repository analysis.
 
 This module contains the RepositoryAnalyzerService which coordinates the analysis
 of repositories using the analyzer and source control ports.
@@ -11,15 +10,16 @@ import asyncio
 import json
 import logging
 import os
+from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import Optional, Sequence, Callable, Dict, List, Any
+from typing import Any
 
 from repo_organizer.domain.analysis.action_recommendation_service import (
     ActionRecommendationService,
 )
 from repo_organizer.domain.analysis.events import (
-    RepositoryAnalysisCompleted,
     AnalysisError,
+    RepositoryAnalysisCompleted,
 )
 from repo_organizer.domain.analysis.models import RepoAnalysis
 from repo_organizer.domain.analysis.protocols import AnalyzerPort
@@ -31,8 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 class RepositoryAnalyzerService:
-    """
-    Service that orchestrates repository analysis.
+    """Service that orchestrates repository analysis.
 
     This service coordinates between the source control port and analyzer port
     to analyze repositories and generate reports. It follows the Dependency Inversion
@@ -44,13 +43,12 @@ class RepositoryAnalyzerService:
         output_dir: str | Path,
         source_control_port: SourceControlPort,
         analyzer_port: AnalyzerPort,
-        max_repos: Optional[int] = None,
+        max_repos: int | None = None,
         debug: bool = False,
-        repo_filter: Optional[Callable[[Repository], bool]] = None,
+        repo_filter: Callable[[Repository], bool] | None = None,
         force_reanalyze: bool = False,
     ):
-        """
-        Initialize the repository analyzer service.
+        """Initialize the repository analyzer service.
 
         Args:
             output_dir: Directory to write analysis reports to
@@ -79,8 +77,7 @@ class RepositoryAnalyzerService:
             logging.basicConfig(level=logging.INFO)
 
     def should_analyze_repo(self, repo: Repository) -> bool:
-        """
-        Determine if a repository should be analyzed.
+        """Determine if a repository should be analyzed.
 
         Args:
             repo: The repository to check
@@ -101,9 +98,8 @@ class RepositoryAnalyzerService:
 
         return True
 
-    async def analyze_repository(self, repo: Repository) -> Optional[RepoAnalysis]:
-        """
-        Analyze a single repository.
+    async def analyze_repository(self, repo: Repository) -> RepoAnalysis | None:
+        """Analyze a single repository.
 
         Args:
             repo: The repository to analyze
@@ -122,7 +118,7 @@ class RepositoryAnalyzerService:
             # Update repository with language data
             if languages and not repo.languages:
                 repo = repo.with_languages(
-                    {lb.language: lb.percentage for lb in languages}
+                    {lb.language: lb.percentage for lb in languages},
                 )
 
             # Prepare data for analysis
@@ -133,7 +129,7 @@ class RepositoryAnalyzerService:
 
             # Publish domain event
             await event_bus.dispatch(
-                RepositoryAnalysisCompleted(aggregate_id=repo.name, analysis=analysis)
+                RepositoryAnalysisCompleted(aggregate_id=repo.name, analysis=analysis),
             )
 
             # Generate action recommendation
@@ -146,14 +142,14 @@ class RepositoryAnalyzerService:
             return analysis
 
         except Exception as e:
-            error_msg = f"Error analyzing {repo.name}: {str(e)}"
+            error_msg = f"Error analyzing {repo.name}: {e!s}"
             logger.error(error_msg)
 
             # Publish error event
             await event_bus.dispatch(
                 AnalysisError(
-                    aggregate_id=repo.name, repo_name=repo.name, error_message=error_msg
-                )
+                    aggregate_id=repo.name, repo_name=repo.name, error_message=error_msg,
+                ),
             )
 
             if self.debug:
@@ -162,10 +158,9 @@ class RepositoryAnalyzerService:
             return None
 
     def prepare_analysis_data(
-        self, repo: Repository, commits: Sequence[Any], contributors: Sequence[Any]
-    ) -> Dict[str, Any]:
-        """
-        Prepare repository data for analysis.
+        self, repo: Repository, commits: Sequence[Any], contributors: Sequence[Any],
+    ) -> dict[str, Any]:
+        """Prepare repository data for analysis.
 
         Args:
             repo: The repository to prepare data for
@@ -176,7 +171,7 @@ class RepositoryAnalyzerService:
             Dictionary of data for analysis
         """
         # Prepare repository data
-        data: Dict[str, Any] = {
+        data: dict[str, Any] = {
             "name": repo.name,
             "description": repo.description or "",
             "url": repo.url or "",
@@ -215,8 +210,7 @@ class RepositoryAnalyzerService:
         return data
 
     async def write_report(self, repo_name: str, analysis: RepoAnalysis) -> None:
-        """
-        Write an analysis report to disk.
+        """Write an analysis report to disk.
 
         Args:
             repo_name: Name of the repository
@@ -234,9 +228,8 @@ class RepositoryAnalyzerService:
 
         logger.debug(f"Wrote report to {report_path}")
 
-    async def generate_reports(self, repos: Sequence[Repository]) -> List[RepoAnalysis]:
-        """
-        Generate analysis reports for multiple repositories.
+    async def generate_reports(self, repos: Sequence[Repository]) -> list[RepoAnalysis]:
+        """Generate analysis reports for multiple repositories.
 
         Args:
             repos: The repositories to analyze

@@ -1,5 +1,4 @@
-"""
-Enhanced logging utility with rich formatting.
+"""Enhanced logging utility with rich formatting.
 
 This module provides a Logger class that implements a Façade pattern over
 the Rich console and standard file logging, simplifying the interface for
@@ -7,13 +6,13 @@ logging operations throughout the application.
 """
 
 import datetime
-import time
 import os
-from typing import Any, List, Optional
+import time
+from typing import Any
 
 from rich.console import Console
-from rich.table import Table
 from rich.panel import Panel
+from rich.table import Table
 
 from repo_organizer.infrastructure.config.settings import Settings
 
@@ -34,7 +33,7 @@ class Logger:
     def __init__(
         self,
         log_file: str,
-        console: Optional[Console] = None,
+        console: Console | None = None,
         debug_enabled: bool = False,
         quiet_mode: bool = False,
     ):
@@ -164,7 +163,7 @@ class Logger:
         else:
             self.stats[key] = value
 
-    def print_summary(self, rate_limiters: Optional[List[Any]] = None) -> None:
+    def print_summary(self, rate_limiters: list[Any] | None = None) -> None:
         """Print a summary of the run statistics.
 
         Args:
@@ -179,7 +178,7 @@ class Logger:
 
         summary.add_row("Total Duration", f"{duration:.2f} seconds")
         summary.add_row(
-            "Repositories Analyzed", str(self.stats.get("repos_analyzed", 0))
+            "Repositories Analyzed", str(self.stats.get("repos_analyzed", 0)),
         )
         summary.add_row("Analysis Failures", str(self.stats.get("repos_failed", 0)))
         summary.add_row("Repositories Skipped", str(self.stats.get("repos_skipped", 0)))
@@ -191,7 +190,7 @@ class Logger:
             # Rate limiting statistics
             if rate_limiters:
                 rate_table = Table(
-                    title="API Rate Limiting Statistics", show_header=True
+                    title="API Rate Limiting Statistics", show_header=True,
                 )
                 rate_table.add_column("API", style="cyan")
                 rate_table.add_column("Calls", justify="right")

@@ -1,22 +1,22 @@
 """Domain objects and ports for the *Analysis* bounded context."""
 
-from .models import RepoAnalysis, Recommendation
-from .protocols import AnalyzerPort
-from .services import AnalysisService
 from .action_recommendation_service import ActionRecommendationService
-from .repository_analyzer_service import RepositoryAnalyzerService
-from .value_objects import (
-    RecommendedAction,
-    ActivityLevel,
-    ValueLevel,
-    PriorityLevel,
-    RepoAssessment,
-)
 from .events import (
-    RepositoryAnalysisCompleted,
-    RepositoryActionRecommended,
-    HighPriorityIssueIdentified,
     AnalysisError,
+    HighPriorityIssueIdentified,
+    RepositoryActionRecommended,
+    RepositoryAnalysisCompleted,
+)
+from .models import Recommendation, RepoAnalysis
+from .protocols import AnalyzerPort
+from .repository_analyzer_service import RepositoryAnalyzerService
+from .services import AnalysisService
+from .value_objects import (
+    ActivityLevel,
+    PriorityLevel,
+    RecommendedAction,
+    RepoAssessment,
+    ValueLevel,
 )
 
 __all__ = [

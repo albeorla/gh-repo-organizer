@@ -8,15 +8,16 @@ migrated to the new port we can clean up the inheritance relationship and use
 
 from __future__ import annotations
 
-from typing import Sequence, Dict
-import requests
 import base64
+from collections.abc import Sequence
+
+import requests
 
 from repo_organizer.domain.source_control.models import (
-    Repository,
-    LanguageBreakdown,
     Commit,
     Contributor,
+    LanguageBreakdown,
+    Repository,
 )
 from repo_organizer.domain.source_control.protocols import SourceControlPort
 
@@ -64,7 +65,7 @@ class GitHubRestAdapter(SourceControlPort):
         """
         if self.logger:
             self.logger.log(
-                f"Fetching up to {limit} repositories for {self.github_username}"
+                f"Fetching up to {limit} repositories for {self.github_username}",
             )
 
         repos = []
@@ -124,7 +125,7 @@ class GitHubRestAdapter(SourceControlPort):
 
         return repos
 
-    def get_repository_languages(self, repo_name: str) -> Dict[str, float]:
+    def get_repository_languages(self, repo_name: str) -> dict[str, float]:
         """Get language breakdown for a repository.
 
         Args:
@@ -145,7 +146,7 @@ class GitHubRestAdapter(SourceControlPort):
         if response.status_code != 200:
             if self.logger:
                 self.logger.log(
-                    f"Error fetching languages: {response.status_code}", "error"
+                    f"Error fetching languages: {response.status_code}", "error",
                 )
             return {}
 
@@ -177,13 +178,13 @@ class GitHubRestAdapter(SourceControlPort):
         try:
             if self.logger:
                 self.logger.log(f"Fetching README for {repo_name}", "info")
-                
+
             response = self._session.get(url, timeout=15)
 
             if response.status_code != 200:
                 if self.logger:
                     self.logger.log(
-                        f"Error fetching README: {response.status_code}", "warning"
+                        f"Error fetching README: {response.status_code}", "warning",
                     )
                 return ""
 
@@ -206,7 +207,7 @@ class GitHubRestAdapter(SourceControlPort):
             return ""
 
     def list_repositories(
-        self, owner: str, *, limit: int | None = None
+        self, owner: str, *, limit: int | None = None,
     ) -> Sequence[Repository]:
         """List repositories for the given owner.
 
@@ -221,7 +222,7 @@ class GitHubRestAdapter(SourceControlPort):
         if owner != self.github_username:
             if self.logger:
                 self.logger.log(
-                    f"Owner mismatch: {owner} != {self.github_username}", "warning"
+                    f"Owner mismatch: {owner} != {self.github_username}", "warning",
                 )
 
         # Use the get_repositories method we just implemented
@@ -267,7 +268,7 @@ class GitHubRestAdapter(SourceControlPort):
             if response.status_code != 200:
                 if self.logger:
                     self.logger.log(
-                        f"Error fetching commits: {response.status_code}", "warning"
+                        f"Error fetching commits: {response.status_code}", "warning",
                     )
                 return []
 
@@ -337,6 +338,6 @@ class GitHubRestAdapter(SourceControlPort):
         except Exception as e:
             if self.logger:
                 self.logger.log(
-                    f"Error fetching contributors for {repo.name}: {e}", "error"
+                    f"Error fetching contributors for {repo.name}: {e}", "error",
                 )
             return []

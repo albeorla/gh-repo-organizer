@@ -1,11 +1,9 @@
-"""
-Authentication settings module for the repository organizer.
+"""Authentication settings module for the repository organizer.
 
 This module extends the core settings to include authentication configuration options.
 """
 
 import os
-from typing import Dict, Optional
 
 from pydantic import Field
 
@@ -22,34 +20,33 @@ class AuthSettings(Settings):
 
     # Authentication settings
     auth_enabled: bool = Field(
-        True, description="Whether authentication is globally enabled"
+        True, description="Whether authentication is globally enabled",
     )
-    
-    auth_default_requirements: Dict[str, str] = Field(
+
+    auth_default_requirements: dict[str, str] = Field(
         default_factory=lambda: {
             OperationType.READ_ONLY: AuthRequirement.OPTIONAL,
             OperationType.ANALYSIS: AuthRequirement.REQUIRED,
             OperationType.WRITE: AuthRequirement.REQUIRED,
             OperationType.ADMIN: AuthRequirement.REQUIRED,
         },
-        description="Default authentication requirements by operation type"
+        description="Default authentication requirements by operation type",
     )
-    
-    auth_operation_overrides: Dict[str, str] = Field(
+
+    auth_operation_overrides: dict[str, str] = Field(
         default_factory=dict,
-        description="Override authentication requirements for specific operations"
+        description="Override authentication requirements for specific operations",
     )
-    
+
     def get_auth_config(self) -> AuthConfig:
-        """
-        Convert settings to an AuthConfig object.
-        
+        """Convert settings to an AuthConfig object.
+
         Returns:
             AuthConfig based on current settings
         """
         # Create a default config
         config = AuthConfig()
-        
+
         # Apply settings-based customizations
         if not self.auth_enabled:
             # If auth is globally disabled, set all default requirements to NOT_REQUIRED
@@ -65,7 +62,7 @@ class AuthSettings(Settings):
                 except (ValueError, KeyError):
                     # Skip invalid values
                     pass
-            
+
             # Apply operation-specific overrides
             for op_name, requirement_str in self.auth_operation_overrides.items():
                 try:
@@ -74,31 +71,32 @@ class AuthSettings(Settings):
                 except ValueError:
                     # Skip invalid values
                     pass
-        
+
         return config
 
 
-def load_auth_settings(env_file: Optional[str] = None) -> AuthSettings:
-    """
-    Load authentication settings from environment or .env file.
-    
+def load_auth_settings(env_file: str | None = None) -> AuthSettings:
+    """Load authentication settings from environment or .env file.
+
     Args:
         env_file: Optional path to .env file
-    
+
     Returns:
         AuthSettings object
     """
     from repo_organizer.config.settings import load_settings
-    
+
     # Start with the standard settings
     settings = load_settings(env_file)
     settings_dict = settings.model_dump()
-    
+
     # Add authentication settings
-    settings_dict.update({
-        "auth_enabled": os.getenv("AUTH_ENABLED", "true").lower() == "true",
-    })
-    
+    settings_dict.update(
+        {
+            "auth_enabled": os.getenv("AUTH_ENABLED", "true").lower() == "true",
+        },
+    )
+
     # Parse operation overrides if provided
     auth_overrides_str = os.getenv("AUTH_OPERATION_OVERRIDES", "")
     if auth_overrides_str:
@@ -113,7 +111,7 @@ def load_auth_settings(env_file: Optional[str] = None) -> AuthSettings:
         except Exception:
             # If parsing fails, use empty dict
             settings_dict["auth_operation_overrides"] = {}
-    
+
     # Parse default requirements if provided
     auth_defaults_str = os.getenv("AUTH_DEFAULT_REQUIREMENTS", "")
     if auth_defaults_str:
@@ -128,5 +126,5 @@ def load_auth_settings(env_file: Optional[str] = None) -> AuthSettings:
         except Exception:
             # If parsing fails, use default requirements
             pass
-    
+
     return AuthSettings(**settings_dict)

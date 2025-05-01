@@ -1,3 +1,2 @@
-"""
-Tests for the CLI package.
+"""Tests for the CLI package.
 """

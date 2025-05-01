@@ -1,25 +1,24 @@
-"""
-Application factory module for creating application instances.
+"""Application factory module for creating application instances.
 
 This module implements the Factory Method pattern to create the application
 and its components with proper dependency injection.
 """
 
-from typing import Optional, Callable
+from collections.abc import Callable
 
 from rich.console import Console
 
 from repo_organizer.bootstrap.application_runner import ApplicationRunner
-from repo_organizer.infrastructure.source_control.github_service import GitHubService
-from repo_organizer.services.progress_reporter import ProgressReporter
-from repo_organizer.utils.logger import Logger
-from repo_organizer.utils.rate_limiter import RateLimiter
 from repo_organizer.config.settings import load_settings
 
 # Import adapter implementation for AnalyzerPort
 from repo_organizer.infrastructure.analysis.langchain_claude_adapter import (
     LangChainClaudeAdapter,
 )
+from repo_organizer.infrastructure.source_control.github_service import GitHubService
+from repo_organizer.services.progress_reporter import ProgressReporter
+from repo_organizer.utils.logger import Logger
+from repo_organizer.utils.rate_limiter import RateLimiter
 
 
 class ApplicationFactory:
@@ -33,11 +32,11 @@ class ApplicationFactory:
     def create_application(
         cls,
         force_analysis: bool = False,
-        output_dir: Optional[str] = None,
-        max_repos: Optional[int] = None,
-        debug_logging: Optional[bool] = None,
-        env_file: Optional[str] = None,
-        progress_callback: Optional[Callable[[int, int, Optional[str]], None]] = None,
+        output_dir: str | None = None,
+        max_repos: int | None = None,
+        debug_logging: bool | None = None,
+        env_file: str | None = None,
+        progress_callback: Callable[[int, int, str | None], None] | None = None,
         quiet_mode: bool = False,
     ) -> ApplicationRunner:
         """Create a fully configured application instance.
@@ -70,7 +69,7 @@ class ApplicationFactory:
             import os
 
             expanded_output = os.path.abspath(
-                os.path.expanduser(os.path.expandvars(output_dir))
+                os.path.expanduser(os.path.expandvars(output_dir)),
             )
             settings.output_dir = expanded_output
 
@@ -88,8 +87,8 @@ class ApplicationFactory:
         console = Console(quiet=quiet_mode)
 
         # Create logger
-        import os
         import datetime
+        import os
 
         # Use logs directory from settings
         logs_dir = settings.logs_dir

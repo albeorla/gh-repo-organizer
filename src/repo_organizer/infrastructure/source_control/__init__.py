@@ -1,5 +1,4 @@
-"""
-Source Control Infrastructure Layer.
+"""Source Control Infrastructure Layer.
 
 This module contains implementations for source control adapters.
 Primarily focused on GitHub integration and repository management.

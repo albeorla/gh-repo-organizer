@@ -1,34 +1,34 @@
-"""
-Command-line interface for the GitHub Repository Organizer.
+"""Command-line interface for the GitHub Repository Organizer.
 
 This module provides a modern CLI using Typer with rich integration for
 an enhanced user experience.
 """
 
-import time
-from typing import Optional
-from pathlib import Path
 import os
+import time
 from enum import Enum
+from pathlib import Path
 
 import typer
 from rich.console import Console
+from rich.panel import Panel
 from rich.progress import (
+    BarColumn,
     Progress,
     SpinnerColumn,
-    TextColumn,
-    BarColumn,
     TaskProgressColumn,
+    TextColumn,
 )
-from rich.panel import Panel
-from rich.table import Table
 from rich.syntax import Syntax
+from rich.table import Table
+
+from repo_organizer.cli.auth_middleware import authenticate_command
+from repo_organizer.cli.commands import execute_actions
 
 # Import needed for running the CLI without accessing it through the entry points
 # This prevents relative import errors when running the CLI directly
 from repo_organizer.config.settings import load_settings
-from repo_organizer.cli.commands import execute_actions
-from repo_organizer.cli.auth_middleware import authenticate_command, with_auth_option
+
 from .dev import dev_app
 
 
@@ -64,7 +64,7 @@ def version_callback(value: bool):
         from repo_organizer import __version__
 
         console.print(
-            f"[bold green]GitHub Repository Analyzer[/] version: [bold]{__version__}[/]"
+            f"[bold green]GitHub Repository Analyzer[/] version: [bold]{__version__}[/]",
         )
         typer.Exit()
 
@@ -80,12 +80,10 @@ def main(
         is_eager=True,
     ),
 ):
-    """
-    Analyze GitHub repositories using LangChain and Anthropic's Claude AI.
+    """Analyze GitHub repositories using LangChain and Anthropic's Claude AI.
 
     This tool provides insights, recommendations, and documentation for repositories that you own (not repositories you've starred or forked).
     """
-    pass
 
 
 @app.command()
@@ -105,16 +103,16 @@ def analyze(
         help="Directory to output analysis results (default: .out/repos).",
     ),
     limit: int = typer.Option(
-        None, "--limit", "-l", help="Maximum number of repositories to analyze."
+        None, "--limit", "-l", help="Maximum number of repositories to analyze.",
     ),
-    max_repos: Optional[int] = typer.Option(
+    max_repos: int | None = typer.Option(
         None,
         "--max-repos",
         "-m",
         help="Maximum number of repositories to analyze (deprecated, use --limit).",
     ),
     owner: str = typer.Option(None, "--owner", help="GitHub owner/user to analyze."),
-    single_repo: Optional[str] = typer.Option(
+    single_repo: str | None = typer.Option(
         None,
         "--single-repo",
         "-s",
@@ -122,11 +120,10 @@ def analyze(
     ),
     debug: bool = typer.Option(False, "--debug", "-d", help="Enable debug logging."),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize console output."),
-    username: Optional[str] = None,  # Added by with_auth_option, manually included here for clarity
+    username: str | None = None,  # Added by with_auth_option, manually included here for clarity
 ):
-    """
-    Analyze GitHub repositories and generate detailed reports.
-    
+    """Analyze GitHub repositories and generate detailed reports.
+
     This command uses Domain-Driven Design (DDD) architecture to provide accurate
     repository analysis with proper separation of concerns, improved error handling,
     and better maintainability.
@@ -136,22 +133,28 @@ def analyze(
         limit = max_repos
 
     # Use the DDD approach
-    from repo_organizer.config.settings import load_settings
-    # Import directly from bounded context modules to avoid circular imports
-    from repo_organizer.infrastructure.github_rest import GitHubRestAdapter
-    from repo_organizer.infrastructure.analysis.langchain_claude_adapter import LangChainClaudeAdapter
-    from repo_organizer.application.analyze_repositories import analyze_repositories
-    from repo_organizer.utils.logger import Logger
-    from repo_organizer.utils.rate_limiter import RateLimiter
     from pathlib import Path
 
+    from repo_organizer.application.analyze_repositories import analyze_repositories
+    from repo_organizer.config.settings import load_settings
+    from repo_organizer.infrastructure.analysis.langchain_claude_adapter import (
+        LangChainClaudeAdapter,
+    )
+
+    # Import directly from bounded context modules to avoid circular imports
+    from repo_organizer.infrastructure.github_rest import GitHubRestAdapter
+    from repo_organizer.utils.logger import Logger
+    from repo_organizer.utils.rate_limiter import RateLimiter
+
     settings = load_settings()
-    
+
     # Apply single repository option to settings if provided via command line
     if single_repo:
         settings.single_repo = single_repo
         if not quiet:
-            console.print(f"[cyan]Single repository mode: Will only process [bold]{single_repo}[/][/]")
+            console.print(
+                f"[cyan]Single repository mode: Will only process [bold]{single_repo}[/][/]",
+            )
 
     # Resolve owner
     if owner is None:
@@ -159,7 +162,7 @@ def analyze(
             owner = settings.github_username
         else:
             console.print(
-                "[red]Owner not specified and GITHUB_USERNAME missing in env[/]"
+                "[red]Owner not specified and GITHUB_USERNAME missing in env[/]",
             )
             raise typer.Exit(1)
 
@@ -170,7 +173,7 @@ def analyze(
         import os
 
         expanded_output = os.path.abspath(
-            os.path.expanduser(os.path.expandvars(output_dir))
+            os.path.expanduser(os.path.expandvars(output_dir)),
         )
         output_path = Path(expanded_output)
 
@@ -178,7 +181,7 @@ def analyze(
         console.print("")  # Add a blank line for better output formatting
 
     with console.status(
-        "[bold green]Starting repository analysis...[/]", spinner="dots"
+        "[bold green]Starting repository analysis...[/]", spinner="dots",
     ):
         # Create the output directory
         output_path.mkdir(parents=True, exist_ok=True)
@@ -224,17 +227,23 @@ def analyze(
         get_time=None,
     ) as progress:
         fetch_task = progress.add_task(
-            "[cyan]Fetching repositories", total=1, status="Starting...", details=""
+            "[cyan]Fetching repositories", total=1, status="Starting...", details="",
         )
 
         try:
             if not quiet:
                 if settings.single_repo:
-                    console.print(f"[cyan]Fetching repository [bold]{settings.single_repo}[/] for [bold]{owner}[/]...")
+                    console.print(
+                        f"[cyan]Fetching repository [bold]{settings.single_repo}[/] for [bold]{owner}[/]...",
+                    )
                 else:
-                    console.print(f"[cyan]Fetching repositories for [bold]{owner}[/]...")
+                    console.print(
+                        f"[cyan]Fetching repositories for [bold]{owner}[/]...",
+                    )
 
-            analyses = analyze_repositories(owner, github, llm, limit=limit, single_repo=settings.single_repo)
+            analyses = analyze_repositories(
+                owner, github, llm, limit=limit, single_repo=settings.single_repo,
+            )
             progress.update(
                 fetch_task,
                 completed=1,
@@ -288,7 +297,7 @@ def analyze(
                                 f.write("## Recommendations\n\n")
                                 for rec in a.recommendations:
                                     f.write(
-                                        f"- **{rec.recommendation}** ({rec.priority} Priority)  \n"
+                                        f"- **{rec.recommendation}** ({rec.priority} Priority)  \n",
                                     )
                                     f.write(f"  *Reason: {rec.reason}*\n")
                                 f.write("\n")
@@ -311,18 +320,22 @@ def analyze(
                 # Add single repo mode indicator if applicable
                 if settings.single_repo:
                     f.write("# Single Repository Analysis Report\n\n")
-                    f.write(f"*This report contains analysis for a single repository: **{settings.single_repo}**.*\n\n")
+                    f.write(
+                        f"*This report contains analysis for a single repository: **{settings.single_repo}**.*\n\n",
+                    )
                 else:
                     f.write("# Repository Analysis Summary\n\n")
-                
+
                 f.write("## Overview\n\n")
                 f.write(f"- **Total Repositories**: {len(analyses)}\n")
                 f.write(f"- **Successfully Analyzed**: {success_count}\n")
                 f.write(f"- **Failed Analyses**: {fail_count}\n")
-                
+
                 # Add mode information
                 if settings.single_repo:
-                    f.write(f"- **Mode**: Single repository analysis of **{settings.single_repo}**\n")
+                    f.write(
+                        f"- **Mode**: Single repository analysis of **{settings.single_repo}**\n",
+                    )
                 else:
                     f.write("- **Mode**: Full repository analysis\n")
                 f.write("\n")
@@ -352,10 +365,10 @@ def analyze(
             # Show final results
             if not quiet:
                 console.print("\n[bold green]Analysis complete![/]")
-                
+
                 # Create content for panel with mode information
                 panel_content = f"Total Repositories: {len(analyses)}\nSuccessfully Analyzed: {success_count}\nFailed Analyses: {fail_count}"
-                
+
                 # Add mode information
                 if settings.single_repo:
                     panel_content += f"\nMode: Single repository analysis of [bold]{settings.single_repo}[/]"
@@ -363,19 +376,19 @@ def analyze(
                 else:
                     panel_content += "\nMode: Full repository analysis"
                     panel_title = "Repository Analysis Summary"
-                
+
                 console.print(
                     Panel(
                         panel_content,
                         title=panel_title,
                         border_style="green",
                         expand=False,
-                    )
+                    ),
                 )
 
                 # Show output location
                 console.print(
-                    f"\nReports generated in: [bold]{output_path.absolute()}[/]"
+                    f"\nReports generated in: [bold]{output_path.absolute()}[/]",
                 )
             else:
                 # Just print the output path in quiet mode
@@ -397,19 +410,18 @@ def analyze(
 @authenticate_command("cleanup")
 def cleanup(
     force: bool = typer.Option(
-        False, "--force", "-f", help="Force removal of all files without confirmation."
+        False, "--force", "-f", help="Force removal of all files without confirmation.",
     ),
-    output_dir: Optional[str] = typer.Option(
+    output_dir: str | None = typer.Option(
         None,
         "--output-dir",
         "-o",
         help="Directory containing analysis results to clean up (default: .out/repos).",
     ),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize console output."),
-    username: Optional[str] = None,  # Added by with_auth_option, manually included here for clarity
+    username: str | None = None,  # Added by with_auth_option, manually included here for clarity
 ):
-    """
-    Clean up generated repository analysis files.
+    """Clean up generated repository analysis files.
     """
     # Get settings directly from the config module
     settings = load_settings()
@@ -431,7 +443,7 @@ def cleanup(
     # Ask for confirmation if not forced
     if not force and not quiet:
         delete_confirmed = typer.confirm(
-            f"Delete {len(files)} analysis files from {output_path}?", default=False
+            f"Delete {len(files)} analysis files from {output_path}?", default=False,
         )
         if not delete_confirmed:
             console.print("[yellow]Operation cancelled.[/]")
@@ -458,24 +470,23 @@ def cleanup(
 
     if not quiet:
         console.print(
-            f"[bold green]Successfully cleaned up {len(files)} analysis files![/]"
+            f"[bold green]Successfully cleaned up {len(files)} analysis files![/]",
         )
 
 
 @app.command()
 def logs(
     latest: bool = typer.Option(
-        True, "--latest", "-l", help="Show only the latest log file."
+        True, "--latest", "-l", help="Show only the latest log file.",
     ),
     all_logs: bool = typer.Option(
-        False, "--all", "-a", help="Show a list of all available log files."
+        False, "--all", "-a", help="Show a list of all available log files.",
     ),
-    log_file: Optional[str] = typer.Option(
-        None, "--file", "-f", help="Specific log file to display."
+    log_file: str | None = typer.Option(
+        None, "--file", "-f", help="Specific log file to display.",
     ),
 ):
-    """
-    View analysis log files.
+    """View analysis log files.
     """
     # Get logs directory from settings
     settings = load_settings()
@@ -488,7 +499,7 @@ def logs(
 
     # Get all log files
     log_files = sorted(
-        [f for f in os.listdir(logs_dir) if f.startswith("analysis_log_")], reverse=True
+        [f for f in os.listdir(logs_dir) if f.startswith("analysis_log_")], reverse=True,
     )
 
     if not log_files:
@@ -538,7 +549,7 @@ def logs(
                 file_to_show = matches[0]
             elif len(matches) > 1:
                 console.print(
-                    f"[yellow]Multiple log files match '{log_file}'. Please be more specific:[/]"
+                    f"[yellow]Multiple log files match '{log_file}'. Please be more specific:[/]",
                 )
                 for match in matches[:5]:  # Show at most 5 matches
                     console.print(f"  {match}")
@@ -558,7 +569,7 @@ def logs(
     # Display the log file
     log_path = os.path.join(logs_dir, file_to_show)
     try:
-        with open(log_path, "r") as f:
+        with open(log_path) as f:
             content = f.read()
 
         # Create syntax highlighted content
@@ -570,7 +581,7 @@ def logs(
                 title=f"Log File: {file_to_show}",
                 subtitle=f"Path: {log_path}",
                 expand=False,
-            )
+            ),
         )
     except Exception as e:
         console.print(f"[red]Error reading log file: {e}[/]")
@@ -579,17 +590,16 @@ def logs(
 @app.command()
 def reports(
     summary: bool = typer.Option(
-        True, "--summary", "-s", help="Show the summary report of all repositories."
+        True, "--summary", "-s", help="Show the summary report of all repositories.",
     ),
-    repository: Optional[str] = typer.Option(
-        None, "--repo", "-r", help="Show the report for a specific repository."
+    repository: str | None = typer.Option(
+        None, "--repo", "-r", help="Show the report for a specific repository.",
     ),
     list_reports: bool = typer.Option(
-        False, "--list", "-l", help="List all available repository reports."
+        False, "--list", "-l", help="List all available repository reports.",
     ),
 ):
-    """
-    View repository analysis reports.
+    """View repository analysis reports.
     """
     # Get output directory from settings
     settings = load_settings()
@@ -647,7 +657,7 @@ def reports(
                 report_file = matches[0]
             elif len(matches) > 1:
                 console.print(
-                    f"[yellow]Multiple reports match '{repository}'. Please be more specific:[/]"
+                    f"[yellow]Multiple reports match '{repository}'. Please be more specific:[/]",
                 )
                 for match in matches[:10]:  # Show at most 10 matches
                     console.print(f"  {match.replace('.md', '')}")
@@ -661,7 +671,7 @@ def reports(
         # Display the repository report
         report_path = os.path.join(output_dir, report_file)
         try:
-            with open(report_path, "r") as f:
+            with open(report_path) as f:
                 content = f.read()
 
             # Create syntax highlighted content
@@ -673,7 +683,7 @@ def reports(
                     title=f"Repository Report: {report_file.replace('.md', '')}",
                     subtitle=f"Path: {report_path}",
                     expand=False,
-                )
+                ),
             )
         except Exception as e:
             console.print(f"[red]Error reading report file: {e}[/]")
@@ -687,7 +697,7 @@ def reports(
             return
 
         try:
-            with open(summary_path, "r") as f:
+            with open(summary_path) as f:
                 content = f.read()
 
             # Create syntax highlighted content
@@ -699,7 +709,7 @@ def reports(
                     title="Repository Analysis Summary",
                     subtitle=f"Path: {summary_path}",
                     expand=False,
-                )
+                ),
             )
         except Exception as e:
             console.print(f"[red]Error reading summary report: {e}[/]")
@@ -709,13 +719,12 @@ def reports(
 @authenticate_command("reset")
 def reset(
     force: bool = typer.Option(
-        False, "--force", "-f", help="Force removal without confirmation."
+        False, "--force", "-f", help="Force removal without confirmation.",
     ),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize console output."),
-    username: Optional[str] = None,  # Added by with_auth_option, manually included here for clarity
+    username: str | None = None,  # Added by with_auth_option, manually included here for clarity
 ):
-    """
-    Reset and clean up all analysis files, removing reports that don't match your GitHub repositories.
+    """Reset and clean up all analysis files, removing reports that don't match your GitHub repositories.
     """
     # Get settings directly from the config module
     settings = load_settings()
@@ -743,10 +752,10 @@ def reset(
     # Fetch the user's actual repositories
     try:
         # Import necessary classes here to avoid circular imports
+        from repo_organizer.infrastructure.github_rest import GitHubRestAdapter
         from repo_organizer.utils.logger import Logger
         from repo_organizer.utils.rate_limiter import RateLimiter
-        from repo_organizer.infrastructure.github_rest import GitHubRestAdapter
-        
+
         # Create rate limiter and logger for the GitHub adapter
         logger = Logger(
             str(output_path / "analysis.log"),
@@ -755,7 +764,7 @@ def reset(
             quiet_mode=quiet,
         )
         github_lim = RateLimiter(settings.github_rate_limit, name="GitHub")
-        
+
         # Create the GitHub adapter
         github = GitHubRestAdapter(
             github_username=github_username,
@@ -763,7 +772,7 @@ def reset(
             rate_limiter=github_lim,
             logger=logger,
         )
-        
+
         # Use the adapter to get repositories
         repos = github.get_repositories(limit=settings.max_repos)
         repo_names = set(repo.name for repo in repos)
@@ -787,7 +796,7 @@ def reset(
         # Show what will be deleted
         if not quiet:
             console.print(
-                f"[yellow]Found {len(invalid_reports)} repository reports that don't match your GitHub repositories:[/]"
+                f"[yellow]Found {len(invalid_reports)} repository reports that don't match your GitHub repositories:[/]",
             )
             for file_path in invalid_reports[:10]:
                 console.print(f"  • {file_path.name}")
@@ -797,7 +806,7 @@ def reset(
         # Ask for confirmation
         if not force and not quiet:
             delete_confirmed = typer.confirm(
-                f"Delete these {len(invalid_reports)} files?", default=False
+                f"Delete these {len(invalid_reports)} files?", default=False,
             )
             if not delete_confirmed:
                 console.print("[yellow]Operation cancelled.[/]")
@@ -833,7 +842,7 @@ def reset(
 
         if not quiet:
             console.print(
-                f"[bold green]Successfully removed {len(invalid_reports)} invalid repository reports![/]"
+                f"[bold green]Successfully removed {len(invalid_reports)} invalid repository reports![/]",
             )
 
     except Exception as e:
@@ -849,22 +858,21 @@ def reset(
 @authenticate_command("execute_actions")
 def actions(
     action_type: ActionType = typer.Option(
-        ActionType.ALL, "--type", "-t", help="Type of action to execute."
+        ActionType.ALL, "--type", "-t", help="Type of action to execute.",
     ),
     dry_run: bool = typer.Option(
-        True, "--dry-run", "-d", help="Perform a dry run without making changes."
+        True, "--dry-run", "-d", help="Perform a dry run without making changes.",
     ),
     force: bool = typer.Option(
-        False, "--force", "-f", help="Skip confirmation prompts."
+        False, "--force", "-f", help="Skip confirmation prompts.",
     ),
-    output_dir: Optional[str] = typer.Option(
-        None, "--output-dir", "-o", help="Override the output directory."
+    output_dir: str | None = typer.Option(
+        None, "--output-dir", "-o", help="Override the output directory.",
     ),
-    username: Optional[str] = None,  # Added by with_auth_option, manually included here for clarity
+    username: str | None = None,  # Added by with_auth_option, manually included here for clarity
 ):
-    """
-    Execute repository actions based on analysis results.
-    
+    """Execute repository actions based on analysis results.
+
     This command uses the recommended actions from repository analyses to perform
     operations like archiving, deleting, extracting valuable parts, or pinning
     repositories. By default, it runs in dry-run mode to show what would happen.
@@ -872,7 +880,7 @@ def actions(
     try:
         # Pass the action type as string or None for ALL
         action = None if action_type == ActionType.ALL else action_type.value.upper()
-        
+
         # Execute actions
         execute_actions(
             dry_run=dry_run,
@@ -886,6 +894,7 @@ def actions(
         if getattr(e, "__cause__", None):
             console.print(f"[red]Caused by: {e.__cause__}[/]")
         import traceback
+
         console.print(traceback.format_exc(), style="red")
         raise typer.Exit(code=1)
 

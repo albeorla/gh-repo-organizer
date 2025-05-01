@@ -1,5 +1,4 @@
-"""
-LangChain/Anthropic adapter implementing the ``AnalyzerPort`` interface.
+"""LangChain/Anthropic adapter implementing the ``AnalyzerPort`` interface.
 
 This is a composition-based adapter following DDD principles to keep the domain
 layer independent of external frameworks.
@@ -8,19 +7,19 @@ layer independent of external frameworks.
 from __future__ import annotations
 
 import time
-from typing import Mapping, Optional, Any, Dict, Tuple
+from collections.abc import Mapping
+from typing import Any
 
 from repo_organizer.domain.analysis.models import RepoAnalysis
 from repo_organizer.domain.analysis.protocols import AnalyzerPort
 from repo_organizer.infrastructure.analysis.llm_service import LLMService
+from repo_organizer.utils.exceptions import LLMServiceError, RateLimitExceededError
 from repo_organizer.utils.logger import Logger
 from repo_organizer.utils.rate_limiter import RateLimiter
-from repo_organizer.utils.exceptions import LLMServiceError, RateLimitExceededError
 
 
 class LangChainClaudeAdapter(AnalyzerPort):
-    """
-    Adapter that implements the AnalyzerPort using LangChain and Claude.
+    """Adapter that implements the AnalyzerPort using LangChain and Claude.
 
     This adapter uses composition rather than inheritance, properly separating
     the domain interface from the infrastructure implementation.
@@ -31,16 +30,16 @@ class LangChainClaudeAdapter(AnalyzerPort):
         api_key: str,
         model_name: str = "claude-3-7-sonnet-latest",
         temperature: float = 0.2,
-        max_tokens: Optional[int] = None,
+        max_tokens: int | None = None,
         top_p: float = 1.0,
-        top_k: Optional[int] = None,
+        top_k: int | None = None,
         thinking_enabled: bool = True,
         thinking_budget: int = 16000,
         request_timeout: int = 120,
         max_retries: int = 3,
         retry_base_delay: float = 1.0,
-        rate_limiter: Optional[RateLimiter] = None,
-        logger: Optional[Logger] = None,
+        rate_limiter: RateLimiter | None = None,
+        logger: Logger | None = None,
         enable_caching: bool = True,
         cache_ttl: int = 3600,  # 1 hour cache by default
     ):
@@ -100,7 +99,7 @@ class LangChainClaudeAdapter(AnalyzerPort):
         }
 
         # Simple in-memory cache
-        self._cache: Dict[str, Tuple[RepoAnalysis, float]] = {}
+        self._cache: dict[str, tuple[RepoAnalysis, float]] = {}
 
         # Log initialization
         if self.logger:
@@ -115,7 +114,7 @@ class LangChainClaudeAdapter(AnalyzerPort):
     # Helper methods
     # ------------------------------------------------------------------
 
-    def _get_cache_key(self, repo_data: Dict[str, Any]) -> str:
+    def _get_cache_key(self, repo_data: dict[str, Any]) -> str:
         """Generate a cache key from repository data.
 
         Args:
@@ -158,7 +157,7 @@ class LangChainClaudeAdapter(AnalyzerPort):
             and self.logger.debug_enabled
         ):
             self.logger.log(
-                f"Cleaned {len(expired_keys)} expired cache entries", "debug"
+                f"Cleaned {len(expired_keys)} expired cache entries", "debug",
             )
 
     def _report_thinking_progress(self, repo_name: str, thinking_text: str) -> None:
@@ -180,10 +179,10 @@ class LangChainClaudeAdapter(AnalyzerPort):
             # First 100 chars of thinking text + ellipsis if longer
             preview = thinking_text[:100] + ("..." if len(thinking_text) > 100 else "")
             self.logger.log(
-                f"[{repo_name}] Thinking progress: {preview}", level="debug"
+                f"[{repo_name}] Thinking progress: {preview}", level="debug",
             )
 
-    def _execute_with_retry(self, repo_data: Dict[str, Any]) -> RepoAnalysis:
+    def _execute_with_retry(self, repo_data: dict[str, Any]) -> RepoAnalysis:
         """Execute analysis with exponential backoff retry.
 
         Args:
@@ -198,31 +197,47 @@ class LangChainClaudeAdapter(AnalyzerPort):
         retry_count = 0
         last_exception = None
         success = False
-        
+
         # Create a clean copy of the repo_data
         data_dict = dict(repo_data)
         repo_name = data_dict.get("repo_name", "unknown")
 
         # We'll track intermediate failures separately from the main metrics
         intermediate_failures = 0
-        
+
         # Comprehensive validation of required and optional fields
-        required_fields = ["repo_name", "repo_desc", "repo_url", "updated_at", "readme_excerpt"]
-        optional_fields = [
-            "is_archived", "stars", "forks", "languages", "open_issues", 
-            "closed_issues", "activity_summary", "recent_commits_count", 
-            "contributor_summary", "dependency_info", "dependency_context"
+        required_fields = [
+            "repo_name",
+            "repo_desc",
+            "repo_url",
+            "updated_at",
+            "readme_excerpt",
         ]
-        
+        optional_fields = [
+            "is_archived",
+            "stars",
+            "forks",
+            "languages",
+            "open_issues",
+            "closed_issues",
+            "activity_summary",
+            "recent_commits_count",
+            "contributor_summary",
+            "dependency_info",
+            "dependency_context",
+        ]
+
         # Check for missing required fields
-        missing_fields = [field for field in required_fields if not data_dict.get(field)]
-        
+        missing_fields = [
+            field for field in required_fields if not data_dict.get(field)
+        ]
+
         if missing_fields and self.logger:
             self.logger.log(
                 f"Warning: Repository {repo_name} missing required fields: {', '.join(missing_fields)}",
-                "warning"
+                "warning",
             )
-            
+
         # First ensure all required fields have values
         for field in required_fields:
             if not data_dict.get(field):
@@ -236,52 +251,69 @@ class LangChainClaudeAdapter(AnalyzerPort):
                     data_dict["updated_at"] = "Unknown"
                 elif field == "readme_excerpt":
                     data_dict["readme_excerpt"] = "No README content available"
-                
-                if self.logger and hasattr(self.logger, "debug_enabled") and self.logger.debug_enabled:
+
+                if (
+                    self.logger
+                    and hasattr(self.logger, "debug_enabled")
+                    and self.logger.debug_enabled
+                ):
                     self.logger.log(
-                        f"Added default value for required field: {field}",
-                        "debug"
+                        f"Added default value for required field: {field}", "debug",
                     )
-        
+
         # Then ensure all optional fields have sensible defaults
         for field in optional_fields:
             if field not in data_dict or data_dict.get(field) is None:
-                if field in ["stars", "forks", "open_issues", "closed_issues", "recent_commits_count"]:
+                if field in [
+                    "stars",
+                    "forks",
+                    "open_issues",
+                    "closed_issues",
+                    "recent_commits_count",
+                ]:
                     data_dict[field] = 0
                 elif field == "is_archived":
                     data_dict[field] = False
                 else:  # Text fields
                     data_dict[field] = f"No {field.replace('_', ' ')} available"
-                
-                if self.logger and hasattr(self.logger, "debug_enabled") and self.logger.debug_enabled:
+
+                if (
+                    self.logger
+                    and hasattr(self.logger, "debug_enabled")
+                    and self.logger.debug_enabled
+                ):
                     self.logger.log(
-                        f"Added default value for optional field: {field}",
-                        "debug"
+                        f"Added default value for optional field: {field}", "debug",
                     )
-                    
+
         # Validate critical content field - readme_excerpt
-        if not data_dict.get("readme_excerpt") or data_dict.get("readme_excerpt") == "No README content available":
+        if (
+            not data_dict.get("readme_excerpt")
+            or data_dict.get("readme_excerpt") == "No README content available"
+        ):
             if self.logger:
                 self.logger.log(
                     f"Warning: Repository {repo_name} has no README content - analysis may be limited",
-                    "warning"
+                    "warning",
                 )
-            
+
         # Log the data being sent for analysis (helpful for debugging)
-        if self.logger and hasattr(self.logger, "debug_enabled") and self.logger.debug_enabled:
+        if (
+            self.logger
+            and hasattr(self.logger, "debug_enabled")
+            and self.logger.debug_enabled
+        ):
             self.logger.log(
-                f"Final repository data for analysis of {repo_name}:",
-                "debug"
+                f"Final repository data for analysis of {repo_name}:", "debug",
             )
-            self.logger.log(
-                f"Data keys: {list(data_dict.keys())}",
-                "debug"
-            )
+            self.logger.log(f"Data keys: {list(data_dict.keys())}", "debug")
             for key, value in data_dict.items():
                 if key == "readme_excerpt":
                     val_str = str(value) if value is not None else "None"
                     preview = val_str[:150] + ("..." if len(val_str) > 150 else "")
-                    self.logger.log(f"- {key} ({len(val_str)} chars): {preview}", "debug")
+                    self.logger.log(
+                        f"- {key} ({len(val_str)} chars): {preview}", "debug",
+                    )
                 else:
                     self.logger.log(f"- {key}: {value}", "debug")
 
@@ -381,13 +413,13 @@ class LangChainClaudeAdapter(AnalyzerPort):
 
                 # Wrap in LLMServiceError for better error handling upstream
                 raise LLMServiceError(
-                    f"Analysis failed after {self.max_retries} retries"
+                    f"Analysis failed after {self.max_retries} retries",
                 ) from last_exception
 
         # This should never happen since last_exception should be set
         if not success:
             raise LLMServiceError(
-                f"Analysis failed after {self.max_retries} retries with unknown error"
+                f"Analysis failed after {self.max_retries} retries with unknown error",
             )
 
     def _update_metrics(self, success: bool, response_time: float = 0.0) -> None:
@@ -415,7 +447,7 @@ class LangChainClaudeAdapter(AnalyzerPort):
         else:
             self._metrics["failed_requests"] += 1
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get adapter metrics.
 
         Returns:
@@ -428,8 +460,7 @@ class LangChainClaudeAdapter(AnalyzerPort):
     # ------------------------------------------------------------------
 
     def analyze(self, repo_data: Mapping[str, Any]) -> RepoAnalysis:
-        """
-        Analyze a repository using Claude LLM.
+        """Analyze a repository using Claude LLM.
 
         Args:
             repo_data: A mapping containing repository data
@@ -439,42 +470,80 @@ class LangChainClaudeAdapter(AnalyzerPort):
         """
         # Convert to dictionary if not already to allow modifications
         repo_data_dict = dict(repo_data)
-        
+
         # Get repository name or use a default
         repo_name = repo_data_dict.get("repo_name", "unknown")
-        
+
         # Log repository analysis initiation
         if self.logger:
             self.logger.log(f"Starting analysis of repository: {repo_name}", "info")
-            
+
             if hasattr(self.logger, "debug_enabled") and self.logger.debug_enabled:
                 # Log comprehensive debug information about data
-                self.logger.log(f"Repository data keys: {list(repo_data_dict.keys())}", "debug")
-                
+                self.logger.log(
+                    f"Repository data keys: {list(repo_data_dict.keys())}", "debug",
+                )
+
                 # Check for required fields
-                required_fields = ["repo_name", "repo_desc", "repo_url", "updated_at", "readme_excerpt"]
-                optional_fields = ["stars", "forks", "languages", "is_archived", "open_issues", 
-                                  "closed_issues", "activity_summary", "contributor_summary"]
-                
-                present_required = [f for f in required_fields if f in repo_data_dict and repo_data_dict.get(f)]
-                missing_required = [f for f in required_fields if f not in repo_data_dict or not repo_data_dict.get(f)]
-                present_optional = [f for f in optional_fields if f in repo_data_dict and repo_data_dict.get(f)]
-                
+                required_fields = [
+                    "repo_name",
+                    "repo_desc",
+                    "repo_url",
+                    "updated_at",
+                    "readme_excerpt",
+                ]
+                optional_fields = [
+                    "stars",
+                    "forks",
+                    "languages",
+                    "is_archived",
+                    "open_issues",
+                    "closed_issues",
+                    "activity_summary",
+                    "contributor_summary",
+                ]
+
+                present_required = [
+                    f
+                    for f in required_fields
+                    if f in repo_data_dict and repo_data_dict.get(f)
+                ]
+                missing_required = [
+                    f
+                    for f in required_fields
+                    if f not in repo_data_dict or not repo_data_dict.get(f)
+                ]
+                present_optional = [
+                    f
+                    for f in optional_fields
+                    if f in repo_data_dict and repo_data_dict.get(f)
+                ]
+
                 # Log field presence status
                 if present_required:
-                    self.logger.log(f"Present required fields: {present_required}", "debug")
+                    self.logger.log(
+                        f"Present required fields: {present_required}", "debug",
+                    )
                 if missing_required:
-                    self.logger.log(f"MISSING REQUIRED FIELDS: {missing_required}", "warning")
+                    self.logger.log(
+                        f"MISSING REQUIRED FIELDS: {missing_required}", "warning",
+                    )
                 if present_optional:
-                    self.logger.log(f"Present optional fields: {present_optional}", "debug")
-                
+                    self.logger.log(
+                        f"Present optional fields: {present_optional}", "debug",
+                    )
+
                 # Log a preview of key fields to verify data integrity
                 for field in required_fields:
                     value = repo_data_dict.get(field)
                     if field == "readme_excerpt" and value:
                         val_str = str(value)
-                        preview = val_str[:150] + "..." if len(val_str) > 150 else val_str
-                        self.logger.log(f"{field} ({len(val_str)} chars): {preview}", "debug")
+                        preview = (
+                            val_str[:150] + "..." if len(val_str) > 150 else val_str
+                        )
+                        self.logger.log(
+                            f"{field} ({len(val_str)} chars): {preview}", "debug",
+                        )
                     elif value:
                         self.logger.log(f"{field}: {value}", "debug")
                     else:
@@ -502,12 +571,18 @@ class LangChainClaudeAdapter(AnalyzerPort):
 
             # No cache hit
             self._metrics["cache_misses"] += 1
-            if self.logger and hasattr(self.logger, "debug_enabled") and self.logger.debug_enabled:
+            if (
+                self.logger
+                and hasattr(self.logger, "debug_enabled")
+                and self.logger.debug_enabled
+            ):
                 self.logger.log(f"Cache miss for {repo_name}", "debug")
 
         try:
             # Execute analysis with retry logic
-            self.logger.log(f"Executing analysis for {repo_name} with retry logic", "info")
+            self.logger.log(
+                f"Executing analysis for {repo_name} with retry logic", "info",
+            )
             analysis = self._execute_with_retry(repo_data_dict)
 
             # Cache successful result if caching is enabled
@@ -515,7 +590,11 @@ class LangChainClaudeAdapter(AnalyzerPort):
                 cache_key = self._get_cache_key(repo_data_dict)
                 self._cache[cache_key] = (analysis, time.time())
 
-                if self.logger and hasattr(self.logger, "debug_enabled") and self.logger.debug_enabled:
+                if (
+                    self.logger
+                    and hasattr(self.logger, "debug_enabled")
+                    and self.logger.debug_enabled
+                ):
                     self.logger.log(
                         f"Cached analysis result for {repo_name}",
                         "debug",
@@ -536,7 +615,7 @@ class LangChainClaudeAdapter(AnalyzerPort):
             # Try to create a minimal analysis with what we know
             return RepoAnalysis(
                 repo_name=fallback_name,
-                summary=f"Analysis failed: {str(e)}",
+                summary=f"Analysis failed: {e!s}",
                 strengths=["Analysis unavailable"],
                 weaknesses=["Analysis unavailable"],
                 recommendations=[],

@@ -1,5 +1,4 @@
-"""
-Value objects for the Analysis bounded context.
+"""Value objects for the Analysis bounded context.
 
 These are immutable objects that represent domain concepts without identity.
 """
@@ -20,7 +19,7 @@ class RecommendedAction(Enum):
     PIN = "PIN"
 
     @classmethod
-    def from_string(cls, value: str) -> "RecommendedAction":
+    def from_string(cls, value: str) -> RecommendedAction:
         """Convert a string to a RecommendedAction enum value."""
         try:
             return cls[value.upper()]
@@ -36,7 +35,7 @@ class PriorityLevel(Enum):
     LOW = "low"
 
     @classmethod
-    def from_string(cls, value: str) -> "PriorityLevel":
+    def from_string(cls, value: str) -> PriorityLevel:
         """Convert a string to a PriorityLevel enum value."""
         try:
             return cls[value.upper()]
@@ -53,17 +52,16 @@ class ActivityLevel(Enum):
     INACTIVE = "inactive"
 
     @classmethod
-    def from_string(cls, value: str) -> "ActivityLevel":
+    def from_string(cls, value: str) -> ActivityLevel:
         """Convert a string assessment to an ActivityLevel enum value."""
         value_lower = value.lower()
         if "inactive" in value_lower or "none" in value_lower:
             return cls.INACTIVE
-        elif "high" in value_lower:
+        if "high" in value_lower:
             return cls.HIGH
-        elif "low" in value_lower:
+        if "low" in value_lower:
             return cls.LOW
-        else:
-            return cls.MEDIUM
+        return cls.MEDIUM
 
 
 class ValueLevel(Enum):
@@ -74,7 +72,7 @@ class ValueLevel(Enum):
     LOW = "low"
 
     @classmethod
-    def from_string(cls, value: str) -> "ValueLevel":
+    def from_string(cls, value: str) -> ValueLevel:
         """Convert a string to a ValueLevel enum value."""
         try:
             return cls[value.upper()]
@@ -92,8 +90,8 @@ class RepoAssessment:
 
     @classmethod
     def from_strings(
-        cls, activity: str, value: str, reasoning: str
-    ) -> "RepoAssessment":
+        cls, activity: str, value: str, reasoning: str,
+    ) -> RepoAssessment:
         """Create a RepoAssessment from string values."""
         return cls(
             activity=ActivityLevel.from_string(activity),

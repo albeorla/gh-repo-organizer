@@ -1,11 +1,10 @@
-"""
-Language model service for analyzing repository content.
+"""Language model service for analyzing repository content.
 
 This module implements the Strategy pattern for the language model service,
 allowing different LLM backends to be used with a consistent interface.
 """
 
-from typing import Any, Optional
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Optional dependency handling
@@ -20,25 +19,25 @@ try:
     from langchain_anthropic import ChatAnthropic  # type: ignore
 except ModuleNotFoundError:  # pragma: no cover – executed in test env only
 
-    class _StubChatAnthropic:  # noqa: D401,E302
+    class _StubChatAnthropic:
         """Very small stub that fulfils the interface used in tests."""
 
-        def __init__(self, *args, **kwargs):  # noqa: D401
+        def __init__(self, *args, **kwargs):
             pass
 
         # The real class exposes an ``invoke`` method that returns an object
         # having a ``content`` attribute (string).  The unit tests *mock*
         # ``ChatAnthropic`` anyway, so we just raise to signal unintended
         # usage in production.
-        def invoke(self, *args, **kwargs):  # noqa: D401
+        def invoke(self, *args, **kwargs):
             raise RuntimeError(
-                "ChatAnthropic stub invoked – install 'langchain_anthropic' for production use."
+                "ChatAnthropic stub invoked – install 'langchain_anthropic' for production use.",
             )
 
-    ChatAnthropic = _StubChatAnthropic  # type: ignore  # noqa: N816
+    ChatAnthropic = _StubChatAnthropic  # type: ignore
+from langchain.output_parsers import OutputFixingParser
 from langchain_core.messages import HumanMessage
 from langchain_core.output_parsers import PydanticOutputParser
-from langchain.output_parsers import OutputFixingParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 
@@ -61,8 +60,8 @@ class LLMService:
         temperature: float = 0.2,
         thinking_enabled: bool = True,
         thinking_budget: int = 16000,
-        rate_limiter: Optional[RateLimiter] = None,
-        logger: Optional[Logger] = None,
+        rate_limiter: RateLimiter | None = None,
+        logger: Logger | None = None,
     ):
         """Initialize the LLM service.
 
@@ -94,7 +93,7 @@ class LLMService:
         # Add extended thinking if enabled
         if thinking_enabled:
             kwargs["extra_body"] = {
-                "thinking": {"type": "enabled", "budget_tokens": thinking_budget}
+                "thinking": {"type": "enabled", "budget_tokens": thinking_budget},
             }
             if logger and logger.debug_enabled:
                 logger.log(
@@ -110,7 +109,7 @@ class LLMService:
         # perform an additional LLM call).  Caching avoids rebuilding the
         # chain for every single repository when analysing dozens of repos in
         # one run.
-        self._analysis_chain: Optional[Any] = None
+        self._analysis_chain: Any | None = None
 
     def _log_raw_output(self, x: Any) -> Any:
         """Logs the raw output before parsing only if debug is enabled.
@@ -143,7 +142,7 @@ class LLMService:
         # can trigger a call to the LLM through OutputFixingParser.
         if self.rate_limiter:
             self.rate_limiter.wait(
-                self.logger, debug=getattr(self.logger, "debug_enabled", False)
+                self.logger, debug=getattr(self.logger, "debug_enabled", False),
             )
 
         # Base parser for structured output
@@ -151,7 +150,7 @@ class LLMService:
 
         # Wrap with OutputFixingParser (may perform a validation-step LLM call)
         output_fixing_parser = OutputFixingParser.from_llm(
-            parser=pydantic_parser, llm=self.llm
+            parser=pydantic_parser, llm=self.llm,
         )
 
         # Create the prompt template using modern ChatPromptTemplate
@@ -235,9 +234,9 @@ class LLMService:
             - DO NOT nest fields like `summary`, `strengths`, etc., inside another key like "analysis". They must be top-level keys.
             - Replace ALL placeholders like {{{{some_value}}}} with actual analysis content. Do not output the placeholders.
             - Generate ONLY the JSON object that matches the schema.
-            """
-                )
-            ]
+            """,
+                ),
+            ],
         )
 
         # Create the LCEL chain using modern pattern with fixed format instructions
@@ -253,14 +252,14 @@ class LLMService:
             "open_issues": lambda x: x.get("open_issues", 0),
             "closed_issues": lambda x: x.get("closed_issues", 0),
             "activity_summary": lambda x: x.get(
-                "activity_summary", "No activity data available"
+                "activity_summary", "No activity data available",
             ),
             "recent_commits_count": lambda x: x.get("recent_commits_count", 0),
             "contributor_summary": lambda x: x.get(
-                "contributor_summary", "No contributor data available"
+                "contributor_summary", "No contributor data available",
             ),
             "dependency_info": lambda x: x.get(
-                "dependency_info", "No dependency information available"
+                "dependency_info", "No dependency information available",
             ),
             "dependency_context": lambda x: x.get("dependency_context", ""),
             "readme_excerpt": lambda x: x.get("readme_excerpt", ""),
@@ -289,7 +288,7 @@ class LLMService:
         """
         if self.rate_limiter:
             self.rate_limiter.wait(
-                self.logger, debug=getattr(self.logger, "debug_enabled", False)
+                self.logger, debug=getattr(self.logger, "debug_enabled", False),
             )
 
         try:
@@ -343,7 +342,7 @@ class LLMService:
                         if json_match:
                             json_str = json_match.group(1)
                             if self.logger and getattr(
-                                self.logger, "debug_enabled", False
+                                self.logger, "debug_enabled", False,
                             ):
                                 self.logger.log(
                                     f"Extracted JSON: {json_str[:500]}...",
@@ -356,7 +355,7 @@ class LLMService:
                             except json.JSONDecodeError as jde:
                                 if self.logger:
                                     self.logger.log(
-                                        f"JSON decode error: {jde}", level="error"
+                                        f"JSON decode error: {jde}", level="error",
                                     )
 
                         # Try direct parsing as last resort
@@ -365,23 +364,23 @@ class LLMService:
                         except Exception as parse_err:
                             if self.logger:
                                 self.logger.log(
-                                    f"Validation error: {parse_err}", level="error"
+                                    f"Validation error: {parse_err}", level="error",
                                 )
 
                 except Exception as fallback_err:
                     if self.logger:
                         self.logger.log(
-                            f"Fallback parsing failed: {fallback_err}", level="error"
+                            f"Fallback parsing failed: {fallback_err}", level="error",
                         )
 
             if self.logger:
-                self.logger.log(f"Error analyzing repo: {str(e)}", level="error")
+                self.logger.log(f"Error analyzing repo: {e!s}", level="error")
 
             # Create a placeholder analysis with error tag so that callers do
             # not break.  This mirrors the previous behaviour.
             return RepoAnalysis(
                 repo_name=repo_data.get("repo_name", "unknown"),
-                summary=f"Error analyzing repository: {str(e)}",
+                summary=f"Error analyzing repository: {e!s}",
                 strengths=["Could not analyze"],
                 weaknesses=["Could not analyze"],
                 recommendations=[],

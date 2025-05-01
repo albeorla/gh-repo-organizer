@@ -10,13 +10,13 @@ Inversion Principle (DIP).
 """
 
 # Re-export most commonly used names for convenience
-from .models import Repository, Commit, Contributor, LanguageBreakdown
+from .models import Commit, Contributor, LanguageBreakdown, Repository
 from .protocols import SourceControlPort
 
 __all__ = [
-    "Repository",
     "Commit",
     "Contributor",
     "LanguageBreakdown",
+    "Repository",
     "SourceControlPort",
 ]

@@ -1,24 +1,24 @@
-from dataclasses import dataclass, field
-from datetime import datetime, UTC
-import uuid
-from typing import Any, Callable, Dict, List, Set, Type, Union
-import inspect
 import asyncio
+import inspect
 import logging
+import uuid
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from typing import Any
 
 
 # --- Base Domain Event ---
 @dataclass(frozen=True)
 class DomainEvent:
-    """
-    Base class for all domain events in the system.
+    """Base class for all domain events in the system.
     """
 
     aggregate_id: str
     event_id: uuid.UUID = field(default_factory=uuid.uuid4)
     timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert event to dictionary representation for serialization."""
         return {
             "event_id": str(self.event_id),
@@ -28,7 +28,7 @@ class DomainEvent:
             "data": self._get_event_data(),
         }
 
-    def _get_event_data(self) -> Dict[str, Any]:
+    def _get_event_data(self) -> dict[str, Any]:
         """Extract event-specific data for serialization. Override in subclasses."""
         return {}
 
@@ -39,20 +39,19 @@ AsyncHandlerFunc = Callable[[DomainEvent], Any]
 
 
 class EventDispatcher:
-    """
-    Dispatches events to registered handlers. Supports both sync and async handlers.
+    """Dispatches events to registered handlers. Supports both sync and async handlers.
     """
 
     def __init__(self):
-        self._handlers: Dict[
-            Type[DomainEvent], List[Union[HandlerFunc, AsyncHandlerFunc]]
+        self._handlers: dict[
+            type[DomainEvent], list[HandlerFunc | AsyncHandlerFunc],
         ] = {}
         self._logger = logging.getLogger(__name__)
 
     def register(
         self,
-        event_type: Type[DomainEvent],
-        handler: Union[HandlerFunc, AsyncHandlerFunc],
+        event_type: type[DomainEvent],
+        handler: HandlerFunc | AsyncHandlerFunc,
     ) -> None:
         """Register a handler for a specific event type."""
         if event_type not in self._handlers:
@@ -60,19 +59,19 @@ class EventDispatcher:
         if handler not in self._handlers[event_type]:
             self._handlers[event_type].append(handler)
             self._logger.debug(
-                f"Registered handler {handler.__name__} for {event_type.__name__}"
+                f"Registered handler {handler.__name__} for {event_type.__name__}",
             )
 
     def unregister(
         self,
-        event_type: Type[DomainEvent],
-        handler: Union[HandlerFunc, AsyncHandlerFunc],
+        event_type: type[DomainEvent],
+        handler: HandlerFunc | AsyncHandlerFunc,
     ) -> None:
         """Unregister a handler for a specific event type."""
         if event_type in self._handlers and handler in self._handlers[event_type]:
             self._handlers[event_type].remove(handler)
             self._logger.debug(
-                f"Unregistered handler {handler.__name__} for {event_type.__name__}"
+                f"Unregistered handler {handler.__name__} for {event_type.__name__}",
             )
 
     async def dispatch(self, event: DomainEvent) -> None:
@@ -83,7 +82,7 @@ class EventDispatcher:
             self._logger.warning(f"No handlers registered for {event_type.__name__}")
             return
         self._logger.debug(
-            f"Dispatching {event_type.__name__} to {len(handlers)} handlers"
+            f"Dispatching {event_type.__name__} to {len(handlers)} handlers",
         )
         sync_tasks = []
         async_tasks = []
@@ -100,11 +99,11 @@ class EventDispatcher:
             await asyncio.gather(*async_tasks)
 
     def _get_handlers_for_event(
-        self, event: DomainEvent
-    ) -> List[Union[HandlerFunc, AsyncHandlerFunc]]:
+        self, event: DomainEvent,
+    ) -> list[HandlerFunc | AsyncHandlerFunc]:
         """Get all handlers for an event, including parent class handlers."""
         event_type = type(event)
-        handlers: Set[Union[HandlerFunc, AsyncHandlerFunc]] = set()
+        handlers: set[HandlerFunc | AsyncHandlerFunc] = set()
         for registered_type, type_handlers in self._handlers.items():
             if issubclass(event_type, registered_type):
                 handlers.update(type_handlers)

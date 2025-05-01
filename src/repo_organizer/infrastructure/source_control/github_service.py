@@ -17,23 +17,23 @@ import base64
 import datetime
 import json
 import os
-import subprocess
 import re
-from typing import Any, Dict, List, Optional
+import subprocess
+from typing import Any
 
-import requests
 import git
+import requests
 from tenacity import (
     retry,
+    retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
-    retry_if_exception_type,
 )
 
+from repo_organizer.infrastructure.analysis.pydantic_models import Commit, Contributor
 from repo_organizer.utils.exceptions import APIError
 from repo_organizer.utils.logger import Logger
 from repo_organizer.utils.rate_limiter import RateLimiter
-from repo_organizer.infrastructure.analysis.pydantic_models import Commit, Contributor
 
 
 class GitHubService:
@@ -46,9 +46,9 @@ class GitHubService:
     def __init__(
         self,
         github_username: str,
-        github_token: Optional[str] = None,
-        rate_limiter: Optional[RateLimiter] = None,
-        logger: Optional[Logger] = None,
+        github_token: str | None = None,
+        rate_limiter: RateLimiter | None = None,
+        logger: Logger | None = None,
     ):
         """Initialize the GitHub service.
 
@@ -75,7 +75,7 @@ class GitHubService:
         # Inject the *optional* GitHub token into every request.
         if self.github_token:
             self._session.headers.update(
-                {"Authorization": f"token {self.github_token}"}
+                {"Authorization": f"token {self.github_token}"},
             )
 
         # GitHub recommends explicitly setting an *application name* in the
@@ -84,7 +84,7 @@ class GitHubService:
             {
                 "Accept": "application/vnd.github+json",
                 "User-Agent": "repo-organizer/1.0 (https://github.com/)",
-            }
+            },
         )
 
     @retry(
@@ -92,7 +92,7 @@ class GitHubService:
         wait=wait_exponential(multiplier=1, min=2, max=10),
         retry=retry_if_exception_type(APIError),
     )
-    def get_repos(self, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_repos(self, limit: int = 100) -> list[dict[str, Any]]:
         """Return public (non-fork) repositories for *github_username*.
 
         The GitHub REST API limits the ``per_page`` parameter to 100 items.
@@ -104,7 +104,6 @@ class GitHubService:
         Raises:
             APIError: On network failures or unexpected status codes.
         """
-
         collected: list[dict[str, Any]] = []
         page = 1
 
@@ -114,7 +113,7 @@ class GitHubService:
             # ------------------------------------------------------------------
             if self.rate_limiter:
                 self.rate_limiter.wait(
-                    self.logger, debug=getattr(self.logger, "debug_enabled", False)
+                    self.logger, debug=getattr(self.logger, "debug_enabled", False),
                 )
 
             params: dict[str, Any] = {
@@ -190,7 +189,7 @@ class GitHubService:
         wait=wait_exponential(multiplier=1, min=2, max=10),
         retry=retry_if_exception_type(APIError),
     )
-    def get_repo_languages(self, repo_name: str) -> Dict[str, float]:
+    def get_repo_languages(self, repo_name: str) -> dict[str, float]:
         """Get the language breakdown for a repository.
 
         Args:
@@ -202,7 +201,7 @@ class GitHubService:
         # Apply rate limiting if available
         if self.rate_limiter:
             self.rate_limiter.wait(
-                self.logger, debug=getattr(self.logger, "debug_enabled", False)
+                self.logger, debug=getattr(self.logger, "debug_enabled", False),
             )
 
         if self.logger:
@@ -259,7 +258,7 @@ class GitHubService:
         wait=wait_exponential(multiplier=1, min=2, max=10),
         retry=retry_if_exception_type(APIError),
     )
-    def get_repo_readme(self, repo_name: str, max_bytes: int = 5000) -> str:  # noqa: D401
+    def get_repo_readme(self, repo_name: str, max_bytes: int = 5000) -> str:
         """Return the raw README contents for *repo_name*.
 
         The GitHub REST API is queried with an ``Accept: application/vnd.github.raw``
@@ -279,7 +278,7 @@ class GitHubService:
         """
         if self.rate_limiter:
             self.rate_limiter.wait(
-                self.logger, debug=getattr(self.logger, "debug_enabled", False)
+                self.logger, debug=getattr(self.logger, "debug_enabled", False),
             )
 
         if self.logger:
@@ -325,9 +324,7 @@ class GitHubService:
 
         return readme_content
 
-        # ``@retry`` will handle the re-execution in case of APIError.
-
-    def get_repo_commits(self, repo_path: str, limit: int = 10) -> List[Commit]:
+    def get_repo_commits(self, repo_path: str, limit: int = 10) -> list[Commit]:
         """Get recent commits for a repository.
 
         Args:
@@ -351,20 +348,20 @@ class GitHubService:
                         message=commit.message.split("\n")[0],
                         author=commit.author.name,
                         date=datetime.datetime.fromtimestamp(
-                            commit.committed_date
+                            commit.committed_date,
                         ).strftime("%Y-%m-%d"),
-                    )
+                    ),
                 )
 
             return commits
         except Exception as e:
             if self.logger:
                 self.logger.log(
-                    f"Error getting commits for {repo_path}: {str(e)}", "warning"
+                    f"Error getting commits for {repo_path}: {e!s}", "warning",
                 )
             return []
 
-    def get_repo_contributors(self, repo_path: str) -> List[Contributor]:
+    def get_repo_contributors(self, repo_path: str) -> list[Contributor]:
         """Get contributors for a repository.
 
         Args:
@@ -381,7 +378,7 @@ class GitHubService:
                 ["git", "shortlog", "-sn", "--no-merges"],
                 capture_output=True,
                 text=True,
-                cwd=repo_path,
+                cwd=repo_path, check=False,
             )
 
             contributors = []
@@ -394,15 +391,15 @@ class GitHubService:
                             count, name = parts
                             contributors.append(
                                 Contributor(
-                                    name=name.strip(), commits=int(count.strip())
-                                )
+                                    name=name.strip(), commits=int(count.strip()),
+                                ),
                             )
 
             return contributors
         except Exception as e:
             if self.logger:
                 self.logger.log(
-                    f"Error getting contributors for {repo_path}: {str(e)}", "warning"
+                    f"Error getting contributors for {repo_path}: {e!s}", "warning",
                 )
             return []
 
@@ -411,7 +408,7 @@ class GitHubService:
         wait=wait_exponential(multiplier=1, min=2, max=10),
         retry=retry_if_exception_type(APIError),
     )
-    def get_repo_issues_stats(self, repo_name: str) -> Dict[str, Any]:
+    def get_repo_issues_stats(self, repo_name: str) -> dict[str, Any]:
         """Get issue statistics for a repository.
 
         Args:
@@ -422,7 +419,7 @@ class GitHubService:
         """
         if self.rate_limiter:
             self.rate_limiter.wait(
-                self.logger, debug=getattr(self.logger, "debug_enabled", False)
+                self.logger, debug=getattr(self.logger, "debug_enabled", False),
             )
 
         if self.logger:
@@ -474,7 +471,7 @@ class GitHubService:
                         "direction": "desc",
                     }
                     recent_response = self._session.get(
-                        open_url, params=recent_params, timeout=15
+                        open_url, params=recent_params, timeout=15,
                     )
                     if recent_response.status_code == 200:
                         recent_issues = recent_response.json()
@@ -484,7 +481,7 @@ class GitHubService:
                                 updated_at = issue.get("updated_at")
                                 if updated_at:
                                     updated_date = datetime.datetime.fromisoformat(
-                                        updated_at.rstrip("Z")
+                                        updated_at.rstrip("Z"),
                                     )
                                     if (now - updated_date).days <= 30:
                                         recent_activity = True
@@ -519,16 +516,16 @@ class GitHubService:
             }
         except Exception as e:
             if self.logger:
-                self.logger.log(f"Error fetching issues stats: {str(e)}", "warning")
+                self.logger.log(f"Error fetching issues stats: {e!s}", "warning")
                 self.logger.update_stats("retries")
-            raise APIError(f"Error fetching issues stats: {str(e)}") from e
+            raise APIError(f"Error fetching issues stats: {e!s}") from e
 
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
         retry=retry_if_exception_type(APIError),
     )
-    def get_repo_commit_activity(self, repo_name: str) -> Dict[str, Any]:
+    def get_repo_commit_activity(self, repo_name: str) -> dict[str, Any]:
         """Get commit activity statistics for a repository.
 
         Args:
@@ -539,7 +536,7 @@ class GitHubService:
         """
         if self.rate_limiter:
             self.rate_limiter.wait(
-                self.logger, debug=getattr(self.logger, "debug_enabled", False)
+                self.logger, debug=getattr(self.logger, "debug_enabled", False),
             )
 
         if self.logger:
@@ -601,16 +598,16 @@ class GitHubService:
             }
         except Exception as e:
             if self.logger:
-                self.logger.log(f"Error fetching commit activity: {str(e)}", "warning")
+                self.logger.log(f"Error fetching commit activity: {e!s}", "warning")
                 self.logger.update_stats("retries")
-            raise APIError(f"Error fetching commit activity: {str(e)}") from e
+            raise APIError(f"Error fetching commit activity: {e!s}") from e
 
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
         retry=retry_if_exception_type(APIError),
     )
-    def get_repo_contributors_stats(self, repo_name: str) -> Dict[str, Any]:
+    def get_repo_contributors_stats(self, repo_name: str) -> dict[str, Any]:
         """Get contributor statistics for a repository.
 
         Args:
@@ -621,7 +618,7 @@ class GitHubService:
         """
         if self.rate_limiter:
             self.rate_limiter.wait(
-                self.logger, debug=getattr(self.logger, "debug_enabled", False)
+                self.logger, debug=getattr(self.logger, "debug_enabled", False),
             )
 
         if self.logger:
@@ -680,17 +677,17 @@ class GitHubService:
         except Exception as e:
             if self.logger:
                 self.logger.log(
-                    f"Error fetching contributor stats: {str(e)}", "warning"
+                    f"Error fetching contributor stats: {e!s}", "warning",
                 )
                 self.logger.update_stats("retries")
-            raise APIError(f"Error fetching contributor stats: {str(e)}") from e
+            raise APIError(f"Error fetching contributor stats: {e!s}") from e
 
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
         retry=retry_if_exception_type(APIError),
     )
-    def get_repo_dependency_files(self, repo_name: str) -> Dict[str, Any]:
+    def get_repo_dependency_files(self, repo_name: str) -> dict[str, Any]:
         """Get dependency files for a repository (package.json, requirements.txt, etc).
 
         Args:
@@ -701,7 +698,7 @@ class GitHubService:
         """
         if self.rate_limiter:
             self.rate_limiter.wait(
-                self.logger, debug=getattr(self.logger, "debug_enabled", False)
+                self.logger, debug=getattr(self.logger, "debug_enabled", False),
             )
 
         if self.logger:
@@ -736,18 +733,18 @@ class GitHubService:
                         if content_data.get("type") == "file":
                             # File exists, get content
                             content = base64.b64decode(
-                                content_data.get("content", "")
+                                content_data.get("content", ""),
                             ).decode("utf-8")
                             results[file_path] = content
                             found_any = True
                     except Exception as e:
                         if self.logger:
                             self.logger.log(
-                                f"Error parsing {file_path} content: {e}", "debug"
+                                f"Error parsing {file_path} content: {e}", "debug",
                             )
             except Exception as e:
                 if self.logger:
-                    self.logger.log(f"Error fetching {file_path}: {str(e)}", "debug")
+                    self.logger.log(f"Error fetching {file_path}: {e!s}", "debug")
 
         # Add a summary if any files were found
         if found_any:
@@ -759,7 +756,7 @@ class GitHubService:
                         deps = list(data.get("dependencies", {}).keys())
                         dev_deps = list(data.get("devDependencies", {}).keys())
                         summary.append(
-                            f"Node.js project with {len(deps)} dependencies and {len(dev_deps)} dev dependencies"
+                            f"Node.js project with {len(deps)} dependencies and {len(dev_deps)} dev dependencies",
                         )
                     except Exception:
                         summary.append("Node.js project (could not parse package.json)")
@@ -772,7 +769,7 @@ class GitHubService:
                     summary.append(f"Python project with {len(lines)} dependencies")
                 elif file == "pyproject.toml":
                     summary.append(
-                        "Python project using modern tooling (pyproject.toml)"
+                        "Python project using modern tooling (pyproject.toml)",
                     )
                 elif file == "go.mod":
                     summary.append("Go module")

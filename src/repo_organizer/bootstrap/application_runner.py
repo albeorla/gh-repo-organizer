@@ -1,17 +1,16 @@
-"""
-Main application orchestrator for the GitHub Repository Organizer.
+"""Main application orchestrator for the GitHub Repository Organizer.
 
 This module contains the ApplicationRunner class which serves as the main
 orchestrator for the repository analysis process, following the Façade pattern
 to provide a simple interface to the complex subsystem of services.
 """
 
-import os
-import time
 import concurrent.futures
+import os
 import sys
+import time
 from threading import Lock
-from typing import Any, Dict
+from typing import Any
 
 from rich.console import Console
 
@@ -86,7 +85,7 @@ class ApplicationRunner:
                 level="warning",
             )
 
-    def _should_skip_analysis(self, repo_info: Dict[str, Any]) -> bool:
+    def _should_skip_analysis(self, repo_info: dict[str, Any]) -> bool:
         """Check if analysis for a repo should be skipped based on existing report file.
 
         Args:
@@ -110,7 +109,7 @@ class ApplicationRunner:
         if os.path.exists(repo_file_path):
             try:
                 updated_at_str = repo_info.get("updatedAt") or repo_info.get(
-                    "updated_at"
+                    "updated_at",
                 )
                 if updated_at_str:
                     import datetime as _dt
@@ -119,7 +118,7 @@ class ApplicationRunner:
                     updated_at_str = updated_at_str.rstrip("Z")
                     repo_updated_ts = _dt.datetime.fromisoformat(updated_at_str)
                     report_mtime_ts = _dt.datetime.fromtimestamp(
-                        os.path.getmtime(repo_file_path)
+                        os.path.getmtime(repo_file_path),
                     )
 
                     if report_mtime_ts >= repo_updated_ts:
@@ -171,7 +170,7 @@ class ApplicationRunner:
         except Exception as e:
             # Log exception caught directly within the task
             self.logger.log(
-                f"Exception in analyze_repo_task for {repo_name}: {type(e).__name__}: {str(e)}",
+                f"Exception in analyze_repo_task for {repo_name}: {type(e).__name__}: {e!s}",
                 level="error",
             )
             import traceback
@@ -216,7 +215,7 @@ class ApplicationRunner:
             filtered_repos = [r for r in repos if not self._should_skip_analysis(r)]
             return len(filtered_repos)
         except Exception as e:
-            self.logger.log(f"Error determining repository count: {str(e)}", "error")
+            self.logger.log(f"Error determining repository count: {e!s}", "error")
             return 0
 
     def get_summary(self) -> str:
@@ -254,15 +253,15 @@ class ApplicationRunner:
         if progress_callback:
             self.progress_reporter.set_progress_callback(progress_callback)
         self.logger.log(
-            f"Starting GitHub repository analysis with {self.max_workers} workers"
+            f"Starting GitHub repository analysis with {self.max_workers} workers",
         )
         if self.debug_logging:
             self.logger.log("Debug logging enabled", level="debug")
         self.logger.log(
-            f"GitHub API rate limit: {self.github_limiter.calls_per_minute} calls/min"
+            f"GitHub API rate limit: {self.github_limiter.calls_per_minute} calls/min",
         )
         self.logger.log(
-            f"LLM API rate limit: {self.llm_limiter.calls_per_minute} calls/min"
+            f"LLM API rate limit: {self.llm_limiter.calls_per_minute} calls/min",
         )
 
         # Create the analyzer service instance using our analyzer that implements AnalyzerPort
@@ -284,10 +283,10 @@ class ApplicationRunner:
             repos = self.github_service.get_repos(self.max_repos)
             if not repos:
                 self.logger.log("No repositories found to analyze.", level="warning")
-                return
+                return None
             self.logger.log(f"Successfully fetched {len(repos)} repositories")
         except Exception as e:
-            self.logger.log(f"Failed to fetch repositories: {str(e)}", level="error")
+            self.logger.log(f"Failed to fetch repositories: {e!s}", level="error")
             sys.exit(1)  # Exit if we can't fetch repos
 
         # Analyze repositories
@@ -326,7 +325,7 @@ class ApplicationRunner:
                     self.callback(self.completed, self.total, None)
 
         with concurrent.futures.ThreadPoolExecutor(
-            max_workers=self.max_workers
+            max_workers=self.max_workers,
         ) as executor:
             future_to_repo = {}
             skipped_count = 0
@@ -358,7 +357,7 @@ class ApplicationRunner:
                 # If not skipped, submit the analysis task
                 future_to_repo[
                     executor.submit(
-                        self.analyze_repo_task, repo, repository_analyzer, pbar
+                        self.analyze_repo_task, repo, repository_analyzer, pbar,
                     )
                 ] = repo
 
@@ -377,7 +376,7 @@ class ApplicationRunner:
                         analyses.append(analysis_result)
                         # Write the individual report immediately after successful analysis
                         repository_analyzer._write_single_report(
-                            analysis_result, repo_info
+                            analysis_result, repo_info,
                         )
                 except Exception as exc:
                     self.logger.log(
@@ -401,7 +400,7 @@ class ApplicationRunner:
         if analyses:
             self.logger.log(f"Reports generated in {self.output_dir}", "success")
             self.logger.log(
-                f"Main report: {os.path.join(self.output_dir, 'repositories_report.md')}"
+                f"Main report: {os.path.join(self.output_dir, 'repositories_report.md')}",
             )
 
         self.logger.print_summary([self.github_limiter, self.llm_limiter])

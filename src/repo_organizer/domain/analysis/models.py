@@ -12,8 +12,8 @@ application & domain layers.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Sequence
 
 # Import Pydantic models from the infrastructure layer
 from repo_organizer.infrastructure.analysis.pydantic_models import (
@@ -22,7 +22,6 @@ from repo_organizer.infrastructure.analysis.pydantic_models import (
 from repo_organizer.infrastructure.analysis.pydantic_models import (
     RepoRecommendation as _RecommendationPydantic,
 )
-
 
 # ---------------------------------------------------------------------------
 # Value Objects
@@ -39,14 +38,14 @@ class Recommendation:
 
     # Conversion helpers -----------------------------------------------------
     @staticmethod
-    def from_pydantic(pyd_obj: _RecommendationPydantic) -> "Recommendation":
+    def from_pydantic(pyd_obj: _RecommendationPydantic) -> Recommendation:
         return Recommendation(
             recommendation=pyd_obj.recommendation,
             reason=pyd_obj.reason,
             priority=pyd_obj.priority,
         )
 
-    def to_pydantic(self) -> _RecommendationPydantic:  # noqa: D401
+    def to_pydantic(self) -> _RecommendationPydantic:
         return _RecommendationPydantic(
             recommendation=self.recommendation,
             reason=self.reason,
@@ -76,7 +75,7 @@ class RepoAnalysis:
 
     # Conversion helpers -----------------------------------------------------
     @staticmethod
-    def from_pydantic(pyd_obj: _RepoAnalysisPydantic) -> "RepoAnalysis":
+    def from_pydantic(pyd_obj: _RepoAnalysisPydantic) -> RepoAnalysis:
         return RepoAnalysis(
             repo_name=pyd_obj.repo_name,
             summary=pyd_obj.summary,
@@ -92,7 +91,7 @@ class RepoAnalysis:
             action_reasoning=pyd_obj.action_reasoning,
         )
 
-    def to_pydantic(self) -> _RepoAnalysisPydantic:  # noqa: D401
+    def to_pydantic(self) -> _RepoAnalysisPydantic:
         return _RepoAnalysisPydantic(
             repo_name=self.repo_name,
             summary=self.summary,

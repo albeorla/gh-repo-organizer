@@ -1,5 +1,4 @@
-"""
-Settings management module implementing Repository pattern for configuration.
+"""Settings management module implementing Repository pattern for configuration.
 
 This module provides a centralized configuration management system using
 the Repository pattern, allowing access to configuration values from
@@ -7,11 +6,10 @@ multiple sources (environment variables, config files, etc).
 """
 
 import os
-from typing import Optional
 
+from dotenv import load_dotenv
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
-from dotenv import load_dotenv
 
 
 class Settings(BaseSettings):
@@ -26,8 +24,8 @@ class Settings(BaseSettings):
     github_token: str = Field(..., description="GitHub Personal Access Token")
 
     # GitHub configuration
-    github_username: Optional[str] = Field(
-        None, description="GitHub username for API requests"
+    github_username: str | None = Field(
+        None, description="GitHub username for API requests",
     )
 
     # Repository organizer settings
@@ -39,7 +37,7 @@ class Settings(BaseSettings):
     llm_model: str = Field("claude-3-7-sonnet-latest", description="LLM model to use")
     llm_temperature: float = Field(0.2, description="LLM temperature (0.0-1.0)")
     llm_thinking_enabled: bool = Field(
-        True, description="Enable extended thinking for LLM"
+        True, description="Enable extended thinking for LLM",
     )
     llm_thinking_budget: int = Field(16000, description="Token budget for LLM thinking")
 
@@ -54,16 +52,16 @@ class Settings(BaseSettings):
 
     # Application settings
     log_level: str = Field(
-        "INFO", description="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)"
+        "INFO", description="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)",
     )
     cache_dir: str = Field(
-        "~/.repo_organizer/cache", description="Directory for caching data"
+        "~/.repo_organizer/cache", description="Directory for caching data",
     )
 
     # Feature flags
     enable_analytics: bool = Field(False, description="Enable usage analytics")
     debug_mode: bool = Field(
-        False, description="Enable debug mode with additional logging"
+        False, description="Enable debug mode with additional logging",
     )
 
     @field_validator("github_token")
@@ -73,7 +71,7 @@ class Settings(BaseSettings):
         return v
 
     @field_validator("output_dir", "logs_dir")
-    def create_directory(cls, v: str) -> str:  # noqa: D401
+    def create_directory(cls, v: str) -> str:
         """Return a fully-qualified path and guarantee the directory exists.
 
         The path supplied by the user may contain *nix style home
@@ -83,7 +81,6 @@ class Settings(BaseSettings):
         absolute path so the rest of the application can rely on a
         canonical representation.
         """
-
         # Expand ``~`` to the user home and any *nix environment
         # variables that may be present in the supplied string.
         expanded = os.path.expanduser(os.path.expandvars(v))
@@ -108,7 +105,7 @@ class Settings(BaseSettings):
     }
 
 
-def load_settings(env_file: Optional[str] = None) -> Settings:
+def load_settings(env_file: str | None = None) -> Settings:
     """Load settings from environment or .env file.
 
     This function implements the Factory pattern to create a validated

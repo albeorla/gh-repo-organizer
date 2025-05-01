@@ -1,5 +1,4 @@
-"""
-Tests for the authentication validator module.
+"""Tests for the authentication validator module.
 """
 
 from repo_organizer.domain.core.auth_validator import validate_username
@@ -21,7 +20,9 @@ class TestAuthValidator:
 
         for username in valid_usernames:
             result = validate_username(username)
-            assert result.is_valid, f"Username '{username}' should be valid, got error: {result.error_message}"
+            assert result.is_valid, (
+                f"Username '{username}' should be valid, got error: {result.error_message}"
+            )
             assert result.error_message is None
 
     def test_validate_username_none(self):

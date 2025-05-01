@@ -1,15 +1,14 @@
-"""
-Domain events for the Analysis bounded context.
+"""Domain events for the Analysis bounded context.
 
 These events represent significant state changes and actions within the analysis process.
 """
 
-from dataclasses import dataclass
 import uuid
-from datetime import datetime, UTC
-from typing import Dict, Any
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from typing import Any
 
-from repo_organizer.domain.analysis.models import RepoAnalysis, Recommendation
+from repo_organizer.domain.analysis.models import Recommendation, RepoAnalysis
 
 # Since we're having inheritance issues with the DomainEvent class,
 # we'll create standalone event classes that follow the same pattern
@@ -25,7 +24,7 @@ class RepositoryAnalysisCompleted:
     event_id: uuid.UUID = uuid.uuid4()
     timestamp: datetime = datetime.now(UTC)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert event to dictionary representation for serialization."""
         return {
             "event_id": str(self.event_id),
@@ -35,7 +34,7 @@ class RepositoryAnalysisCompleted:
             "data": self._get_event_data(),
         }
 
-    def _get_event_data(self) -> Dict[str, Any]:
+    def _get_event_data(self) -> dict[str, Any]:
         """Extract event-specific data for serialization."""
         return {
             "repo_name": self.analysis.repo_name,
@@ -57,7 +56,7 @@ class RepositoryActionRecommended:
     event_id: uuid.UUID = uuid.uuid4()
     timestamp: datetime = datetime.now(UTC)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert event to dictionary representation for serialization."""
         return {
             "event_id": str(self.event_id),
@@ -67,7 +66,7 @@ class RepositoryActionRecommended:
             "data": self._get_event_data(),
         }
 
-    def _get_event_data(self) -> Dict[str, Any]:
+    def _get_event_data(self) -> dict[str, Any]:
         """Extract event-specific data for serialization."""
         return {
             "repo_name": self.repo_name,
@@ -86,7 +85,7 @@ class HighPriorityIssueIdentified:
     event_id: uuid.UUID = uuid.uuid4()
     timestamp: datetime = datetime.now(UTC)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert event to dictionary representation for serialization."""
         return {
             "event_id": str(self.event_id),
@@ -96,7 +95,7 @@ class HighPriorityIssueIdentified:
             "data": self._get_event_data(),
         }
 
-    def _get_event_data(self) -> Dict[str, Any]:
+    def _get_event_data(self) -> dict[str, Any]:
         """Extract event-specific data for serialization."""
         return {
             "repo_name": self.repo_name,
@@ -116,7 +115,7 @@ class AnalysisError:
     event_id: uuid.UUID = uuid.uuid4()
     timestamp: datetime = datetime.now(UTC)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert event to dictionary representation for serialization."""
         return {
             "event_id": str(self.event_id),
@@ -126,7 +125,7 @@ class AnalysisError:
             "data": self._get_event_data(),
         }
 
-    def _get_event_data(self) -> Dict[str, Any]:
+    def _get_event_data(self) -> dict[str, Any]:
         """Extract event-specific data for serialization."""
         return {
             "repo_name": self.repo_name,

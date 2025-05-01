@@ -14,9 +14,8 @@ duplication.  In a later stage we may gradually migrate towards lightweight
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Mapping, Sequence
-
 
 ###############################################################################
 # Value Objects
@@ -30,7 +29,7 @@ class LanguageBreakdown:
     language: str
     percentage: float  # 0-100 inclusive
 
-    def __post_init__(self) -> None:  # noqa: D401
+    def __post_init__(self) -> None:
         if not (0.0 <= self.percentage <= 100.0):
             raise ValueError("percentage must be between 0 and 100")
 
@@ -72,9 +71,8 @@ class Repository:
     languages: Sequence[LanguageBreakdown] | None = None
 
     # Convenience helpers -----------------------------------------------------
-    def with_languages(self, breakdown: Mapping[str, float]) -> "Repository":
+    def with_languages(self, breakdown: Mapping[str, float]) -> Repository:
         """Return a *new* instance containing language percentages."""
-
         lb = [LanguageBreakdown(lang, pct) for lang, pct in breakdown.items()]
         return Repository(
             name=self.name,

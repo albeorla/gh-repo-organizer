@@ -1,9 +1,11 @@
-import pytest
 import asyncio
-from src.repo_organizer.domain.core.events import DomainEvent, EventDispatcher
-from dataclasses import dataclass
 import uuid
+from dataclasses import dataclass
 from datetime import datetime
+
+import pytest
+
+from src.repo_organizer.domain.core.events import DomainEvent, EventDispatcher
 
 
 # --- Test Event Classes ---

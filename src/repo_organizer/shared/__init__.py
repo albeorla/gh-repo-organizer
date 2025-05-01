@@ -14,13 +14,12 @@ implementations into this package without breaking imports.
 # NOTE:  Re-export legacy utilities so existing code keeps working while we
 # gradually migrate call-sites to the new import paths.
 
-from repo_organizer.utils.logger import Logger as Logger  # noqa: F401
-from repo_organizer.utils.rate_limiter import RateLimiter as RateLimiter  # noqa: F401
-from repo_organizer.utils.exceptions import APIError  # noqa: F401
-
+from repo_organizer.utils.exceptions import APIError
+from repo_organizer.utils.logger import Logger as Logger
+from repo_organizer.utils.rate_limiter import RateLimiter as RateLimiter
 
 __all__ = [
+    "APIError",
     "Logger",
     "RateLimiter",
-    "APIError",
 ]

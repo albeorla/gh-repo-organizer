@@ -1,5 +1,4 @@
-"""
-GitHub adapter that implements the SourceControlPort.
+"""GitHub adapter that implements the SourceControlPort.
 
 This adapter connects the domain layer with the actual GitHub infrastructure service,
 implementing the SourceControlPort protocol while delegating to the GitHubService.
@@ -7,7 +6,7 @@ implementing the SourceControlPort protocol while delegating to the GitHubServic
 
 from __future__ import annotations
 
-from typing import Optional, Sequence
+from collections.abc import Sequence
 
 from repo_organizer.domain.source_control.models import (
     Commit,
@@ -31,8 +30,8 @@ class GitHubAdapter:
     def __init__(
         self,
         settings: Settings,
-        logger: Optional[Logger] = None,
-        rate_limiter: Optional[GitHubRateLimiter] = None,
+        logger: Logger | None = None,
+        rate_limiter: GitHubRateLimiter | None = None,
     ):
         """Initialize the GitHub adapter.
 
@@ -44,7 +43,7 @@ class GitHubAdapter:
         # Create default rate limiter with settings if none provided
         if rate_limiter is None:
             rate_limiter = GitHubRateLimiter(
-                calls_per_minute=settings.github_rate_limit
+                calls_per_minute=settings.github_rate_limit,
             )
 
         # Initialize the underlying GitHub service
@@ -58,7 +57,7 @@ class GitHubAdapter:
         self.logger = logger
 
     def list_repositories(
-        self, owner: str, *, limit: int | None = None
+        self, owner: str, *, limit: int | None = None,
     ) -> Sequence[Repository]:
         """Return public repositories owned by *owner*.
 
@@ -104,7 +103,7 @@ class GitHubAdapter:
             ]
         except Exception as e:
             if self.logger:
-                self.logger.log(f"Error fetching repositories: {str(e)}", "error")
+                self.logger.log(f"Error fetching repositories: {e!s}", "error")
             return []
 
     def fetch_languages(self, repo: Repository) -> Sequence[LanguageBreakdown]:
@@ -131,7 +130,7 @@ class GitHubAdapter:
         except Exception as e:
             if self.logger:
                 self.logger.log(
-                    f"Error fetching languages for {repo.name}: {str(e)}", "error"
+                    f"Error fetching languages for {repo.name}: {e!s}", "error",
                 )
             return []
 
@@ -153,9 +152,7 @@ class GitHubAdapter:
             # We'll use any activity data available from GitHub API instead
             activity_data = self.github_service.get_repo_commit_activity(repo.name)
             # Get contributor data for debugging only
-            _ = self.github_service.get_repo_contributors_stats(
-                repo.name
-            )
+            _ = self.github_service.get_repo_contributors_stats(repo.name)
 
             # Log that we would need a local clone for actual commits
             if self.logger:
@@ -176,7 +173,7 @@ class GitHubAdapter:
         except Exception as e:
             if self.logger:
                 self.logger.log(
-                    f"Error fetching commits for {repo.name}: {str(e)}", "error"
+                    f"Error fetching commits for {repo.name}: {e!s}", "error",
                 )
             return []
 
@@ -195,7 +192,7 @@ class GitHubAdapter:
         try:
             # Similar to commits, we need API-based stats rather than local clone
             contributor_stats = self.github_service.get_repo_contributors_stats(
-                repo.name
+                repo.name,
             )
 
             # Log that we would need to add API endpoint or local clone for actual contributors
@@ -216,6 +213,6 @@ class GitHubAdapter:
         except Exception as e:
             if self.logger:
                 self.logger.log(
-                    f"Error fetching contributors for {repo.name}: {str(e)}", "error"
+                    f"Error fetching contributors for {repo.name}: {e!s}", "error",
                 )
             return []

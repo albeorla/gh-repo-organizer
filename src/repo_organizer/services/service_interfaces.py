@@ -1,12 +1,12 @@
-"""
-Interface definitions for services to enable dependency inversion.
+"""Interface definitions for services to enable dependency inversion.
 
 This module contains Protocol classes that define interfaces for various
 services used in the application, following the Interface Segregation and
 Dependency Inversion principles from SOLID.
 """
 
-from typing import Protocol, List, Dict, Any, Optional
+from typing import Any, Protocol
+
 from repo_organizer.infrastructure.analysis.pydantic_models import (
     Commit,
     Contributor,
@@ -25,7 +25,7 @@ class LoggerProtocol(Protocol):
         """Update statistics."""
         ...
 
-    def print_summary(self, rate_limiters: Optional[List[Any]] = None) -> None:
+    def print_summary(self, rate_limiters: list[Any] | None = None) -> None:
         """Print a summary of the run statistics."""
         ...
 
@@ -34,12 +34,12 @@ class RateLimiterProtocol(Protocol):
     """Interface for rate limiter implementations."""
 
     def wait(
-        self, logger: Optional[LoggerProtocol] = None, debug: bool = False
+        self, logger: LoggerProtocol | None = None, debug: bool = False,
     ) -> float:
         """Wait until next call is allowed according to rate limits."""
         ...
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get statistics about rate limiting."""
         ...
 
@@ -47,19 +47,19 @@ class RateLimiterProtocol(Protocol):
 class GitHubServiceProtocol(Protocol):
     """Interface for GitHub service implementations."""
 
-    def get_repos(self, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_repos(self, limit: int = 100) -> list[dict[str, Any]]:
         """Fetch repository information using GitHub CLI."""
         ...
 
-    def get_repo_languages(self, repo_name: str) -> Dict[str, float]:
+    def get_repo_languages(self, repo_name: str) -> dict[str, float]:
         """Get the language breakdown for a repository."""
         ...
 
-    def get_repo_commits(self, repo_path: str, limit: int = 10) -> List[Commit]:
+    def get_repo_commits(self, repo_path: str, limit: int = 10) -> list[Commit]:
         """Get recent commits for a repository."""
         ...
 
-    def get_repo_contributors(self, repo_path: str) -> List[Contributor]:
+    def get_repo_contributors(self, repo_path: str) -> list[Contributor]:
         """Get contributors for a repository."""
         ...
 
@@ -81,11 +81,11 @@ class RepositoryAnalyzerServiceProtocol(Protocol):
 
     def analyze_repos(
         self,
-        repos: List[Dict],
+        repos: list[dict],
         model_name: str = "claude-3-opus-20240229",
-        max_repos: Optional[int] = None,
+        max_repos: int | None = None,
         retry_failed: bool = False,
         force_repull: bool = False,
-    ) -> List[RepoAnalysis]:
+    ) -> list[RepoAnalysis]:
         """Analyze multiple GitHub repositories and generate reports."""
         ...

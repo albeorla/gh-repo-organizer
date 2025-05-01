@@ -1,9 +1,9 @@
-"""
-Tests for the GitHub adapter implementation.
+"""Tests for the GitHub adapter implementation.
 """
 
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from repo_organizer.domain.source_control.models import Repository
 from repo_organizer.infrastructure.source_control.github_adapter import GitHubAdapter
@@ -24,29 +24,22 @@ class TestGitHubAdapter:
     @pytest.fixture
     def mock_logger(self):
         """Create mock logger for tests."""
-        logger = MagicMock()
-        return logger
+        return MagicMock()
 
     @pytest.fixture
     def mock_rate_limiter(self):
         """Create mock rate limiter for tests."""
-        rate_limiter = MagicMock()
-        return rate_limiter
+        return MagicMock()
 
     @pytest.fixture
-    def github_adapter(self, mock_settings, mock_logger, mock_rate_limiter):
-        """Create GitHub adapter with mocked dependencies."""
-        with patch(
-            "repo_organizer.infrastructure.source_control.github_adapter.GitHubService"
-        ) as mock_service:
-            # Configure the mock service
-            mock_service.return_value
-            adapter = GitHubAdapter(
-                settings=mock_settings,
+    def github_adapter(self, mock_logger, mock_rate_limiter):
+        """Create GitHub adapter instance for tests."""
+        with patch("repo_organizer.infrastructure.source_control.github_adapter.GitHubService") as mock_service:
+            return GitHubAdapter(
+                github_service=mock_service(),
                 logger=mock_logger,
                 rate_limiter=mock_rate_limiter,
             )
-            return adapter
 
     def test_list_repositories_success(self, github_adapter, mock_logger):
         """Test list_repositories successfully retrieves repositories."""
@@ -92,7 +85,7 @@ class TestGitHubAdapter:
         # Verify service call
         github_adapter.github_service.get_repos.assert_called_once_with(limit=10)
         mock_logger.log.assert_called_with(
-            "Fetching repositories for test-user", "info"
+            "Fetching repositories for test-user", "info",
         )
 
     def test_list_repositories_wrong_owner(self, github_adapter, mock_logger):
@@ -122,7 +115,7 @@ class TestGitHubAdapter:
         # Assert
         assert len(repos) == 0
         mock_logger.log.assert_any_call(
-            "Error fetching repositories: API Error", "error"
+            "Error fetching repositories: API Error", "error",
         )
 
     def test_fetch_languages(self, github_adapter, mock_logger):
@@ -157,7 +150,7 @@ class TestGitHubAdapter:
 
         # Verify service call
         github_adapter.github_service.get_repo_languages.assert_called_once_with(
-            "test-repo"
+            "test-repo",
         )
         mock_logger.log.assert_called_with("Fetching languages for test-repo", "info")
 
@@ -174,7 +167,7 @@ class TestGitHubAdapter:
             forks=0,
         )
         github_adapter.github_service.get_repo_languages.side_effect = Exception(
-            "API Error"
+            "API Error",
         )
 
         # Act
@@ -183,7 +176,7 @@ class TestGitHubAdapter:
         # Assert
         assert len(languages) == 0
         mock_logger.log.assert_any_call(
-            "Error fetching languages for test-repo: API Error", "error"
+            "Error fetching languages for test-repo: API Error", "error",
         )
 
     def test_recent_commits(self, github_adapter, mock_logger):
@@ -215,7 +208,7 @@ class TestGitHubAdapter:
         # We expect an empty list since actual commits require a local clone
         assert len(commits) == 0
         github_adapter.github_service.get_repo_commit_activity.assert_called_once_with(
-            "test-repo"
+            "test-repo",
         )
         mock_logger.log.assert_any_call("Fetching recent commits for test-repo", "info")
 
@@ -243,6 +236,6 @@ class TestGitHubAdapter:
         # We expect an empty list since actual contributors require enhanced API access
         assert len(contributors) == 0
         github_adapter.github_service.get_repo_contributors_stats.assert_called_once_with(
-            "test-repo"
+            "test-repo",
         )
         mock_logger.log.assert_any_call("Fetching contributors for test-repo", "info")

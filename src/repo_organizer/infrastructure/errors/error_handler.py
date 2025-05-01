@@ -1,5 +1,4 @@
-"""
-Error handling utilities.
+"""Error handling utilities.
 
 This module provides utilities for handling errors in a consistent way,
 including decorators for error handling and utility functions for error logging.
@@ -7,7 +6,8 @@ including decorators for error handling and utility functions for error logging.
 
 import functools
 import traceback
-from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, cast
+from collections.abc import Callable
+from typing import Any, TypeVar, cast
 
 from repo_organizer.infrastructure.errors.exceptions import RepoOrganizerError
 from repo_organizer.infrastructure.logging.logger import Logger
@@ -20,7 +20,7 @@ def handle_errors(
     logger: Logger,
     default_message: str = "An error occurred",
     reraise: bool = True,
-    handled_exceptions: Optional[List[Type[Exception]]] = None,
+    handled_exceptions: list[type[Exception]] | None = None,
     return_value: Any = None,
 ) -> Callable[[Callable[..., T]], Callable[..., T]]:
     """Decorator for handling errors in a consistent way.
@@ -65,7 +65,7 @@ def handle_errors(
                 # Reraise or return the specified value
                 if reraise:
                     raise
-                return cast(T, return_value)
+                return cast("T", return_value)
 
         return wrapper
 
@@ -77,7 +77,7 @@ def log_error(
     error: Exception,
     message: str = "An error occurred",
     log_level: str = "error",
-    context: Optional[Dict[str, Any]] = None,
+    context: dict[str, Any] | None = None,
 ) -> None:
     """Log an error with consistent formatting.
 

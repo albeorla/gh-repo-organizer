@@ -1,5 +1,4 @@
-"""
-Enhanced logging utility with rich formatting.
+"""Enhanced logging utility with rich formatting.
 
 This module provides a Logger class that implements a Façade pattern over
 the Rich console and standard file logging, simplifying the interface for
@@ -7,13 +6,13 @@ logging operations throughout the application.
 """
 
 import datetime
-import time
 import os
-from typing import Any, List, Optional
+import time
+from typing import Any
 
 from rich.console import Console
-from rich.table import Table
 from rich.panel import Panel
+from rich.table import Table
 
 from repo_organizer.utils.rate_limiter import RateLimiter
 
@@ -36,10 +35,10 @@ class Logger:
     def __init__(
         self,
         log_file: str,
-        console: Optional[Console] = None,
+        console: Console | None = None,
         debug_enabled: bool = False,
         quiet_mode: bool = False,
-        username: Optional[str] = None,
+        username: str | None = None,
     ):
         """Initialize the logger.
 
@@ -73,14 +72,16 @@ class Logger:
 
     def set_username(self, username: str) -> None:
         """Set the username for logging and tracking.
-        
+
         Args:
             username: Username to associate with log entries
         """
         self.username = username
         self.log(f"Username set to {username}", level="debug")
 
-    def log(self, message: str, level: str = "info", username: Optional[str] = None) -> None:
+    def log(
+        self, message: str, level: str = "info", username: str | None = None,
+    ) -> None:
         """Log a message to both console and log file.
 
         Args:
@@ -91,7 +92,7 @@ class Logger:
         """
         # Use the provided username or the default one
         effective_username = username or self.username
-        
+
         # Only print to console if:
         # 1. Not in quiet mode, or level is error/warning
         # 2. Level is not debug or debug is enabled
@@ -183,7 +184,7 @@ class Logger:
         else:
             self.stats[key] = value
 
-    def print_summary(self, rate_limiters: Optional[List[RateLimiter]] = None) -> None:
+    def print_summary(self, rate_limiters: list[RateLimiter] | None = None) -> None:
         """Print a summary of the run statistics.
 
         Args:
@@ -198,7 +199,7 @@ class Logger:
 
         summary.add_row("Total Duration", f"{duration:.2f} seconds")
         summary.add_row(
-            "Repositories Analyzed", str(self.stats.get("repos_analyzed", 0))
+            "Repositories Analyzed", str(self.stats.get("repos_analyzed", 0)),
         )
         summary.add_row("Analysis Failures", str(self.stats.get("repos_failed", 0)))
         summary.add_row("Repositories Skipped", str(self.stats.get("repos_skipped", 0)))
@@ -210,7 +211,7 @@ class Logger:
             # Rate limiting statistics
             if rate_limiters:
                 rate_table = Table(
-                    title="API Rate Limiting Statistics", show_header=True
+                    title="API Rate Limiting Statistics", show_header=True,
                 )
                 rate_table.add_column("API", style="cyan")
                 rate_table.add_column("Calls", justify="right")

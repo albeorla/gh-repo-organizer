@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Sequence
-
+from collections.abc import Sequence
 
 from repo_organizer.application import analyze_repositories
 from repo_organizer.domain.analysis.models import RepoAnalysis
@@ -11,7 +10,6 @@ from repo_organizer.domain.source_control.models import (
     LanguageBreakdown,
     Repository,
 )
-
 
 # ---------------------------------------------------------------------------
 # In-memory fakes for ports – no external I/O.
@@ -27,19 +25,19 @@ class _FakeSourceControl:
 
     # --- Port implementations --------------------------------------------
 
-    def list_repositories(self, owner: str, *, limit: int | None = None):  # noqa: D401
+    def list_repositories(self, owner: str, *, limit: int | None = None):
         return self._repos[: limit or None]
 
-    def fetch_languages(self, repo: Repository):  # noqa: D401
+    def fetch_languages(self, repo: Repository):
         return [LanguageBreakdown("Python", 100.0)]
 
-    def recent_commits(self, repo: Repository, *, limit: int = 10):  # noqa: D401
+    def recent_commits(self, repo: Repository, *, limit: int = 10):
         return []  # Return empty list instead of raising NotImplementedError
 
-    def contributors(self, repo: Repository):  # noqa: D401
+    def contributors(self, repo: Repository):
         return []  # Return empty list instead of raising NotImplementedError
-        
-    def get_repository_readme(self, repo_name: str):  # noqa: D401
+
+    def get_repository_readme(self, repo_name: str):
         """Get a fake README for the repository."""
         return f"# {repo_name}\n\nThis is a test repository."
 
@@ -47,7 +45,7 @@ class _FakeSourceControl:
 class _FakeAnalyzer:
     """Produces a trivial RepoAnalysis for every repository."""
 
-    def analyze(self, repo_data):  # noqa: D401 ANN001
+    def analyze(self, repo_data):  # noqa: ANN001
         repo_name = repo_data.get("repo_name") or repo_data.get("name", "unknown")
         return RepoAnalysis(
             repo_name=repo_name,

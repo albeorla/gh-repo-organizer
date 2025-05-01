@@ -1,14 +1,14 @@
-"""
-Unit tests for the ActionRecommendationService.
+"""Unit tests for the ActionRecommendationService.
 """
 
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from repo_organizer.domain.analysis.action_recommendation_service import (
     ActionRecommendationService,
 )
-from repo_organizer.domain.analysis.models import RepoAnalysis, Recommendation
+from repo_organizer.domain.analysis.models import Recommendation, RepoAnalysis
 from repo_organizer.domain.analysis.value_objects import RecommendedAction
 from repo_organizer.domain.core.events import event_bus
 from repo_organizer.domain.source_control.models import Repository
@@ -58,7 +58,7 @@ class TestActionRecommendationService:
                     recommendation="Delete repository",
                     reason="Inactive with no value",
                     priority="high",
-                )
+                ),
             ],
             activity_assessment="inactive",
             estimated_value="low",
@@ -91,7 +91,7 @@ class TestActionRecommendationService:
                     recommendation="Archive repository",
                     reason="Inactive but valuable for reference",
                     priority="medium",
-                )
+                ),
             ],
             activity_assessment="inactive",
             estimated_value="high",
@@ -100,12 +100,12 @@ class TestActionRecommendationService:
 
     @pytest.mark.asyncio
     async def test_recommend_delete_for_inactive_low_value(
-        self, inactive_repo, inactive_analysis, mock_event_bus
+        self, inactive_repo, inactive_analysis, mock_event_bus,
     ):
         """Test that an inactive repository with low value gets DELETE recommendation."""
         # Act
         action = await ActionRecommendationService.recommend_action(
-            inactive_repo, inactive_analysis
+            inactive_repo, inactive_analysis,
         )
 
         # Assert
@@ -114,12 +114,12 @@ class TestActionRecommendationService:
 
     @pytest.mark.asyncio
     async def test_recommend_archive_for_inactive_high_value(
-        self, valuable_repo, valuable_analysis, mock_event_bus
+        self, valuable_repo, valuable_analysis, mock_event_bus,
     ):
         """Test that an inactive repository with high value gets ARCHIVE recommendation."""
         # Act
         action = await ActionRecommendationService.recommend_action(
-            valuable_repo, valuable_analysis
+            valuable_repo, valuable_analysis,
         )
 
         # Assert
@@ -210,7 +210,7 @@ class TestActionRecommendationService:
 
         # Act
         results = await ActionRecommendationService.batch_recommend_actions(
-            repos, analyses
+            repos, analyses,
         )
 
         # Assert
@@ -284,7 +284,7 @@ class TestActionRecommendationService:
         ):
             # Act
             results = await ActionRecommendationService.batch_recommend_actions(
-                repos, analyses
+                repos, analyses,
             )
 
             # Assert

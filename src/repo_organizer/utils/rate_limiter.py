@@ -1,11 +1,9 @@
-"""
-Rate limiter for API calls to respect service limits.
+"""Rate limiter for API calls to respect service limits.
 """
 
 import time
-from threading import Lock
 from statistics import mean
-from typing import Optional
+from threading import Lock
 
 from repo_organizer.utils.exceptions import RateLimitExceededError
 
@@ -17,7 +15,7 @@ class RateLimiter:
         self,
         calls_per_minute: int = 60,
         name: str = "API",
-        max_wait_time: Optional[float] = None,
+        max_wait_time: float | None = None,
         fail_on_limit: bool = False,
     ):
         """Initialize rate limiter.
@@ -72,14 +70,13 @@ class RateLimiter:
                         if logger:
                             logger.log(error_msg, level="error")
                         raise RateLimitExceededError(error_msg)
-                    else:
-                        # Cap wait time at max_wait_time
-                        wait_time = self.max_wait_time
-                        if logger:
-                            logger.log(
-                                f"Rate limit: Capping wait time to {wait_time:.2f}s for {self.name} API",
-                                level="warning" if debug else "info",
-                            )
+                    # Cap wait time at max_wait_time
+                    wait_time = self.max_wait_time
+                    if logger:
+                        logger.log(
+                            f"Rate limit: Capping wait time to {wait_time:.2f}s for {self.name} API",
+                            level="warning" if debug else "info",
+                        )
 
                 if logger and debug:
                     logger.log(

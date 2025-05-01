@@ -1,18 +1,18 @@
-"""
-Progress reporter service for tracking long-running operations.
+"""Progress reporter service for tracking long-running operations.
 
 This module implements the Observer pattern to report progress of
 long-running repository analysis operations.
 """
 
-from typing import Protocol, Callable, Optional
+from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Protocol
 
 
 class ProgressObserver(Protocol):
     """Protocol defining the interface for progress observers."""
 
-    def update(self, current: int, total: int, status: Optional[str] = None) -> None:
+    def update(self, current: int, total: int, status: str | None = None) -> None:
         """Update the observer with current progress.
 
         Args:
@@ -29,7 +29,7 @@ class ProgressUpdate:
 
     current: int
     total: int
-    status: Optional[str] = None
+    status: str | None = None
 
 
 class ProgressReporter:
@@ -42,7 +42,7 @@ class ProgressReporter:
     def __init__(self):
         """Initialize the progress reporter."""
         self._observers: list[ProgressObserver] = []
-        self._progress_callback: Optional[Callable[[int, int, Optional[str]], None]] = (
+        self._progress_callback: Callable[[int, int, str | None], None] | None = (
             None
         )
         self._current = 0
@@ -68,7 +68,7 @@ class ProgressReporter:
             self._observers.remove(observer)
 
     def set_progress_callback(
-        self, callback: Optional[Callable[[int, int, Optional[str]], None]]
+        self, callback: Callable[[int, int, str | None], None] | None,
     ) -> None:
         """Set a callback function for progress updates.
 
@@ -78,7 +78,7 @@ class ProgressReporter:
         self._progress_callback = callback
 
     def update_progress(
-        self, current: int, total: int, status: Optional[str] = None
+        self, current: int, total: int, status: str | None = None,
     ) -> None:
         """Update the progress and notify all observers.
 
@@ -103,7 +103,7 @@ class ProgressReporter:
         if self._progress_callback:
             self._progress_callback(current, total, self._status)
 
-    def increment(self, amount: int = 1, status: Optional[str] = None) -> None:
+    def increment(self, amount: int = 1, status: str | None = None) -> None:
         """Increment the progress value.
 
         Args:

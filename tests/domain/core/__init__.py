@@ -1,3 +1,2 @@
-"""
-Tests for the domain core package.
+"""Tests for the domain core package.
 """

@@ -1,5 +1,4 @@
-"""
-Rate limiter for API calls to respect service limits.
+"""Rate limiter for API calls to respect service limits.
 
 This module provides rate limiting functionality for API calls to prevent
 exceeding service rate limits, with functionality for tracking and reporting
@@ -7,9 +6,9 @@ on rate limiting statistics.
 """
 
 import time
-from threading import Lock
 from statistics import mean
-from typing import Any, Dict, Optional
+from threading import Lock
+from typing import Any
 
 from repo_organizer.infrastructure.logging.logger import Logger
 
@@ -37,7 +36,7 @@ class RateLimiter:
         self.total_waits = 0
         self.total_calls = 0
 
-    def wait(self, logger: Optional[Logger] = None, debug: bool = False) -> float:
+    def wait(self, logger: Logger | None = None, debug: bool = False) -> float:
         """Wait until next call is allowed according to rate limits.
 
         Args:
@@ -67,7 +66,7 @@ class RateLimiter:
             self.total_calls += 1
             return wait_time
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get statistics about rate limiting.
 
         Returns:

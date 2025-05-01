@@ -10,7 +10,7 @@ arguments, which makes it trivial to test.
 
 from __future__ import annotations
 
-from typing import Mapping, Sequence
+from collections.abc import Mapping, Sequence
 
 from repo_organizer.domain.analysis.models import RepoAnalysis
 from repo_organizer.domain.analysis.protocols import AnalyzerPort
@@ -41,31 +41,33 @@ def analyze_repositories(
     """
     # Get repos from source control
     repos: Sequence[Repository] = source_control.list_repositories(owner, limit=limit)
-    
+
     # Filter for single repository if specified
     if single_repo:
         # Log the filter operation
         if hasattr(source_control, "logger") and source_control.logger:
-            source_control.logger.log(f"Filtering repositories to only include: {single_repo}")
-            
+            source_control.logger.log(
+                f"Filtering repositories to only include: {single_repo}",
+            )
+
         filtered_repos = [repo for repo in repos if repo.name == single_repo]
-        
+
         # Check if the specified repo was found
         if not filtered_repos:
             if hasattr(source_control, "logger") and source_control.logger:
                 source_control.logger.log(
-                    f"Repository '{single_repo}' not found in list of {len(repos)} repositories", 
-                    level="error"
+                    f"Repository '{single_repo}' not found in list of {len(repos)} repositories",
+                    level="error",
                 )
                 if repos:
                     source_control.logger.log(
-                        f"Available repositories: {', '.join(repo.name for repo in repos[:10])}...", 
-                        level="info"
+                        f"Available repositories: {', '.join(repo.name for repo in repos[:10])}...",
+                        level="info",
                     )
-            
+
             # Use empty list if repo not found
             return []
-            
+
         repos = filtered_repos
 
     results: list[RepoAnalysis] = []
@@ -82,18 +84,20 @@ def analyze_repositories(
             readme_content = source_control.get_repository_readme(repo.name)
             if not readme_content or readme_content.strip() == "":
                 readme_content = "No README content available"
-            
+
             # Log the README content for debugging
-            if source_control.logger and getattr(source_control.logger, "debug_enabled", False):
+            if source_control.logger and getattr(
+                source_control.logger, "debug_enabled", False,
+            ):
                 source_control.logger.log(
                     f"README content for {repo.name} (first 200 chars): {readme_content[:200]}...",
                     "debug",
                 )
         except Exception as e:
             if source_control.logger:
-                source_control.logger.log(f"Error fetching README: {str(e)}", "error")
+                source_control.logger.log(f"Error fetching README: {e!s}", "error")
             readme_content = "No README content available"
-            
+
         # Get recent commits and activity info (best-effort)
         try:
             recent_commits = source_control.recent_commits(repo)
@@ -102,7 +106,7 @@ def analyze_repositories(
         except Exception:
             recent_commits_count = 0
             activity_summary = "No activity data available"
-            
+
         repo_data: Mapping[str, object] = {
             "repo_name": repo.name,
             "repo_desc": repo.description or "No description",
@@ -120,7 +124,7 @@ def analyze_repositories(
             "closed_issues": 0,
             "contributor_summary": "No contributor data available",
             "dependency_info": "No dependency information available",
-            "dependency_context": ""
+            "dependency_context": "",
         }
 
         analysis = analyzer.analyze(repo_data)

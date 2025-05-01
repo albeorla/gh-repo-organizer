@@ -1,31 +1,28 @@
-"""
-CLI command implementations for repository actions.
+"""CLI command implementations for repository actions.
 
 This module contains commands for executing repository actions
 based on analysis results.
 """
 
 from pathlib import Path
-from typing import List, Optional
 
 import typer
 from rich.console import Console
+from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn
 from rich.table import Table
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
 
+from repo_organizer.config.settings import Settings, load_settings
 from repo_organizer.domain.analysis.models import RepoAnalysis
 from repo_organizer.domain.analysis.services import AnalysisService
-from repo_organizer.config.settings import Settings, load_settings
-from repo_organizer.utils.rate_limiter import RateLimiter
 from repo_organizer.utils.logger import Logger
+from repo_organizer.utils.rate_limiter import RateLimiter
 
 # Create console for rich output
 console = Console()
 
 
-def _load_analyses(settings: Settings) -> List[RepoAnalysis]:
-    """
-    Load existing repository analyses from output directory.
+def _load_analyses(settings: Settings) -> list[RepoAnalysis]:
+    """Load existing repository analyses from output directory.
 
     Args:
         settings: Application settings
@@ -61,7 +58,7 @@ def _load_analyses(settings: Settings) -> List[RepoAnalysis]:
             action = "KEEP"  # default
             reasoning = ""
 
-            with open(md_file, "r") as f:
+            with open(md_file) as f:
                 content = f.read()
 
                 # Look for action in the file
@@ -87,8 +84,8 @@ def _load_analyses(settings: Settings) -> List[RepoAnalysis]:
                 )
 
                 # Monkey-patch the analysis object with the action
-                setattr(analysis, "recommended_action", action)
-                setattr(analysis, "action_reasoning", reasoning)
+                analysis.recommended_action = action
+                analysis.action_reasoning = reasoning
 
                 analyses.append(analysis)
         except Exception as e:
@@ -100,13 +97,12 @@ def _load_analyses(settings: Settings) -> List[RepoAnalysis]:
 def execute_actions(
     dry_run: bool = True,
     force: bool = False,
-    output_dir: Optional[str] = None,
-    github_token: Optional[str] = None,
-    action_type: Optional[str] = None,
+    output_dir: str | None = None,
+    github_token: str | None = None,
+    action_type: str | None = None,
     username: str = None,  # Now required
 ):
-    """
-    Execute repository actions based on analysis results.
+    """Execute repository actions based on analysis results.
 
     Args:
         dry_run: Whether to perform a dry run without making changes
@@ -127,9 +123,15 @@ def execute_actions(
 
     # Set up logging with username for tracking
     log_path = Path(settings.logs_dir) / "action_execution.log"
-    logger = Logger(str(log_path), console=console, debug_enabled=False, quiet_mode=False, username=username)
+    logger = Logger(
+        str(log_path),
+        console=console,
+        debug_enabled=False,
+        quiet_mode=False,
+        username=username,
+    )
     logger.log(f"Action execution started by {username}", level="info")
-    
+
     # Create rate limiter for statistics (not used directly)
     rate_limiter = RateLimiter(settings.github_rate_limit, name="GitHub")
 
@@ -172,7 +174,9 @@ def execute_actions(
         table.add_row(analysis.repo_name, action)
 
     console.print(table)
-    logger.log(f"Selected {len(filtered_analyses)} repositories for actions", level="info")
+    logger.log(
+        f"Selected {len(filtered_analyses)} repositories for actions", level="info",
+    )
 
     # Confirm execution
     if not force and not dry_run:
@@ -191,7 +195,7 @@ def execute_actions(
         console=console,
     ) as progress:
         task = progress.add_task(
-            "[green]Executing actions", total=len(filtered_analyses)
+            "[green]Executing actions", total=len(filtered_analyses),
         )
 
         success_count = 0
@@ -210,36 +214,31 @@ def execute_actions(
                     msg = f"Would execute {action} for {repo_name}"
                     logger.log(f"[DRY RUN] {msg}", level="info")
                     console.print(f"[dry-run] {msg}")
-                else:
-                    # Actually execute the action
-                    if action == "DELETE":
-                        # Delete repository logic
-                        msg = f"Deleting {repo_name}..."
-                        logger.log(msg, level="info")
-                        console.print(f"[red]{msg}[/]")
-                        # In the future, we would use the GitHub REST API to delete the repository
-                        pass
-                    elif action == "ARCHIVE":
-                        # Archive repository logic
-                        msg = f"Archiving {repo_name}..."
-                        logger.log(msg, level="info")
-                        console.print(f"[yellow]{msg}[/]")
-                        # In the future, we would use the GitHub REST API to archive the repository
-                        pass
-                    elif action == "EXTRACT":
-                        # Extract repository logic
-                        msg = f"Extracting valuable parts from {repo_name}..."
-                        logger.log(msg, level="info")
-                        console.print(f"[blue]{msg}[/]")
-                        # In the future, we would extract valuable parts before archiving/deleting
-                        pass
-                    elif action == "PIN":
-                        # Pin repository logic
-                        msg = f"Pinning {repo_name}..."
-                        logger.log(msg, level="info")
-                        console.print(f"[green]{msg}[/]")
-                        # In the future, we would use the GitHub REST API to pin the repository
-                        pass
+                # Actually execute the action
+                elif action == "DELETE":
+                    # Delete repository logic
+                    msg = f"Deleting {repo_name}..."
+                    logger.log(msg, level="info")
+                    console.print(f"[red]{msg}[/]")
+                    # In the future, we would use the GitHub REST API to delete the repository
+                elif action == "ARCHIVE":
+                    # Archive repository logic
+                    msg = f"Archiving {repo_name}..."
+                    logger.log(msg, level="info")
+                    console.print(f"[yellow]{msg}[/]")
+                    # In the future, we would use the GitHub REST API to archive the repository
+                elif action == "EXTRACT":
+                    # Extract repository logic
+                    msg = f"Extracting valuable parts from {repo_name}..."
+                    logger.log(msg, level="info")
+                    console.print(f"[blue]{msg}[/]")
+                    # In the future, we would extract valuable parts before archiving/deleting
+                elif action == "PIN":
+                    # Pin repository logic
+                    msg = f"Pinning {repo_name}..."
+                    logger.log(msg, level="info")
+                    console.print(f"[green]{msg}[/]")
+                    # In the future, we would use the GitHub REST API to pin the repository
                 success_count += 1
             except Exception as e:
                 error_msg = f"Error executing {action} for {repo_name}: {e}"
@@ -258,6 +257,6 @@ def execute_actions(
         msg = f"Actions executed successfully: {success_count} succeeded, {error_count} failed"
         logger.log(msg, level="success")
         console.print(f"[green]{msg}[/]")
-        
+
     # Add attribution to the log
     logger.log(f"Action execution completed by {username}", level="info")

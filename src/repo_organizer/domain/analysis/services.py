@@ -1,5 +1,4 @@
-"""
-Domain services for the analysis bounded context.
+"""Domain services for the analysis bounded context.
 
 This module contains pure domain logic for evaluating repository activity and value.
 """
@@ -7,24 +6,23 @@ This module contains pure domain logic for evaluating repository activity and va
 from __future__ import annotations
 
 import logging
-from typing import Sequence, Dict, List, Optional
+from collections.abc import Sequence
 
 from repo_organizer.domain.analysis.events import RepositoryAnalysisCompleted
-from repo_organizer.domain.analysis.models import RepoAnalysis, Recommendation
+from repo_organizer.domain.analysis.models import Recommendation, RepoAnalysis
 from repo_organizer.domain.analysis.value_objects import (
-    RecommendedAction,
     ActivityLevel,
+    RecommendedAction,
     ValueLevel,
 )
 from repo_organizer.domain.core.events import event_bus
-from repo_organizer.domain.source_control.models import Repository, Commit, Contributor
+from repo_organizer.domain.source_control.models import Commit, Contributor, Repository
 
 logger = logging.getLogger(__name__)
 
 
 class AnalysisService:
-    """
-    Service containing pure domain logic for repository analysis and evaluation.
+    """Service containing pure domain logic for repository analysis and evaluation.
 
     This is a stateless domain service that contains business logic for evaluating
     repository activity, determining value, and filtering recommendations.
@@ -34,8 +32,7 @@ class AnalysisService:
     def get_high_priority_recommendations(
         analysis: RepoAnalysis,
     ) -> Sequence[Recommendation]:
-        """
-        Extract only high priority recommendations from an analysis.
+        """Extract only high priority recommendations from an analysis.
 
         Args:
             analysis: A repository analysis
@@ -47,8 +44,7 @@ class AnalysisService:
 
     @staticmethod
     def should_be_archived(analysis: RepoAnalysis) -> bool:
-        """
-        Determine if a repository should be archived based on analysis.
+        """Determine if a repository should be archived based on analysis.
 
         The decision is based on the recommended_action if available, otherwise
         it's determined by the activity level and estimated value.
@@ -63,8 +59,7 @@ class AnalysisService:
 
     @staticmethod
     def should_be_deleted(analysis: RepoAnalysis) -> bool:
-        """
-        Determine if a repository should be deleted based on analysis.
+        """Determine if a repository should be deleted based on analysis.
 
         Args:
             analysis: A repository analysis
@@ -76,8 +71,7 @@ class AnalysisService:
 
     @staticmethod
     def should_be_pinned(analysis: RepoAnalysis) -> bool:
-        """
-        Determine if a repository should be pinned based on analysis.
+        """Determine if a repository should be pinned based on analysis.
 
         Args:
             analysis: A repository analysis
@@ -89,8 +83,7 @@ class AnalysisService:
 
     @staticmethod
     def should_extract_value(analysis: RepoAnalysis) -> bool:
-        """
-        Determine if valuable parts should be extracted from repository before archiving/deleting.
+        """Determine if valuable parts should be extracted from repository before archiving/deleting.
 
         Args:
             analysis: A repository analysis
@@ -102,10 +95,9 @@ class AnalysisService:
 
     @staticmethod
     def evaluate_activity(
-        repo: Repository, commits: Sequence[Commit], contributors: Sequence[Contributor]
+        repo: Repository, commits: Sequence[Commit], contributors: Sequence[Contributor],
     ) -> ActivityLevel:
-        """
-        Evaluate the activity level of a repository based on commits and contributors.
+        """Evaluate the activity level of a repository based on commits and contributors.
 
         Args:
             repo: The repository
@@ -133,20 +125,18 @@ class AnalysisService:
         # Check number of commits
         if len(commits) > 20:
             return ActivityLevel.HIGH
-        elif len(commits) > 5:
+        if len(commits) > 5:
             return ActivityLevel.MEDIUM
-        else:
-            return ActivityLevel.LOW
+        return ActivityLevel.LOW
 
     @staticmethod
     def evaluate_value(
         repo: Repository,
-        languages: Optional[Sequence[str]] = None,
-        stars: Optional[int] = None,
-        forks: Optional[int] = None,
+        languages: Sequence[str] | None = None,
+        stars: int | None = None,
+        forks: int | None = None,
     ) -> ValueLevel:
-        """
-        Evaluate the value/importance of a repository.
+        """Evaluate the value/importance of a repository.
 
         Args:
             repo: The repository
@@ -178,9 +168,8 @@ class AnalysisService:
         analyzer_port,  # Using Protocol type
         include_commits: bool = True,
         include_contributors: bool = True,
-    ) -> List[RepoAnalysis]:
-        """
-        Analyze multiple repositories and generate assessments.
+    ) -> list[RepoAnalysis]:
+        """Analyze multiple repositories and generate assessments.
 
         Args:
             repositories: Repositories to analyze
@@ -218,21 +207,20 @@ class AnalysisService:
                 # Publish domain event
                 await event_bus.dispatch(
                     RepositoryAnalysisCompleted(
-                        aggregate_id=repo.name, analysis=analysis
-                    )
+                        aggregate_id=repo.name, analysis=analysis,
+                    ),
                 )
 
                 analyses.append(analysis)
 
             except Exception as e:
-                logger.error(f"Error analyzing repository {repo.name}: {str(e)}")
+                logger.error(f"Error analyzing repository {repo.name}: {e!s}")
 
         return analyses
 
     @staticmethod
-    def filter_by_tag(analyses: Sequence[RepoAnalysis], tag: str) -> List[RepoAnalysis]:
-        """
-        Filter analyses by a specific tag.
+    def filter_by_tag(analyses: Sequence[RepoAnalysis], tag: str) -> list[RepoAnalysis]:
+        """Filter analyses by a specific tag.
 
         Args:
             analyses: Sequence of analyses
@@ -249,10 +237,9 @@ class AnalysisService:
 
     @staticmethod
     def filter_by_value(
-        analyses: Sequence[RepoAnalysis], min_value: ValueLevel = ValueLevel.LOW
-    ) -> List[RepoAnalysis]:
-        """
-        Filter analyses by minimum value level.
+        analyses: Sequence[RepoAnalysis], min_value: ValueLevel = ValueLevel.LOW,
+    ) -> list[RepoAnalysis]:
+        """Filter analyses by minimum value level.
 
         Args:
             analyses: Sequence of analyses
@@ -279,9 +266,8 @@ class AnalysisService:
     @staticmethod
     def categorize_by_action(
         analyses: Sequence[RepoAnalysis],
-    ) -> Dict[str, List[RepoAnalysis]]:
-        """
-        Categorize analyses by their recommended action.
+    ) -> dict[str, list[RepoAnalysis]]:
+        """Categorize analyses by their recommended action.
 
         Args:
             analyses: A sequence of repository analyses

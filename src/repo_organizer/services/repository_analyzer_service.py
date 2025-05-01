@@ -1,5 +1,4 @@
-"""
-Repository analyzer service implementation.
+"""Repository analyzer service implementation.
 
 This module contains the main repository analysis logic, following the SOLID principles
 with a clear separation of concerns.
@@ -7,13 +6,12 @@ with a clear separation of concerns.
 
 import os
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-
-from repo_organizer.infrastructure.analysis.pydantic_models import RepoAnalysis
-from repo_organizer.utils.logger import Logger
-from repo_organizer.infrastructure.source_control.github_service import GitHubService
 from repo_organizer.domain.analysis.protocols import AnalyzerPort
+from repo_organizer.infrastructure.analysis.pydantic_models import RepoAnalysis
+from repo_organizer.infrastructure.source_control.github_service import GitHubService
+from repo_organizer.utils.logger import Logger
 
 
 class RepositoryAnalyzerService:
@@ -26,15 +24,15 @@ class RepositoryAnalyzerService:
     def __init__(
         self,
         output_dir: str = ".out",
-        api_key: Optional[str] = None,
-        github_service: Optional[GitHubService] = None,
-        analyzer: Optional[AnalyzerPort] = None,
-        max_repos: Optional[int] = None,
+        api_key: str | None = None,
+        github_service: GitHubService | None = None,
+        analyzer: AnalyzerPort | None = None,
+        max_repos: int | None = None,
         debug: bool = False,
-        repo_filter: Optional[str] = None,
+        repo_filter: str | None = None,
         force_reanalyze: bool = False,
         *,
-        logger: Optional[Logger] = None,
+        logger: Logger | None = None,
     ):
         """Initialize the repository analyzer service.
 
@@ -90,7 +88,7 @@ class RepositoryAnalyzerService:
         # Skip if report already exists and we're not forcing reanalysis
         if os.path.exists(report_path) and not self.force_reanalyze:
             self.logger.log(
-                f"Skipping {repo_name} - report already exists", level="info"
+                f"Skipping {repo_name} - report already exists", level="info",
             )
             return False
 
@@ -106,7 +104,7 @@ class RepositoryAnalyzerService:
 
         return True
 
-    def analyze_repository(self, repo_info: Dict[str, Any]) -> RepoAnalysis:
+    def analyze_repository(self, repo_info: dict[str, Any]) -> RepoAnalysis:
         """Analyze a single repository.
 
         Args:
@@ -157,31 +155,30 @@ class RepositoryAnalyzerService:
                 self.logger.update_stats("repos_analyzed")
 
                 return analysis
-            else:
-                self.logger.log(
-                    f"Analyzer not available for {repo_name}", level="error"
-                )
-                self.logger.update_stats("repos_failed")
-
-                # Create a placeholder analysis with error tag
-                return RepoAnalysis(
-                    repo_name=repo_name,
-                    summary="Analyzer not available",
-                    strengths=["Analysis failed"],
-                    weaknesses=["Analysis failed"],
-                    recommendations=[],
-                    activity_assessment="Unknown (analysis failed)",
-                    estimated_value="Unknown (analysis failed)",
-                    tags=["error", "service-unavailable"],
-                )
-        except Exception as e:
-            self.logger.log(f"Error analyzing {repo_name}: {str(e)}", level="error")
+            self.logger.log(
+                f"Analyzer not available for {repo_name}", level="error",
+            )
             self.logger.update_stats("repos_failed")
 
             # Create a placeholder analysis with error tag
             return RepoAnalysis(
                 repo_name=repo_name,
-                summary=f"Error analyzing repository: {str(e)}",
+                summary="Analyzer not available",
+                strengths=["Analysis failed"],
+                weaknesses=["Analysis failed"],
+                recommendations=[],
+                activity_assessment="Unknown (analysis failed)",
+                estimated_value="Unknown (analysis failed)",
+                tags=["error", "service-unavailable"],
+            )
+        except Exception as e:
+            self.logger.log(f"Error analyzing {repo_name}: {e!s}", level="error")
+            self.logger.update_stats("repos_failed")
+
+            # Create a placeholder analysis with error tag
+            return RepoAnalysis(
+                repo_name=repo_name,
+                summary=f"Error analyzing repository: {e!s}",
                 strengths=["Analysis failed"],
                 weaknesses=["Analysis failed"],
                 recommendations=[],
@@ -190,7 +187,7 @@ class RepositoryAnalyzerService:
                 tags=["error", "analysis-failed"],
             )
 
-    def _prepare_repo_data(self, repo_info: Dict[str, Any]) -> Dict[str, Any]:
+    def _prepare_repo_data(self, repo_info: dict[str, Any]) -> dict[str, Any]:
         """Prepare repository data for LLM analysis.
 
         Args:
@@ -207,7 +204,7 @@ class RepositoryAnalyzerService:
             languages_data = self.github_service.get_repo_languages(repo_name)
             if languages_data:
                 languages_str = ", ".join(
-                    [f"{lang}: {pct:.1f}%" for lang, pct in languages_data.items()]
+                    [f"{lang}: {pct:.1f}%" for lang, pct in languages_data.items()],
                 )
 
         # Get additional repository data for more accurate analysis
@@ -225,7 +222,7 @@ class RepositoryAnalyzerService:
             issues_data = self.github_service.get_repo_issues_stats(repo_name)
             commit_data = self.github_service.get_repo_commit_activity(repo_name)
             contributor_data = self.github_service.get_repo_contributors_stats(
-                repo_name
+                repo_name,
             )
             dependency_data = self.github_service.get_repo_dependency_files(repo_name)
 
@@ -335,7 +332,7 @@ class RepositoryAnalyzerService:
         }
 
     def _write_single_report(
-        self, analysis: RepoAnalysis, repo_info: Dict[str, Any]
+        self, analysis: RepoAnalysis, repo_info: dict[str, Any],
     ) -> None:
         """Write the markdown report for a single repository.
 
@@ -346,7 +343,7 @@ class RepositoryAnalyzerService:
         repo_name = analysis.repo_name
         repo_file_path = os.path.join(self.output_dir, f"{repo_name}.md")
         self.logger.log(
-            f"Saving report for {repo_name} to {repo_file_path}...", level="debug"
+            f"Saving report for {repo_name} to {repo_file_path}...", level="debug",
         )
 
         try:
@@ -361,11 +358,11 @@ class RepositoryAnalyzerService:
                 repo_link = repo_info.get("html_url") or repo_info.get("url", "")
                 f.write(f"- **URL**: [{repo_link}]({repo_link})\n")
                 f.write(
-                    f"- **Description**: {repo_info.get('description', 'No description')}\n"
+                    f"- **Description**: {repo_info.get('description', 'No description')}\n",
                 )
                 # Handle both GraphQL and REST field names (see above)
                 updated_at = repo_info.get("updatedAt") or repo_info.get(
-                    "updated_at", "Unknown"
+                    "updated_at", "Unknown",
                 )
                 if isinstance(updated_at, str) and "T" in updated_at:
                     updated_at = updated_at.split("T")[0]
@@ -375,7 +372,7 @@ class RepositoryAnalyzerService:
                     is_archived = repo_info.get("archived", False)
 
                 stars = repo_info.get("stargazerCount") or repo_info.get(
-                    "stargazers_count", 0
+                    "stargazers_count", 0,
                 )
                 forks = repo_info.get("forkCount") or repo_info.get("forks_count", 0)
 
@@ -441,11 +438,11 @@ class RepositoryAnalyzerService:
                 f.write("- [ ] Update documentation if keeping\n")
                 if value.lower().startswith("low") or "low" in value.lower():
                     f.write(
-                        "- [ ] Consider archiving or deleting if no longer needed\n"
+                        "- [ ] Consider archiving or deleting if no longer needed\n",
                     )
 
             self.logger.log(
-                f"Successfully saved report for {repo_name}", level="success"
+                f"Successfully saved report for {repo_name}", level="success",
             )
         except Exception as e:
             self.logger.log(
@@ -461,7 +458,7 @@ class RepositoryAnalyzerService:
                 )
 
     def generate_report(
-        self, repos: List[Dict[str, Any]], analyses: List[RepoAnalysis]
+        self, repos: list[dict[str, Any]], analyses: list[RepoAnalysis],
     ) -> None:
         """Generate a summary report of all repository analyses.
 
@@ -478,7 +475,7 @@ class RepositoryAnalyzerService:
                 import datetime
 
                 f.write(
-                    f"Generated on: {datetime.datetime.now().strftime('%Y-%m-%d')}\n\n"
+                    f"Generated on: {datetime.datetime.now().strftime('%Y-%m-%d')}\n\n",
                 )
 
                 # Group repositories by value
@@ -503,7 +500,7 @@ class RepositoryAnalyzerService:
                 if high_value:
                     for analysis in high_value:
                         f.write(
-                            f"### [{analysis.repo_name}]({analysis.repo_name}.md)\n\n"
+                            f"### [{analysis.repo_name}]({analysis.repo_name}.md)\n\n",
                         )
                         f.write(f"{analysis.summary}\n\n")
                         f.write(f"**Tags**: {', '.join(analysis.tags)}\n\n")
@@ -515,7 +512,7 @@ class RepositoryAnalyzerService:
                 if medium_value:
                     for analysis in medium_value:
                         f.write(
-                            f"### [{analysis.repo_name}]({analysis.repo_name}.md)\n\n"
+                            f"### [{analysis.repo_name}]({analysis.repo_name}.md)\n\n",
                         )
                         f.write(f"{analysis.summary}\n\n")
                         f.write(f"**Tags**: {', '.join(analysis.tags)}\n\n")
@@ -527,7 +524,7 @@ class RepositoryAnalyzerService:
                 if low_value:
                     for analysis in low_value:
                         f.write(
-                            f"### [{analysis.repo_name}]({analysis.repo_name}.md)\n\n"
+                            f"### [{analysis.repo_name}]({analysis.repo_name}.md)\n\n",
                         )
                         f.write(f"{analysis.summary}\n\n")
                         f.write(f"**Tags**: {', '.join(analysis.tags)}\n\n")
@@ -539,7 +536,7 @@ class RepositoryAnalyzerService:
                     f.write("## Other Repositories\n\n")
                     for analysis in other_value:
                         f.write(
-                            f"### [{analysis.repo_name}]({analysis.repo_name}.md)\n\n"
+                            f"### [{analysis.repo_name}]({analysis.repo_name}.md)\n\n",
                         )
                         f.write(f"{analysis.summary}\n\n")
                         f.write(f"**Tags**: {', '.join(analysis.tags)}\n\n")

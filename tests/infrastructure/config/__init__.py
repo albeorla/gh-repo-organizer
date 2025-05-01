@@ -1,3 +1,2 @@
-"""
-Tests for the infrastructure config package.
+"""Tests for the infrastructure config package.
 """

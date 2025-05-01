@@ -1,13 +1,13 @@
-"""
-Tests for the LangChainClaudeAdapter.
+"""Tests for the LangChainClaudeAdapter.
 
 These tests mock the LLMService to avoid actual API calls.
 """
 
-import pytest
-from unittest.mock import MagicMock, patch
 import json
 from pathlib import Path
+from unittest.mock import MagicMock
+
+import pytest
 
 from repo_organizer.domain.analysis.models import RepoAnalysis
 from repo_organizer.infrastructure.analysis.langchain_claude_adapter import (
@@ -21,7 +21,7 @@ from repo_organizer.utils.exceptions import RateLimitExceededError
 def sample_repo_data():
     """Load sample repository data for testing."""
     fixtures_path = Path(__file__).parent.parent.parent / "fixtures"
-    with open(fixtures_path / "sample_repo_data.json", "r") as f:
+    with open(fixtures_path / "sample_repo_data.json") as f:
         return json.load(f)
 
 
@@ -33,6 +33,8 @@ def mock_llm_service():
     # Create a sample pydantic model
     from repo_organizer.infrastructure.analysis.pydantic_models import (
         RepoAnalysis as PydanticRepoAnalysis,
+    )
+    from repo_organizer.infrastructure.analysis.pydantic_models import (
         RepoRecommendation,
     )
 
@@ -67,6 +69,7 @@ def mock_logger():
     mock.debug_enabled = False
     return mock
 
+
 @pytest.fixture
 def adapter(mock_llm_service, mock_logger):
     """Create a LangChainClaudeAdapter with a mocked LLMService."""
@@ -79,10 +82,10 @@ def adapter(mock_llm_service, mock_logger):
         thinking_budget=10000,
         logger=mock_logger,
     )
-    
+
     # Replace the internal LLM service with our mock
     adapter._llm_service = mock_llm_service
-    
+
     return adapter
 
 
@@ -96,12 +99,12 @@ class TestLangChainClaudeAdapter:
 
         # Verify mock was called
         assert mock_llm_service.analyze_repository.call_count == 1
-        
+
         # Instead of checking exact argument equality, just verify that it was called with a dict
         # that contains the same repo_name - the adapter adds default values to the dict
         call_args = mock_llm_service.analyze_repository.call_args[0][0]
         assert isinstance(call_args, dict)
-        assert call_args['repo_name'] == sample_repo_data['repo_name']
+        assert call_args["repo_name"] == sample_repo_data["repo_name"]
 
         # Check the result
         assert isinstance(result, RepoAnalysis)
@@ -139,12 +142,12 @@ class TestLangChainClaudeAdapter:
         assert metrics["cache_misses"] == 1
 
     def test_analyze_rate_limit_error(
-        self, adapter, sample_repo_data, mock_llm_service
+        self, adapter, sample_repo_data, mock_llm_service,
     ):
         """Test handling of rate limit errors."""
         # Configure mock to raise rate limit error
         mock_llm_service.analyze_repository.side_effect = RateLimitExceededError(
-            "Rate limit exceeded"
+            "Rate limit exceeded",
         )
 
         # Analyze should handle the error and return fallback

@@ -1,5 +1,4 @@
-"""
-Domain service for generating action recommendations for repositories.
+"""Domain service for generating action recommendations for repositories.
 
 This service contains the business logic for determining what actions should be
 taken for repositories based on their analysis results.
@@ -9,19 +8,19 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Sequence, Dict, List
+from collections.abc import Sequence
 
 from repo_organizer.domain.analysis.events import (
-    RepositoryActionRecommended,
     HighPriorityIssueIdentified,
+    RepositoryActionRecommended,
 )
 from repo_organizer.domain.analysis.models import RepoAnalysis
 from repo_organizer.domain.analysis.value_objects import (
-    RecommendedAction,
     ActivityLevel,
-    ValueLevel,
     PriorityLevel,
+    RecommendedAction,
     RepoAssessment,
+    ValueLevel,
 )
 from repo_organizer.domain.core.events import event_bus
 from repo_organizer.domain.source_control.models import Repository
@@ -30,8 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 class ActionRecommendationService:
-    """
-    Service for determining recommended actions for repositories.
+    """Service for determining recommended actions for repositories.
 
     This pure domain service applies business rules to repository analyses to determine
     the most appropriate action (DELETE/ARCHIVE/EXTRACT/KEEP/PIN).
@@ -39,10 +37,9 @@ class ActionRecommendationService:
 
     @staticmethod
     async def recommend_action(
-        repo: Repository, analysis: RepoAnalysis
+        repo: Repository, analysis: RepoAnalysis,
     ) -> RecommendedAction:
-        """
-        Determine the recommended action for a repository based on its analysis.
+        """Determine the recommended action for a repository based on its analysis.
 
         Args:
             repo: The repository being analyzed
@@ -60,10 +57,10 @@ class ActionRecommendationService:
 
         # Apply business rules to determine the appropriate action
         action = ActionRecommendationService._apply_action_rules(
-            repo, analysis, assessment
+            repo, analysis, assessment,
         )
         reasoning = ActionRecommendationService._generate_reasoning(
-            repo, analysis, assessment, action
+            repo, analysis, assessment, action,
         )
 
         # Publish domain event for the recommended action
@@ -73,7 +70,7 @@ class ActionRecommendationService:
                 repo_name=repo.name,
                 action=action.value,
                 reasoning=reasoning,
-            )
+            ),
         )
 
         # Check for high priority issues and publish events
@@ -87,18 +84,17 @@ class ActionRecommendationService:
         for recommendation in high_priority_recommendations:
             await event_bus.dispatch(
                 HighPriorityIssueIdentified(
-                    aggregate_id=repo.name, repo_name=repo.name, issue=recommendation
-                )
+                    aggregate_id=repo.name, repo_name=repo.name, issue=recommendation,
+                ),
             )
 
         return action
 
     @staticmethod
     def _apply_action_rules(
-        repo: Repository, analysis: RepoAnalysis, assessment: RepoAssessment
+        repo: Repository, analysis: RepoAnalysis, assessment: RepoAssessment,
     ) -> RecommendedAction:
-        """
-        Apply business rules to determine the recommended action.
+        """Apply business rules to determine the recommended action.
 
         Args:
             repo: The repository
@@ -164,8 +160,7 @@ class ActionRecommendationService:
         assessment: RepoAssessment,
         action: RecommendedAction,
     ) -> str:
-        """
-        Generate a reasoning string for the recommended action.
+        """Generate a reasoning string for the recommended action.
 
         Args:
             repo: The repository
@@ -191,38 +186,37 @@ class ActionRecommendationService:
                 f"worth preserving."
             )
 
-        elif action == RecommendedAction.ARCHIVE:
+        if action == RecommendedAction.ARCHIVE:
             return (
                 f"Repository has {assessment.activity.value} activity but "
                 f"{assessment.value.value} value. Should be preserved for reference but "
                 f"not actively maintained."
             )
 
-        elif action == RecommendedAction.EXTRACT:
+        if action == RecommendedAction.EXTRACT:
             return (
                 f"Repository has valuable components that should be extracted before "
                 f"archiving or deleting. Value: {assessment.value.value}, "
                 f"Activity: {assessment.activity.value}."
             )
 
-        elif action == RecommendedAction.PIN:
+        if action == RecommendedAction.PIN:
             return (
                 f"Repository has high value ({assessment.value.value}) and should be "
                 f"pinned for visibility. Activity level: {assessment.activity.value}."
             )
 
-        else:  # KEEP
-            return (
-                f"Repository should be kept active with its current settings. "
-                f"Value: {assessment.value.value}, Activity: {assessment.activity.value}."
-            )
+        # KEEP
+        return (
+            f"Repository should be kept active with its current settings. "
+            f"Value: {assessment.value.value}, Activity: {assessment.activity.value}."
+        )
 
     @staticmethod
     async def batch_recommend_actions(
-        repositories: Sequence[Repository], analyses: Sequence[RepoAnalysis]
-    ) -> Dict[str, RecommendedAction]:
-        """
-        Generate recommended actions for multiple repositories in parallel.
+        repositories: Sequence[Repository], analyses: Sequence[RepoAnalysis],
+    ) -> dict[str, RecommendedAction]:
+        """Generate recommended actions for multiple repositories in parallel.
 
         Args:
             repositories: The repositories to analyze
@@ -258,21 +252,20 @@ class ActionRecommendationService:
                         # Skip exceptions
                         if isinstance(recommendations[i], Exception):
                             logger.error(
-                                f"Error recommending action for {analysis.repo_name}: {str(recommendations[i])}"
+                                f"Error recommending action for {analysis.repo_name}: {recommendations[i]!s}",
                             )
                             continue
                         results[analysis.repo_name] = recommendations[i]
             except Exception as e:
-                logger.error(f"Error during batch recommendation processing: {str(e)}")
+                logger.error(f"Error during batch recommendation processing: {e!s}")
 
         return results
 
     @staticmethod
     def categorize_repositories(
         analyses: Sequence[RepoAnalysis],
-    ) -> Dict[RecommendedAction, List[RepoAnalysis]]:
-        """
-        Categorize repositories by their recommended action.
+    ) -> dict[RecommendedAction, list[RepoAnalysis]]:
+        """Categorize repositories by their recommended action.
 
         Args:
             analyses: List of repository analyses
@@ -280,7 +273,7 @@ class ActionRecommendationService:
         Returns:
             Dictionary mapping actions to lists of analyses
         """
-        categories: Dict[RecommendedAction, List[RepoAnalysis]] = {
+        categories: dict[RecommendedAction, list[RepoAnalysis]] = {
             action: [] for action in RecommendedAction
         }
 
