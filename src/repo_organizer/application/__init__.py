@@ -1,4 +1,4 @@
-"""Application layer – orchestrates use cases across bounded contexts."""
+"""Application layer - orchestrates use cases across bounded contexts."""
 
 from .analyze_repositories import analyze_repositories
 
