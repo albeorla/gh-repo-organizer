@@ -7,7 +7,7 @@ import os
 
 from pydantic import Field
 
-from repo_organizer.config.settings import Settings
+from repo_organizer.infrastructure.config.settings import Settings, load_settings
 from repo_organizer.domain.core.auth_config import (
     AuthConfig,
     AuthRequirement,
@@ -85,8 +85,6 @@ def load_auth_settings(env_file: str | None = None) -> AuthSettings:
     Returns:
         AuthSettings object
     """
-    from repo_organizer.config.settings import load_settings
-
     # Start with the standard settings
     settings = load_settings(env_file)
     settings_dict = settings.model_dump()

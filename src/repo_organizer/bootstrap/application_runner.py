@@ -14,9 +14,7 @@ from typing import Any
 
 from rich.console import Console
 
-from repo_organizer.services.repository_analyzer_service import (
-    RepositoryAnalyzerService,
-)
+from repo_organizer.services.repository_analyzer_service import RepositoryAnalyzerService
 
 
 class ApplicationRunner:

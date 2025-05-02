@@ -32,8 +32,9 @@ You can customize the authentication requirements in several ways:
 
 ### 1. Environment Variables
 
-Set the following environment variables to customize authentication:
+The application is configured via environment variables. Here's a complete list:
 
+#### Authentication Variables
 ```bash
 # Enable/disable authentication globally (default: true)
 AUTH_ENABLED=true
@@ -45,6 +46,48 @@ AUTH_DEFAULT_REQUIREMENTS=read_only:optional,analysis:required,write:required,ad
 AUTH_OPERATION_OVERRIDES=analyze:not_required,cleanup:required
 ```
 
+#### Core Application Variables
+```bash
+# Required: Your Anthropic API key for Claude
+ANTHROPIC_API_KEY=your-api-key-here
+
+# Optional: Claude model to use (default: claude-3-opus-20240229)
+MODEL=claude-3-opus-20240229
+
+# Optional: Maximum tokens for AI responses (default: 8192)
+MAX_TOKENS=8192
+
+# Optional: Temperature for AI model responses (default: 0.7)
+TEMPERATURE=0.7
+
+# Optional: Enable debug logging (default: false)
+DEBUG=false
+
+# Optional: Console output level (default: info)
+LOG_LEVEL=info  # Options: debug, info, warn, error
+
+# Optional: Default number of subtasks for expand (default: 5)
+DEFAULT_SUBTASKS=5
+
+# Optional: Default priority for new tasks (default: medium)
+DEFAULT_PRIORITY=medium
+
+# Optional: Project name used in metadata
+PROJECT_NAME=gh-repo-organizer
+
+# Optional: Project version used in metadata
+PROJECT_VERSION=0.1.0
+```
+
+#### Research Integration Variables
+```bash
+# Optional: API key for Perplexity AI (for --research flags)
+PERPLEXITY_API_KEY=your-perplexity-key-here
+
+# Optional: Perplexity model to use (default: sonar-medium-online)
+PERPLEXITY_MODEL=sonar-medium-online
+```
+
 ### 2. Configuration File
 
 You can create a `.env` file in the project root with the same variables:
@@ -53,6 +96,22 @@ You can create a `.env` file in the project root with the same variables:
 AUTH_ENABLED=true
 AUTH_DEFAULT_REQUIREMENTS=read_only:optional,analysis:required,write:required,admin:required
 AUTH_OPERATION_OVERRIDES=analyze:not_required,cleanup:required
+
+# Core Application Settings
+ANTHROPIC_API_KEY=your-api-key-here
+MODEL=claude-3-opus-20240229
+MAX_TOKENS=8192
+TEMPERATURE=0.7
+DEBUG=false
+LOG_LEVEL=info
+
+# Project Settings
+PROJECT_NAME=gh-repo-organizer
+PROJECT_VERSION=0.1.0
+
+# Research Integration
+PERPLEXITY_API_KEY=your-perplexity-key-here
+PERPLEXITY_MODEL=sonar-medium-online
 ```
 
 ### 3. Programmatically

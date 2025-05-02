@@ -10,7 +10,7 @@ from pathlib import Path
 
 from rich.console import Console
 
-from repo_organizer.config.settings import Settings, load_settings
+from repo_organizer.infrastructure.config.settings import Settings, load_settings
 from repo_organizer.utils.logger import Logger
 
 

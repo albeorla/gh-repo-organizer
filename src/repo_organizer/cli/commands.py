@@ -11,7 +11,7 @@ from rich.console import Console
 from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
-from repo_organizer.config.settings import Settings, load_settings
+from repo_organizer.infrastructure.config.settings import Settings, load_settings
 from repo_organizer.domain.analysis.models import RepoAnalysis
 from repo_organizer.domain.analysis.services import AnalysisService
 from repo_organizer.utils.logger import Logger

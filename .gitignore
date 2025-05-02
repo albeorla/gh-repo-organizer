@@ -79,3 +79,9 @@ README-task-master.md
 **/.claude/settings.local.json
 
 .mcp.json
+
+# Added by Claude Task Master
+# OS specific
+# Task files
+tasks.json
+tasks/ 

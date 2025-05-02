@@ -27,7 +27,7 @@ from repo_organizer.cli.commands import execute_actions
 
 # Import needed for running the CLI without accessing it through the entry points
 # This prevents relative import errors when running the CLI directly
-from repo_organizer.config.settings import load_settings
+from repo_organizer.infrastructure.config.settings import load_settings
 
 from .dev import dev_app
 
@@ -139,7 +139,7 @@ def analyze(
     from pathlib import Path
 
     from repo_organizer.application.analyze_repositories import analyze_repositories
-    from repo_organizer.config.settings import load_settings
+    from repo_organizer.infrastructure.config.settings import load_settings
     from repo_organizer.infrastructure.analysis.langchain_claude_adapter import (
         LangChainClaudeAdapter,
     )

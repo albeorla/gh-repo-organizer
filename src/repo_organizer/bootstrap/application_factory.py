@@ -9,7 +9,7 @@ from collections.abc import Callable
 from rich.console import Console
 
 from repo_organizer.bootstrap.application_runner import ApplicationRunner
-from repo_organizer.config.settings import load_settings
+from repo_organizer.infrastructure.config.settings import load_settings
 
 # Import adapter implementation for AnalyzerPort
 from repo_organizer.infrastructure.analysis.langchain_claude_adapter import (

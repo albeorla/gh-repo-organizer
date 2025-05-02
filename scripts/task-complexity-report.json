@@ -1,0 +1,43 @@
+{
+  "meta": {
+    "generatedAt": "2025-05-02T03:16:22.233Z",
+    "tasksAnalyzed": 4,
+    "thresholdScore": 5,
+    "projectName": "Your Project Name",
+    "usedResearch": true
+  },
+  "complexityAnalysis": [
+    {
+      "taskId": 21,
+      "taskTitle": "Remove duplicate LLM service implementation",
+      "complexityScore": 3,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Break down the process of removing the duplicate LLM service implementation into specific subtasks including code analysis to confirm duplication, refactoring import statements in dependent modules, and validation testing to ensure functionality remains intact",
+      "reasoning": "This task involves removing a duplicate file with a clear indication of which file to keep. The complexity is low but requires careful analysis of imports and dependencies to ensure nothing breaks when the duplicate is removed."
+    },
+    {
+      "taskId": 22,
+      "taskTitle": "Remove duplicate CLI commands implementation",
+      "complexityScore": 3,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Detail the steps needed to safely remove the duplicate CLI commands implementation, including identifying all modules that might import from either file, updating import statements, and testing the CLI functionality after removal",
+      "reasoning": "Similar to task 21, this involves removing a duplicate file. The task is straightforward but requires verifying import patterns and ensuring CLI functionality remains intact after the removal."
+    },
+    {
+      "taskId": 23,
+      "taskTitle": "Remove duplicate configuration settings module",
+      "complexityScore": 4,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Create subtasks for removing the duplicate configuration settings module, including analyzing all imports of configuration settings, ensuring consistent configuration access throughout the codebase, and testing after removal",
+      "reasoning": "This task involves removing a duplicate configuration file, which carries slightly higher risk than the previous tasks because configuration settings affect the entire application. Additional verification is needed to ensure all parts of the application use the correct configuration module."
+    },
+    {
+      "taskId": 24,
+      "taskTitle": "Documentation Cleanup and Integration from Repository Dump",
+      "complexityScore": 7,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Break down the documentation cleanup and integration process into detailed subtasks covering content analysis, integration strategies for different types of documentation, conflict resolution with existing docs, validation of integrated content, and final cleanup",
+      "reasoning": "This task has higher complexity as it involves analyzing unstructured content from a dump file, making informed decisions about where information belongs, updating multiple documentation files, and ensuring consistency across the documentation. The task requires both technical understanding and documentation expertise."
+    }
+  ]
+}
