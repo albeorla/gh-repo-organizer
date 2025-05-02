@@ -73,7 +73,7 @@ def _get_repo_readme(
         README content or None if not available
     """
     try:
-        readme_content = source_control.get_readme(owner, repo_name)
+        readme_content = source_control.get_repository_readme(repo_name)
         if hasattr(source_control, "logger") and source_control.logger and readme_content:
             preview = readme_content[:200]
             source_control.logger.log(
@@ -104,7 +104,7 @@ def _get_repo_activity(
         Tuple of (commit count, activity summary)
     """
     try:
-        recent_commits = source_control.get_recent_commits(owner, repo_name)
+        recent_commits = source_control.recent_commits(repo_name)
         recent_commits_count = len(recent_commits)
     except OSError as e:
         if source_control.logger:
@@ -133,9 +133,11 @@ def analyze_repositories(
     Returns:
         List of repository analyses
     """
-    repos = source_control.get_repositories(owner)
+    repos = source_control.list_repositories(owner, limit=None)
 
     if single_repo:
+        if hasattr(source_control, "logger") and source_control.logger:
+            source_control.logger.log(f"Filtering repositories to only include: {single_repo}")
         repos = _filter_single_repo(repos, single_repo, source_control)
         if not repos:
             return []

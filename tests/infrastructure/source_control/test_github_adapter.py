@@ -31,16 +31,19 @@ class TestGitHubAdapter:
         return MagicMock()
 
     @pytest.fixture
-    def github_adapter(self, mock_logger, mock_rate_limiter):
+    def github_adapter(self, mock_settings, mock_logger, mock_rate_limiter):
         """Create GitHub adapter instance for tests."""
         with patch(
             "repo_organizer.infrastructure.source_control.github_adapter.GitHubService"
         ) as mock_service:
-            return GitHubAdapter(
-                github_service=mock_service(),
+            adapter = GitHubAdapter(
+                settings=mock_settings,
                 logger=mock_logger,
                 rate_limiter=mock_rate_limiter,
             )
+            # Replace the created service with our mock
+            adapter.github_service = mock_service()
+            return adapter
 
     def test_list_repositories_success(self, github_adapter, mock_logger):
         """Test list_repositories successfully retrieves repositories."""

@@ -70,13 +70,15 @@ class Settings(BaseSettings):
     )
 
     @field_validator("github_token")
-    def validate_github_token(self, v):
+    @classmethod
+    def validate_github_token(cls, v):
         if not v or len(v) < 10:
             raise ValueError("GitHub token is required and must be valid")
         return v
 
     @field_validator("output_dir", "logs_dir")
-    def create_directory(self, v: str) -> str:
+    @classmethod
+    def create_directory(cls, v: str) -> str:
         """Return a fully-qualified path and guarantee the directory exists.
 
         The path supplied by the user may contain *nix style home

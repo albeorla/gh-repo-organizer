@@ -62,22 +62,22 @@ def mock_analyzer():
     mock = MagicMock()
 
     # Configure the mock to return a sample analysis
-    def mock_analyze(repo_data):
+    def mock_analyze_repository(repo, readme_content=None, recent_commits=None, activity_summary=None):
         from repo_organizer.domain.analysis.models import RepoAnalysis
-
         return RepoAnalysis(
-            repo_name=repo_data["repo_name"],
-            summary=f"Analysis of {repo_data['repo_name']}",
+            repo_name=repo.name,
+            summary=f"Analysis of {repo.name}",
             strengths=["Sample strength"],
             weaknesses=["Sample weakness"],
             recommendations=[],
             activity_assessment="Medium",
             estimated_value="Medium",
             tags=["test"],
+            recommended_action="KEEP",
+            action_reasoning="Test repository",
         )
 
-    mock.analyze.side_effect = mock_analyze
-
+    mock.analyze_repository.side_effect = mock_analyze_repository
     return mock
 
 
@@ -132,6 +132,6 @@ def test_analyze_repositories_single_repo_not_found(mock_source_control, mock_an
 
     # Verify that error was logged
     mock_source_control.logger.log.assert_any_call(
-        "Repository 'non-existent-repo' not found in list of 3 repositories",
+        "Repository 'non-existent-repo' not found in 3 repositories",
         level="error",
     )

@@ -77,9 +77,9 @@ class TestRepositoryAnalysis(unittest.TestCase):
         self.assertIsInstance(result.recommendations[0], RepoRecommendation)
         self.assertEqual(result.estimated_value, "Medium")
 
-    @patch("repo_organizer.domain.analysis.repository_analyzer_service.AnalyzerPort")
+    @patch("repo_organizer.domain.analysis.protocols.AnalyzerPort")
     @patch(
-        "repo_organizer.domain.analysis.repository_analyzer_service.SourceControlPort",
+        "repo_organizer.domain.source_control.protocols.SourceControlPort",
     )
     def test_repository_analyzer_service(self, mock_source_control, mock_analyzer_port):
         """Test repository analyzer service end-to-end."""
