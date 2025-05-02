@@ -13,9 +13,27 @@ A tool for analyzing and organizing GitHub repositories using AI-powered analysi
 - Supports extended thinking for more thorough and accurate analyses
 - Configurable LLM parameters including model selection and temperature
 - Handles rate limiting and provides robust error recovery
-- Modern command-line interface with rich console output
+- Modern command-line interface with rich console output and shell completion
 
 ## Installation
+
+There are two ways to install the GitHub Repository Organizer:
+
+### 1. Global Installation with pipx (Recommended)
+
+```bash
+# Install pipx if you haven't already
+python -m pip install --user pipx
+python -m pipx ensurepath
+
+# Install gh-repo-organizer
+pipx install gh-repo-organizer
+
+# Enable shell completion (optional, but recommended)
+repo completion install
+```
+
+### 2. Development Installation with Poetry
 
 ```bash
 # Clone the repository
@@ -24,52 +42,92 @@ cd gh-repo-organizer
 
 # Install dependencies
 poetry install
+
+# Enable shell completion (optional, but recommended)
+poetry run repo completion install
 ```
 
 ## Usage
 
+The CLI provides a set of intuitive command groups for managing GitHub repositories:
+
+### Repository Management (`repo`)
+
 ```bash
-# Analyze your GitHub repositories
-poetry run repo-analyzer analyze
+# Analyze repositories
+repo repo analyze                     # Analyze your repositories
+repo repo analyze --owner <username>  # Analyze specific user's repos
+repo repo analyze --single <name>     # Analyze a single repository
 
-# Analyze repositories with specific options
-poetry run repo-analyzer analyze --owner <username> --limit 10
-
-# Analyze a single repository
-poetry run repo-analyzer analyze --single-repo my-repository-name
-
-# Force re-analysis of repositories
-poetry run repo-analyzer analyze --force
-
-# Enable debug mode for verbose logging
-poetry run repo-analyzer analyze --debug
-
-# Specify output directory
-poetry run repo-analyzer analyze --output-dir ./my-reports
-
-# Clean up report files
-poetry run repo-analyzer cleanup
-
-# View generated reports
-poetry run repo-analyzer reports
-
-# View analysis logs
-poetry run repo-analyzer logs
-
-# Reset and clean up analysis files
-poetry run repo-analyzer reset
+# Cleanup and maintenance
+repo repo cleanup                     # Clean up analysis files
+repo repo reset                       # Reset all analysis data
 ```
 
-### Command-line Options
+### Report Management (`reports`)
 
-The `analyze` command supports the following options:
+```bash
+# View and manage reports
+repo reports list                     # List available reports
+repo reports show <repository>        # Show specific report
+repo reports summary                  # Show analysis summary
+```
+
+### Log Management (`logs`)
+
+```bash
+# Access and view logs
+repo logs latest                      # Show latest log file
+repo logs all                        # List all log files
+repo logs view <file>                # View specific log file
+```
+
+### Action Management (`actions`)
+
+```bash
+# Handle repository actions
+repo actions list                     # List pending actions
+repo actions execute                  # Execute pending actions
+repo actions dry-run                  # Simulate action execution
+```
+
+### Command Aliases
+
+For convenience, you can use the shorter alias `ro` instead of `repo`:
+
+```bash
+ro repo analyze      # Same as 'repo repo analyze'
+ro reports list     # Same as 'repo reports list'
+ro logs latest      # Same as 'repo logs latest'
+```
+
+### Shell Completion
+
+The CLI supports shell completion for all commands and options:
+
+```bash
+# Install shell completion (auto-detects shell)
+repo completion install
+
+# Or install for a specific shell
+repo completion install --shell bash  # For Bash
+repo completion install --shell zsh   # For Zsh
+repo completion install --shell fish  # For Fish
+
+# Remove shell completion
+repo completion uninstall
+```
+
+### Repository Analysis Options
+
+The `repo analyze` command supports these options:
 
 - `--owner`, `-o`: GitHub owner/user to analyze (defaults to GITHUB_USERNAME)
 - `--limit`, `-l`: Maximum number of repositories to analyze
-- `--single-repo`: Analyze only the specified repository name
-- `--output-dir`: Directory for output files
+- `--single`, `-s`: Analyze only the specified repository name
+- `--output-dir`, `-d`: Directory for output files
 - `--force`, `-f`: Force re-analysis of all repositories
-- `--debug`, `-d`: Enable debug logging
+- `--debug`: Enable debug logging
 - `--quiet`, `-q`: Minimize console output
 
 ## Configuration
@@ -153,6 +211,11 @@ poetry run ruff format .
 
 # Lint code
 poetry run ruff check .
+
+# Or use the dev commands
+poetry run repo dev lint
+poetry run repo dev format
+poetry run repo dev check
 ```
 
 ## Single Repository Mode
@@ -168,10 +231,10 @@ The tool supports analyzing a single repository instead of the complete set of r
 
 ```bash
 # Analyze a single repository by name
-poetry run repo-analyzer analyze --single-repo repository-name
+repo repo analyze --single repository-name
 
 # Combine with other options
-poetry run repo-analyzer analyze --single-repo repository-name --force --debug
+repo repo analyze --single repository-name --force --debug
 ```
 
 ### Considerations

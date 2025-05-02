@@ -31,6 +31,12 @@ from repo_organizer.infrastructure.config.settings import load_settings
 
 from .dev import dev_app
 
+from repo_organizer.cli.commands import (
+    actions_app,
+    logs_app,
+    repo_app,
+    reports_app,
+)
 
 # Define Enum for action types
 class ActionType(str, Enum):
@@ -46,8 +52,8 @@ class ActionType(str, Enum):
 
 # Create Typer app with rich integration
 app = typer.Typer(
-    name="repo-analyzer",
-    help="Analyze GitHub repositories and provide insights using AI.",
+    name="repo",
+    help="GitHub repository organizer and analyzer.",
     add_completion=True,
 )
 
@@ -57,6 +63,12 @@ app = typer.Typer(
 # Create console for rich output
 console = Console()
 
+# Add command groups
+app.add_typer(repo_app, name="repo")
+app.add_typer(reports_app, name="reports")
+app.add_typer(logs_app, name="logs")
+app.add_typer(actions_app, name="actions")
+app.add_typer(dev_app, name="dev")
 
 def version_callback(value: bool):
     """Display version information and exit."""
@@ -67,7 +79,6 @@ def version_callback(value: bool):
             f"[bold green]GitHub Repository Analyzer[/] version: [bold]{__version__}[/]",
         )
         typer.Exit()
-
 
 @app.callback()
 def main(
@@ -80,9 +91,18 @@ def main(
         is_eager=True,
     ),
 ):
-    """Analyze GitHub repositories using LangChain and Anthropic's Claude AI.
+    """Analyze and organize GitHub repositories using LangChain and Anthropic's Claude AI.
 
-    This tool provides insights, recommendations, and documentation for repositories that you own (not repositories you've starred or forked).
+    This tool provides insights, recommendations, and documentation for repositories
+    that you own (not repositories you've starred or forked). It uses a modern CLI
+    structure with command groups for better organization:
+
+    \b
+    - repo: Analyze and manage repositories
+    - reports: View and manage analysis reports
+    - logs: View and manage application logs
+    - actions: Execute and manage repository actions
+    - dev: Development and debugging tools
     """
 
 
@@ -945,7 +965,97 @@ def actions(
         raise typer.Exit(code=1)
 
 
-app.add_typer(dev_app, name="dev")
+@app.command()
+def completion(
+    shell: str = typer.Argument(
+        None,
+        help="Shell to generate completion for (bash, zsh, fish).",
+    ),
+    install: bool = typer.Option(
+        False,
+        "--install",
+        "-i",
+        help="Install completion for the specified shell.",
+    ),
+):
+    """Generate or install shell completion for the CLI.
+
+    This command helps you set up shell completion for the repo command.
+    You can either:
+    1. Generate completion script: repo completion zsh
+    2. Install completion: repo completion zsh --install
+
+    Supported shells: bash, zsh, fish
+    """
+    import shellingham
+
+    if shell is None:
+        # Auto-detect shell if not specified
+        try:
+            shell_name, _ = shellingham.detect_shell()
+        except shellingham.ShellDetectionFailure:
+            console.print("[red]Could not detect shell. Please specify one.[/]")
+            raise typer.Exit(1)
+    else:
+        shell_name = shell.lower()
+
+    if shell_name not in ["bash", "zsh", "fish"]:
+        console.print(f"[red]Unsupported shell: {shell_name}[/]")
+        raise typer.Exit(1)
+
+    # Get completion script
+    import subprocess
+    try:
+        if shell_name == "bash":
+            script = "eval \"$(repo --completion bash)\""
+            rc_file = "~/.bashrc"
+        elif shell_name == "zsh":
+            script = "eval \"$(repo --completion zsh)\""
+            rc_file = "~/.zshrc"
+        else:  # fish
+            script = "repo --completion fish | source"
+            rc_file = "~/.config/fish/config.fish"
+
+        if install:
+            # Show what we're going to do
+            console.print(
+                Panel(
+                    f"[cyan]This will add the following to {rc_file}:[/]\n\n"
+                    f"{script}\n\n"
+                    "[cyan]Shell completion will be enabled after restarting your shell.[/]",
+                    title="Shell Completion Installation",
+                    border_style="blue",
+                ),
+            )
+
+            # Get confirmation
+            confirm = typer.confirm("Do you want to continue?", default=True)
+            if not confirm:
+                console.print("[yellow]Installation cancelled.[/]")
+                raise typer.Exit()
+
+            # Add to shell config
+            import os
+            rc_path = os.path.expanduser(rc_file)
+            with open(rc_path, "a") as f:
+                f.write(f"\n# Added by repo completion command\n{script}\n")
+
+            console.print(
+                f"[green]Successfully installed completion for {shell_name}![/]\n"
+                f"[cyan]Please restart your shell or source {rc_file} to enable completion.[/]"
+            )
+        else:
+            # Just show the script
+            console.print(
+                Panel(
+                    f"[cyan]Add this to {rc_file} to enable completion:[/]\n\n{script}",
+                    title=f"Shell Completion Script ({shell_name})",
+                    border_style="blue",
+                ),
+            )
+    except Exception as e:
+        console.print(f"[red]Error setting up completion: {str(e)}[/]")
+        raise typer.Exit(1)
 
 
 if __name__ == "__main__":

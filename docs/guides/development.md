@@ -28,25 +28,48 @@ This guide provides information for developers contributing to the GitHub Reposi
    # Edit .env with your favorite editor
    ```
 
+5. **Enable shell completion (optional)**
+   ```bash
+   # Install shell completion for development
+   poetry run repo completion install
+   ```
+
 ## Development Workflow
 
 ### Running the Application
 
+The CLI is organized into logical command groups. Here are common development workflows:
+
 ```bash
-# Run the repository analyzer
-poetry run repo-analyzer analyze
+# Repository Analysis
+poetry run repo repo analyze                     # Analyze your repositories
+poetry run repo repo analyze --debug             # Enable debug mode
+poetry run repo repo analyze --force             # Force re-analysis
+poetry run repo repo analyze --single my-repo    # Analyze single repository
+poetry run repo repo cleanup                     # Clean up reports
 
-# Enable debug mode
-poetry run repo-analyzer analyze --debug
+# Report Management
+poetry run repo reports list                     # List reports
+poetry run repo reports show my-repo             # View specific report
+poetry run repo reports summary                  # View summary
 
-# Force re-analysis of repositories
-poetry run repo-analyzer analyze --force
+# Log Management
+poetry run repo logs latest                      # View latest log
+poetry run repo logs all                         # List all logs
+poetry run repo logs view my-log.txt            # View specific log
 
-# Analyze a single repository (useful for testing)
-poetry run repo-analyzer analyze --single-repo my-repository-name
+# Action Management
+poetry run repo actions list                     # List pending actions
+poetry run repo actions dry-run                  # Simulate actions
+poetry run repo actions execute                  # Execute actions
+```
 
-# Clean up report files
-poetry run repo-analyzer cleanup
+For convenience, you can also use the shorter alias `ro`:
+
+```bash
+poetry run ro repo analyze --debug
+poetry run ro reports list
+poetry run ro logs latest
 ```
 
 ### Code Quality Tools
@@ -64,33 +87,22 @@ poetry run pytest
 
 ## Code Organization
 
-The project follows Domain-Driven Design principles with a hexagonal architecture. Here's the complete repository structure:
+The project follows Domain-Driven Design principles with a hexagonal architecture. Here's the key directory structure:
 
 ```text
 .
-├── CLAUDE.md
-├── README.md
-├── docs
-│   ├── CLAUDE.ARCHIVED.md
-│   ├── README.md
-│   ├── adr
-│   │   ├── 0001-ddd-architecture.md
-│   │   ├── 0002-repository-action-decisions.md
-│   │   └── README.md
-│   ├── auth_configuration.md
-│   ├── guides
-│   │   ├── ddd-architecture.md
-│   │   └── development.md
-│   ├── roadmap.txt
-│   └── task-master-cli-help.md
-├── pyproject.toml
-├── scripts
-│   ├── example_prd.txt
-│   ├── prd.txt
-│   └── task-complexity-report.json
 ├── src
 │   └── repo_organizer
-│       ├── __init__.py
+│       ├── cli
+│       │   ├── __init__.py
+│       │   ├── app.py                # Main CLI application
+│       │   ├── commands/             # Command group implementations
+│       │   │   ├── __init__.py
+│       │   │   ├── actions.py        # Action management commands
+│       │   │   ├── logs.py          # Log management commands
+│       │   │   ├── repo.py          # Repository management commands
+│       │   │   └── reports.py       # Report management commands
+│       │   └── auth_middleware.py    # Authentication middleware
 │       ├── application
 │       │   ├── __init__.py
 │       │   └── analyze_repositories.py
@@ -98,12 +110,6 @@ The project follows Domain-Driven Design principles with a hexagonal architectur
 │       │   ├── __init__.py
 │       │   ├── application_factory.py
 │       │   └── application_runner.py
-│       ├── cli
-│       │   ├── __init__.py
-│       │   ├── app.py
-│       │   ├── auth_middleware.py
-│       │   ├── commands.py
-│       │   └── dev.py
 │       ├── config
 │       │   └── __init__.py
 │       ├── domain
@@ -216,36 +222,126 @@ The project follows Domain-Driven Design principles with a hexagonal architectur
     └── test_application.py
 ```
 
-The key directories and their purposes:
+## CLI Development
 
-- `src/repo_organizer/domain/` - Domain layer containing core business logic
-  - `analysis/` - Analysis bounded context
-  - `core/` - Core domain services and models
-  - `source_control/` - Source control bounded context
+### Command Group Structure
 
-- `src/repo_organizer/application/` - Application layer with use cases
-  - Contains application services that orchestrate domain objects
+The CLI uses Typer's command groups pattern. Each command group is defined in its own module under `cli/commands/`:
 
-- `src/repo_organizer/infrastructure/` - Infrastructure layer with external adapters
-  - `analysis/` - Analysis adapters (LLM, etc.)
-  - `source_control/` - GitHub API adapters
-  - `config/` - Configuration management
-  - `logging/` - Logging infrastructure
-  - `rate_limiting/` - Rate limiting implementation
+```python
+# src/repo_organizer/cli/commands/repo.py
+import typer
+from typing import Optional
 
-- `src/repo_organizer/cli/` - Interface layer (CLI)
-  - Command-line interface implementation
-  - Authentication middleware
-  - Command handlers
+repo_app = typer.Typer(
+    name="repo",
+    help="Repository management commands",
+    short_help="Manage repositories"
+)
 
-- `src/repo_organizer/shared/` - Shared kernel
-  - Common utilities and helpers
-  - Shared types and interfaces
+@repo_app.command()
+def analyze(
+    owner: Optional[str] = typer.Option(None, "--owner", "-o", help="GitHub owner/user"),
+    single: Optional[str] = typer.Option(None, "--single", "-s", help="Single repository"),
+    debug: bool = typer.Option(False, "--debug", help="Enable debug mode"),
+):
+    """Analyze GitHub repositories."""
+    # Command implementation
+```
 
-- `tests/` - Test suite organized by layer
-  - Unit tests for each layer
-  - Integration tests
-  - Test fixtures and utilities
+### Adding New Commands
+
+To add a new command:
+
+1. Choose the appropriate command group module (or create a new one)
+2. Define your command using the `@app.command()` decorator
+3. Add type hints and Typer options for parameters
+4. Implement the command logic
+5. Register the command group in `cli/app.py`
+
+Example:
+
+```python
+# src/repo_organizer/cli/commands/reports.py
+@reports_app.command()
+def export(
+    format: str = typer.Option("markdown", "--format", "-f", help="Export format"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="Output file"),
+):
+    """Export reports in different formats."""
+    # Implementation
+```
+
+### Testing Commands
+
+Create tests in `tests/cli/commands/`:
+
+```python
+# tests/cli/commands/test_repo.py
+from typer.testing import CliRunner
+from repo_organizer.cli.app import app
+
+runner = CliRunner()
+
+def test_analyze_command():
+    result = runner.invoke(app, ["repo", "analyze"])
+    assert result.exit_code == 0
+    # Add assertions for expected output
+```
+
+### Shell Completion
+
+The CLI automatically supports shell completion through Typer. To test completion:
+
+```bash
+# Install completion in development
+poetry run repo completion install
+
+# Test completion
+poetry run repo [TAB][TAB]
+poetry run repo repo [TAB][TAB]
+poetry run repo reports [TAB][TAB]
+```
+
+## Error Handling
+
+Commands should use the error handling utilities in `infrastructure/errors/`:
+
+```python
+from repo_organizer.infrastructure.errors import handle_error
+
+@repo_app.command()
+def analyze(...):
+    try:
+        # Command logic
+    except Exception as e:
+        handle_error(e)
+        raise typer.Exit(1)
+```
+
+## Documentation
+
+When adding or modifying commands:
+
+1. Update the command's docstring with clear usage information
+2. Add examples in the help text using Typer's rich text formatting
+3. Update the [CLI Migration Guide](cli-migration.md) if breaking changes are made
+4. Update the main README.md with new command examples
+
+## Environment Variables
+
+Commands can access configuration through environment variables:
+
+```python
+from repo_organizer.infrastructure.config import settings
+
+@repo_app.command()
+def analyze(...):
+    debug = settings.debug_logging
+    # Use configuration
+```
+
+See the [Configuration Guide](configuration.md) for available settings.
 
 ## Implementation Patterns
 

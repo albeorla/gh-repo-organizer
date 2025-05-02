@@ -1,3 +1,17 @@
+[project]
+name = "gh-repo-organizer"
+version = "0.1.0"
+description = "A tool to organize GitHub repositories."
+authors = [{name = "Albert Orlando", email = "albertjorlando@gmail.com"}]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.12,<4.0"
+repository = "https://github.com/albeorla/gh-repo-organizer"
+
+[project.scripts]
+repo = "repo_organizer.cli:app"
+ro = "repo_organizer.cli:app"
+
 [tool.poetry]
 name = "gh-repo-organizer"
 version = "0.1.0"
@@ -32,45 +46,6 @@ pytest-cov = "^4.1.0"
 pytest-asyncio = "^0.26.0"
 pytest-mock = "^3.12.0"
 types-requests = "^2.31.0"
-
-[tool.poetry.scripts]
-# Main CLI entry point
-repo-analyzer = "repo_organizer.cli:app"
-
-# Analysis commands
-analyze = "repo_organizer.cli:app analyze"
-analyze-repo = "repo_organizer.cli:app analyze --single-repo"
-analyze-all = "repo_organizer.cli:app analyze --force"
-
-# Report management
-reports = "repo_organizer.cli:app reports"
-reports-list = "repo_organizer.cli:app reports list"
-reports-summary = "repo_organizer.cli:app reports summary"
-
-# Log management
-logs = "repo_organizer.cli:app logs"
-logs-all = "repo_organizer.cli:app logs all"
-logs-latest = "repo_organizer.cli:app logs latest"
-
-# Cleanup and maintenance
-cleanup = "repo_organizer.cli:app cleanup"
-cleanup-force = "repo_organizer.cli:app cleanup --force"
-reset = "repo_organizer.cli:app reset"
-reset-force = "repo_organizer.cli:app reset --force"
-
-# Repository actions
-actions = "repo_organizer.cli:app actions"
-actions-delete = "repo_organizer.cli:app actions delete"
-actions-archive = "repo_organizer.cli:app actions archive"
-actions-extract = "repo_organizer.cli:app actions extract"
-actions-pin = "repo_organizer.cli:app actions pin"
-actions-execute = "repo_organizer.cli:app actions execute"
-
-# Development tools
-test = "pytest:main"
-lint = "repo_organizer.cli:app dev lint"
-format = "repo_organizer.cli:app dev format"
-check = "repo_organizer.cli:app dev check"
 
 [build-system]
 requires = ["poetry-core"]
