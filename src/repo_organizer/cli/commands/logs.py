@@ -1,7 +1,6 @@
 """Log management commands for viewing and managing application logs."""
 
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.console import Console
@@ -12,13 +11,12 @@ from repo_organizer.infrastructure.config.settings import load_settings
 
 # Create Typer app for log commands
 logs_app = typer.Typer(
-    name="logs",
-    help="View and manage application logs.",
-    short_help="Manage logs"
+    name="logs", help="View and manage application logs.", short_help="Manage logs"
 )
 
 # Create console for rich output
 console = Console()
+
 
 @logs_app.command()
 def latest():
@@ -35,6 +33,7 @@ def latest():
     log_content = log_path.read_text()
     syntax = Syntax(log_content, "log", theme="monokai")
     console.print(syntax)
+
 
 @logs_app.command(name="all")
 def list_all():
@@ -65,19 +64,21 @@ def list_all():
         last_updated = log_file.stat().st_mtime
 
         from datetime import datetime
+
         updated_str = datetime.fromtimestamp(last_updated).strftime("%Y-%m-%d %H:%M:%S")
-        
+
         # Format size
         if size < 1024:
             size_str = f"{size} B"
         elif size < 1024 * 1024:
-            size_str = f"{size/1024:.1f} KB"
+            size_str = f"{size / 1024:.1f} KB"
         else:
-            size_str = f"{size/(1024*1024):.1f} MB"
+            size_str = f"{size / (1024 * 1024):.1f} MB"
 
         table.add_row(str(file_name), size_str, updated_str)
 
     console.print(table)
+
 
 @logs_app.command()
 def view(
@@ -106,6 +107,7 @@ def view(
 
     if follow:
         import time
+
         last_size = 0
         try:
             while True:
@@ -122,9 +124,9 @@ def view(
     else:
         # Read and display the log
         log_content = log_path.read_text().splitlines()
-        
+
         if tail:
             log_content = log_content[-tail:]
-        
+
         syntax = Syntax("\n".join(log_content), "log", theme="monokai")
-        console.print(syntax) 
+        console.print(syntax)

@@ -2,7 +2,6 @@
 
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.console import Console
@@ -10,28 +9,29 @@ from rich.panel import Panel
 from rich.table import Table
 
 from repo_organizer.cli.auth_middleware import authenticate_command
-from repo_organizer.cli.commands import execute_actions
+from repo_organizer.cli.commands.actions_executor import execute_actions
 from repo_organizer.infrastructure.config.settings import load_settings
 
 # Create Typer app for action commands
 actions_app = typer.Typer(
-    name="actions",
-    help="Execute and manage repository actions.",
-    short_help="Manage actions"
+    name="actions", help="Execute and manage repository actions.", short_help="Manage actions"
 )
 
 # Create console for rich output
 console = Console()
 
+
 # Define Enum for action types
 class ActionType(str, Enum):
     """Repository action types."""
+
     DELETE = "delete"
     ARCHIVE = "archive"
     EXTRACT = "extract"
     KEEP = "keep"
     PIN = "pin"
     ALL = "all"
+
 
 @actions_app.command()
 @authenticate_command("execute_actions")
@@ -70,6 +70,7 @@ def execute(
         output_path = Path(settings.output_dir)
     else:
         import os
+
         expanded_output = os.path.abspath(
             os.path.expanduser(os.path.expandvars(output_dir)),
         )
@@ -104,8 +105,9 @@ def execute(
             github_username=settings.github_username,
         )
     except Exception as e:
-        console.print(f"[red]Error executing actions: {str(e)}[/]")
+        console.print(f"[red]Error executing actions: {e!s}[/]")
         raise typer.Exit(1)
+
 
 @actions_app.command(name="list")
 def list_actions():
@@ -131,6 +133,7 @@ def list_actions():
 
     # Add actions to table
     import json
+
     for action_file in sorted(action_files):
         repo_name = action_file.parent.name
         try:
@@ -141,10 +144,11 @@ def list_actions():
                     reason = action.get("reason", "No reason provided")
                     table.add_row(repo_name, action_type, reason)
         except Exception as e:
-            console.print(f"[red]Error reading actions for {repo_name}: {str(e)}[/]")
+            console.print(f"[red]Error reading actions for {repo_name}: {e!s}[/]")
             continue
 
     console.print(table)
+
 
 @actions_app.command(name="dry-run")
 def dry_run(
@@ -169,6 +173,7 @@ def dry_run(
         output_path = Path(settings.output_dir)
     else:
         import os
+
         expanded_output = os.path.abspath(
             os.path.expanduser(os.path.expandvars(output_dir)),
         )
@@ -188,5 +193,5 @@ def dry_run(
             github_username=settings.github_username,
         )
     except Exception as e:
-        console.print(f"[red]Error simulating actions: {str(e)}[/]")
-        raise typer.Exit(1) 
+        console.print(f"[red]Error simulating actions: {e!s}[/]")
+        raise typer.Exit(1)

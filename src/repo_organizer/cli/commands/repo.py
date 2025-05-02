@@ -1,9 +1,7 @@
 """Repository management commands for analyzing and organizing GitHub repositories."""
 
 import os
-from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.console import Console
@@ -17,10 +15,10 @@ from rich.progress import (
 )
 
 from repo_organizer.cli.auth_middleware import authenticate_command
-from repo_organizer.infrastructure.config.settings import load_settings
 from repo_organizer.infrastructure.analysis.langchain_claude_adapter import (
     LangChainClaudeAdapter,
 )
+from repo_organizer.infrastructure.config.settings import load_settings
 from repo_organizer.infrastructure.github_rest import GitHubRestAdapter
 from repo_organizer.utils.logger import Logger
 from repo_organizer.utils.rate_limiter import RateLimiter
@@ -29,11 +27,12 @@ from repo_organizer.utils.rate_limiter import RateLimiter
 repo_app = typer.Typer(
     name="repo",
     help="Repository management commands for analyzing and organizing GitHub repositories.",
-    short_help="Manage repositories"
+    short_help="Manage repositories",
 )
 
 # Create console for rich output
 console = Console()
+
 
 @repo_app.command()
 @authenticate_command("analyze")
@@ -162,7 +161,7 @@ def analyze(
         refresh_per_second=5,
         get_time=None,
     ) as progress:
-        fetch_task = progress.add_task(
+        progress.add_task(
             "[cyan]Fetching repositories",
             total=1,
             status="Starting...",
@@ -194,11 +193,13 @@ def analyze(
             )
 
         except Exception as e:
-            logger.error(f"Error during repository analysis: {str(e)}")
+            logger.error(f"Error during repository analysis: {e!s}")
             if debug:
                 import traceback
+
                 logger.debug(traceback.format_exc())
             raise typer.Exit(1)
+
 
 @repo_app.command()
 @authenticate_command("cleanup")
@@ -254,6 +255,7 @@ def cleanup(
 
     # Remove all files in the output directory
     import shutil
+
     try:
         shutil.rmtree(output_path)
         if not quiet:
@@ -261,8 +263,9 @@ def cleanup(
                 f"[green]Successfully removed all files in {output_path}[/]",
             )
     except Exception as e:
-        console.print(f"[red]Error removing files: {str(e)}[/]")
+        console.print(f"[red]Error removing files: {e!s}[/]")
         raise typer.Exit(1)
+
 
 @repo_app.command()
 @authenticate_command("reset")
@@ -304,6 +307,7 @@ def reset(
     # Remove output directory and its contents
     if output_path.exists():
         import shutil
+
         try:
             shutil.rmtree(output_path)
             if not quiet:
@@ -311,11 +315,11 @@ def reset(
                     f"[green]Successfully removed output directory: {output_path}[/]",
                 )
         except Exception as e:
-            console.print(f"[red]Error removing output directory: {str(e)}[/]")
+            console.print(f"[red]Error removing output directory: {e!s}[/]")
             raise typer.Exit(1)
 
     # Remove any other application state files here
     # For example: cached credentials, temporary files, etc.
 
     if not quiet:
-        console.print("[green]Application state has been reset successfully.[/]") 
+        console.print("[green]Application state has been reset successfully.[/]")

@@ -62,8 +62,11 @@ def mock_analyzer():
     mock = MagicMock()
 
     # Configure the mock to return a sample analysis
-    def mock_analyze_repository(repo, readme_content=None, recent_commits=None, activity_summary=None):
+    def mock_analyze_repository(
+        repo, readme_content=None, recent_commits=None, activity_summary=None
+    ):
         from repo_organizer.domain.analysis.models import RepoAnalysis
+
         return RepoAnalysis(
             repo_name=repo.name,
             summary=f"Analysis of {repo.name}",

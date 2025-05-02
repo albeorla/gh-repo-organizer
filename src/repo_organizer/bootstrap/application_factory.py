@@ -9,12 +9,12 @@ from collections.abc import Callable
 from rich.console import Console
 
 from repo_organizer.bootstrap.application_runner import ApplicationRunner
-from repo_organizer.infrastructure.config.settings import load_settings
 
 # Import adapter implementation for AnalyzerPort
 from repo_organizer.infrastructure.analysis.langchain_claude_adapter import (
     LangChainClaudeAdapter,
 )
+from repo_organizer.infrastructure.config.settings import load_settings
 from repo_organizer.infrastructure.source_control.github_service import GitHubService
 from repo_organizer.services.progress_reporter import ProgressReporter
 from repo_organizer.utils.logger import Logger

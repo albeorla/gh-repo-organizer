@@ -7,12 +7,12 @@ import os
 
 from pydantic import Field
 
-from repo_organizer.infrastructure.config.settings import Settings, load_settings
 from repo_organizer.domain.core.auth_config import (
     AuthConfig,
     AuthRequirement,
     OperationType,
 )
+from repo_organizer.infrastructure.config.settings import Settings, load_settings
 
 
 class AuthSettings(Settings):

@@ -23,7 +23,13 @@ from rich.syntax import Syntax
 from rich.table import Table
 
 from repo_organizer.cli.auth_middleware import authenticate_command
-from repo_organizer.cli.commands import execute_actions
+from repo_organizer.cli.commands import (
+    actions_app,
+    execute_actions,
+    logs_app,
+    repo_app,
+    reports_app,
+)
 
 # Import needed for running the CLI without accessing it through the entry points
 # This prevents relative import errors when running the CLI directly
@@ -31,12 +37,6 @@ from repo_organizer.infrastructure.config.settings import load_settings
 
 from .dev import dev_app
 
-from repo_organizer.cli.commands import (
-    actions_app,
-    logs_app,
-    repo_app,
-    reports_app,
-)
 
 # Define Enum for action types
 class ActionType(str, Enum):
@@ -70,6 +70,7 @@ app.add_typer(logs_app, name="logs")
 app.add_typer(actions_app, name="actions")
 app.add_typer(dev_app, name="dev")
 
+
 def version_callback(value: bool):
     """Display version information and exit."""
     if value:
@@ -79,6 +80,7 @@ def version_callback(value: bool):
             f"[bold green]GitHub Repository Analyzer[/] version: [bold]{__version__}[/]",
         )
         typer.Exit()
+
 
 @app.callback()
 def main(
@@ -159,10 +161,10 @@ def analyze(
     from pathlib import Path
 
     from repo_organizer.application.analyze_repositories import analyze_repositories
-    from repo_organizer.infrastructure.config.settings import load_settings
     from repo_organizer.infrastructure.analysis.langchain_claude_adapter import (
         LangChainClaudeAdapter,
     )
+    from repo_organizer.infrastructure.config.settings import load_settings
 
     # Import directly from bounded context modules to avoid circular imports
     from repo_organizer.infrastructure.github_rest import GitHubRestAdapter
@@ -1004,13 +1006,13 @@ def completion(
         raise typer.Exit(1)
 
     # Get completion script
-    import subprocess
+
     try:
         if shell_name == "bash":
-            script = "eval \"$(repo --completion bash)\""
+            script = 'eval "$(repo --completion bash)"'
             rc_file = "~/.bashrc"
         elif shell_name == "zsh":
-            script = "eval \"$(repo --completion zsh)\""
+            script = 'eval "$(repo --completion zsh)"'
             rc_file = "~/.zshrc"
         else:  # fish
             script = "repo --completion fish | source"
@@ -1036,6 +1038,7 @@ def completion(
 
             # Add to shell config
             import os
+
             rc_path = os.path.expanduser(rc_file)
             with open(rc_path, "a") as f:
                 f.write(f"\n# Added by repo completion command\n{script}\n")
@@ -1054,7 +1057,7 @@ def completion(
                 ),
             )
     except Exception as e:
-        console.print(f"[red]Error setting up completion: {str(e)}[/]")
+        console.print(f"[red]Error setting up completion: {e!s}[/]")
         raise typer.Exit(1)
 
 

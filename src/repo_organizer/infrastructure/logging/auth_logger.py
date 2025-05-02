@@ -52,11 +52,14 @@ class AuthLogger:
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         self.log_file = self.log_dir / f"auth_log_{timestamp}.txt"
 
+        # Get version or use a default value if not available
+        version = getattr(self.settings, "version", "0.1.0")
+
         # Create the log file if it doesn't exist
         if not self.log_file.exists():
             with open(self.log_file, "w") as f:
                 f.write(f"# Authentication Log - Started {timestamp}\n")
-                f.write(f"# Version: {self.settings.version}\n\n")
+                f.write(f"# Version: {version}\n\n")
 
     def log_authentication_attempt(
         self,

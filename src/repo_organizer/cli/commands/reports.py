@@ -1,7 +1,6 @@
 """Report management commands for viewing and managing repository analysis reports."""
 
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.console import Console
@@ -12,13 +11,12 @@ from repo_organizer.infrastructure.config.settings import load_settings
 
 # Create Typer app for report commands
 reports_app = typer.Typer(
-    name="reports",
-    help="View and manage repository analysis reports.",
-    short_help="Manage reports"
+    name="reports", help="View and manage repository analysis reports.", short_help="Manage reports"
 )
 
 # Create console for rich output
 console = Console()
+
 
 @reports_app.command(name="list")
 def list_reports():
@@ -47,13 +45,15 @@ def list_reports():
         repo_name = report_file.parent.name
         last_updated = report_file.stat().st_mtime
         status = "Complete"  # Could be enhanced to show actual status
-        
+
         from datetime import datetime
+
         updated_str = datetime.fromtimestamp(last_updated).strftime("%Y-%m-%d %H:%M:%S")
-        
+
         table.add_row(repo_name, updated_str, status)
 
     console.print(table)
+
 
 @reports_app.command()
 def show(
@@ -72,19 +72,19 @@ def show(
 
     if not report_path.exists():
         console.print(
-            f"[red]No report found for repository '{repository}'. "
-            "Run 'repo analyze' first.[/]"
+            f"[red]No report found for repository '{repository}'. Run 'repo analyze' first.[/]"
         )
         raise typer.Exit(1)
 
     # Read and display the report
     report_content = report_path.read_text()
-    
+
     if format.lower() == "markdown":
         syntax = Syntax(report_content, "markdown", theme="monokai")
         console.print(syntax)
     else:
         console.print(report_content)
+
 
 @reports_app.command()
 def summary():
@@ -111,6 +111,7 @@ def summary():
 
     # Add summaries to table
     import json
+
     for summary_file in sorted(summary_files):
         repo_name = summary_file.parent.name
         try:
@@ -121,7 +122,7 @@ def summary():
                 recommendations = str(len(data.get("recommendations", [])))
                 table.add_row(repo_name, status, issues, recommendations)
         except Exception as e:
-            console.print(f"[red]Error reading summary for {repo_name}: {str(e)}[/]")
+            console.print(f"[red]Error reading summary for {repo_name}: {e!s}[/]")
             continue
 
-    console.print(table) 
+    console.print(table)

@@ -4,13 +4,13 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from repo_organizer.cli.commands import execute_actions
+from repo_organizer.cli.commands.actions_executor import execute_actions
 
 
 @pytest.fixture
 def mock_settings():
     """Provide mock settings."""
-    with patch("repo_organizer.cli.commands.load_settings") as mock:
+    with patch("repo_organizer.cli.commands.actions_executor.load_settings") as mock:
         settings = Mock()
         settings.output_dir = "/tmp/test_output"
         settings.logs_dir = "/tmp/test_logs"  # Add logs_dir
@@ -23,7 +23,7 @@ def mock_settings():
 @pytest.fixture
 def mock_load_analyses():
     """Mock the _load_analyses function."""
-    with patch("repo_organizer.cli.commands._load_analyses") as mock:
+    with patch("repo_organizer.cli.commands.actions_executor._load_analyses") as mock:
         mock.return_value = []
         yield mock
 
@@ -31,7 +31,7 @@ def mock_load_analyses():
 @pytest.fixture
 def mock_analysis_service():
     """Mock the AnalysisService."""
-    with patch("repo_organizer.cli.commands.AnalysisService") as mock:
+    with patch("repo_organizer.cli.commands.actions_executor.AnalysisService") as mock:
         mock.categorize_by_action.return_value = {"ARCHIVE": [], "DELETE": []}
         yield mock
 
@@ -51,7 +51,7 @@ class TestCommands:
         import typer
 
         # Patch the Logger to avoid file system operations
-        with patch("repo_organizer.cli.commands.Logger") as mock_logger_class:
+        with patch("repo_organizer.cli.commands.actions_executor.Logger") as mock_logger_class:
             mock_logger = Mock()
             mock_logger_class.return_value = mock_logger
 

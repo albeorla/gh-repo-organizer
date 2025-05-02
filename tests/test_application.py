@@ -45,7 +45,9 @@ class _FakeSourceControl:
 class _FakeAnalyzer:
     """Produces a trivial RepoAnalysis for every repository."""
 
-    def analyze_repository(self, repo, readme_content=None, recent_commits=None, activity_summary=None):
+    def analyze_repository(
+        self, repo, readme_content=None, recent_commits=None, activity_summary=None
+    ):
         return RepoAnalysis(
             repo_name=repo.name,
             summary=f"Analysis of {repo.name}",

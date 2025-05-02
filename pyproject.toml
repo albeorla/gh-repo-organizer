@@ -33,7 +33,7 @@ python-dotenv = "1.1.0"
 rich = "^13.0.0"
 tenacity = "8.5.0"
 tqdm = "4.67.1"
-typer = "<0.9.0"
+typer = "^0.15.3"
 shellingham = "^1.5.4"
 requests = "^2.31.0"
 pydantic-settings = "^2.9.1"
@@ -129,6 +129,7 @@ filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore::UserWarning",
 ]
+
 
 [tool.poetry.group.scripts]
 optional = true
