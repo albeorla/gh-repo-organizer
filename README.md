@@ -8,6 +8,7 @@ A tool for analyzing and organizing GitHub repositories using AI-powered analysi
 - Provides actionable decisions (DELETE/ARCHIVE/EXTRACT/KEEP/PIN) with reasoning
 - Generates detailed markdown reports for each repository with strengths, weaknesses, and recommendations
 - Creates summary reports categorizing repositories by value and activity level
+- Supports both public and private repositories via GitHub token authentication
 - Utilizes Domain-Driven Design (DDD) architecture for better reliability and maintainability
 - Integrates with Claude AI for intelligent repository analysis
 - Supports extended thinking for more thorough and accurate analyses
@@ -65,7 +66,7 @@ poetry run repo --help                 # Show help and command information
 # Analyze repositories
 poetry run repo analyze                          # Analyze repositories for current user
 poetry run repo analyze --owner <username>       # Analyze specific user's repositories
-poetry run repo analyze --single-repo <name>     # Analyze a single repository by name
+poetry run repo analyze --single-repo <name>  # Analyze a single repository by name
 poetry run repo analyze --force --debug          # Force re-analysis with debug output
 poetry run repo analyze --output-dir ~/reports   # Specify output directory
 
@@ -74,6 +75,25 @@ poetry run repo cleanup                          # Clean up analysis files
 poetry run repo cleanup --force                  # Clean up without confirmation
 poetry run repo reset                            # Reset analysis data that doesn't match your repositories
 ```
+
+### Authentication for Private Repositories
+
+To access private repositories, set up a GitHub personal access token:
+
+1. Create a token at https://github.com/settings/tokens with `repo` scope
+2. Set the token in your environment:
+
+```bash
+# Set environment variables
+export GITHUB_TOKEN=your-github-token
+export GITHUB_USERNAME=your-github-username
+
+# Or create a .env file in the project root
+echo "GITHUB_TOKEN=your-github-token" >> .env
+echo "GITHUB_USERNAME=your-github-username" >> .env
+```
+
+With a valid token, the tool will automatically fetch both public and private repositories.
 
 ### Report Commands
 

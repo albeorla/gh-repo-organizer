@@ -71,6 +71,7 @@ class Repository:
     is_archived: bool
     stars: int
     forks: int
+    is_private: bool = False
     languages: Sequence[LanguageBreakdown] | None = None
 
     # Convenience helpers -----------------------------------------------------
@@ -85,5 +86,6 @@ class Repository:
             is_archived=self.is_archived,
             stars=self.stars,
             forks=self.forks,
+            is_private=self.is_private,
             languages=lb,
         )

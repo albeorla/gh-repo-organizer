@@ -79,7 +79,17 @@ class GitHubRestAdapter(SourceControlPort):
             if self.rate_limiter:
                 self.rate_limiter.wait(self.logger)
 
-            url = f"https://api.github.com/users/{self.github_username}/repos"
+            # Use the authenticated user endpoint when a token is available to access private repos
+            # Otherwise fall back to the public user repos endpoint
+            if self.github_token:
+                url = "https://api.github.com/user/repos"
+                if self.logger:
+                    self.logger.log("Using authenticated endpoint to fetch repos (includes private)", "info")
+            else:
+                url = f"https://api.github.com/users/{self.github_username}/repos"
+                if self.logger:
+                    self.logger.log("Using public endpoint to fetch repos (excludes private)", "info")
+                
             params = {
                 "per_page": per_page,
                 "page": page,
@@ -111,6 +121,7 @@ class GitHubRestAdapter(SourceControlPort):
                     is_archived=repo_data.get("archived", False),
                     stars=repo_data.get("stargazers_count", 0),
                     forks=repo_data.get("forks_count", 0),
+                    is_private=repo_data.get("private", False),
                 )
 
                 repos.append(repo)

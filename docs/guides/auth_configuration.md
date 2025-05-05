@@ -51,6 +51,13 @@ AUTH_OPERATION_OVERRIDES=analyze:not_required,cleanup:required
 # Required: Your Anthropic API key for Claude
 ANTHROPIC_API_KEY=your-api-key-here
 
+# Required for accessing private repositories: Your GitHub Personal Access Token
+# Note: Without this token, only public repositories will be visible
+GITHUB_TOKEN=your-github-token-here
+
+# Optional: GitHub username (if not provided, must be specified via CLI)
+GITHUB_USERNAME=your-github-username
+
 # Optional: Claude model to use (default: claude-3-opus-20240229)
 MODEL=claude-3-opus-20240229
 
