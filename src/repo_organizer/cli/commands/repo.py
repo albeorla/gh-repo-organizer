@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+from typing import Optional
 
 import typer
 from rich.console import Console
@@ -55,14 +56,14 @@ def analyze(
         "-l",
         help="Maximum number of repositories to analyze.",
     ),
-    max_repos: int | None = typer.Option(
+    max_repos: Optional[int] = typer.Option(
         None,
         "--max-repos",
         "-m",
         help="Maximum number of repositories to analyze (deprecated, use --limit).",
     ),
     owner: str = typer.Option(None, "--owner", help="GitHub owner/user to analyze."),
-    single_repo: str | None = typer.Option(
+    single_repo: Optional[str] = typer.Option(
         None,
         "--single-repo",
         "-s",
@@ -70,7 +71,7 @@ def analyze(
     ),
     debug: bool = typer.Option(False, "--debug", "-d", help="Enable debug logging."),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize console output."),
-    username: str | None = None,  # Added by with_auth_option
+    username: Optional[str] = None,  # Added by with_auth_option
 ):
     """Analyze GitHub repositories and generate detailed reports.
 
@@ -210,14 +211,14 @@ def cleanup(
         "-f",
         help="Force removal of all files without confirmation.",
     ),
-    output_dir: str | None = typer.Option(
+    output_dir: Optional[str] = typer.Option(
         None,
         "--output-dir",
         "-o",
         help="Directory containing analysis results to clean up (default: .out/repos).",
     ),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize console output."),
-    username: str | None = None,  # Added by with_auth_option
+    username: Optional[str] = None,  # Added by with_auth_option
 ):
     """Clean up analysis files and cached data.
 
@@ -277,7 +278,7 @@ def reset(
         help="Force removal without confirmation.",
     ),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize console output."),
-    username: str | None = None,  # Added by with_auth_option
+    username: Optional[str] = None,  # Added by with_auth_option
 ):
     """Reset the application state by removing all generated files.
 

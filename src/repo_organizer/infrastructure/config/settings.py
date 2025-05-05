@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     output_dir: str = Field(".out/repos", description="Directory for output files")
     logs_dir: str = Field(".logs", description="Directory for log files")
     max_repos: int = Field(100, description="Maximum number of repositories to process")
+    single_repo: str | None = Field(None, description="Process only a single repository by name")
 
     # LLM settings
     llm_model: str = Field("claude-3-7-sonnet-latest", description="LLM model to use")
@@ -141,6 +142,7 @@ def load_settings(env_file: str | None = None) -> Settings:
         "output_dir": os.getenv("OUTPUT_DIR", ".out/repos"),
         "logs_dir": os.getenv("LOGS_DIR", ".logs"),
         "max_repos": int(os.getenv("MAX_REPOS", "100")),
+        "single_repo": os.getenv("SINGLE_REPO"),
         "max_workers": int(os.getenv("MAX_WORKERS", "5")),
         "github_rate_limit": int(os.getenv("GITHUB_RATE_LIMIT", "30")),
         "llm_rate_limit": int(os.getenv("LLM_RATE_LIMIT", "10")),

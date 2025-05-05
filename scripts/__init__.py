@@ -1,1 +1,0 @@
-"""Scripts package for GitHub Repository Organizer."""

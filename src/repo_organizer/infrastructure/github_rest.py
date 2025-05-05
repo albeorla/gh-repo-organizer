@@ -250,11 +250,11 @@ class GitHubRestAdapter(SourceControlPort):
             for lang, percentage in lang_percentages.items()
         ]
 
-    def recent_commits(self, repo: Repository, *, limit: int = 10) -> Sequence[Commit]:
+    def recent_commits(self, repo_name: str, *, limit: int = 10) -> Sequence[Commit]:
         """Return the latest commits for a repository.
 
         Args:
-            repo: Repository domain object
+            repo_name: Repository name
             limit: Maximum number of commits to return
 
         Returns:
@@ -263,7 +263,7 @@ class GitHubRestAdapter(SourceControlPort):
         if self.rate_limiter:
             self.rate_limiter.wait(self.logger)
 
-        url = f"https://api.github.com/repos/{self.github_username}/{repo.name}/commits"
+        url = f"https://api.github.com/repos/{self.github_username}/{repo_name}/commits"
         params = {"per_page": min(100, limit)}
 
         try:
@@ -293,7 +293,7 @@ class GitHubRestAdapter(SourceControlPort):
 
         except Exception as e:
             if self.logger:
-                self.logger.log(f"Error fetching commits for {repo.name}: {e}", "error")
+                self.logger.log(f"Error fetching commits for {repo_name}: {e}", "error")
             return []
 
     def contributors(self, repo: Repository) -> Sequence[Contributor]:

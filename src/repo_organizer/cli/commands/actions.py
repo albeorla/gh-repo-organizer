@@ -2,6 +2,7 @@
 
 from enum import Enum
 from pathlib import Path
+from typing import Optional
 
 import typer
 from rich.console import Console
@@ -54,13 +55,13 @@ def execute(
         "-f",
         help="Skip confirmation prompts.",
     ),
-    output_dir: str | None = typer.Option(
+    output_dir: Optional[str] = typer.Option(
         None,
         "--output-dir",
         "-o",
         help="Override the output directory.",
     ),
-    username: str | None = None,  # Added by with_auth_option
+    username: Optional[str] = None,  # Added by with_auth_option
 ):
     """Execute repository actions based on analysis results."""
     settings = load_settings()
@@ -158,7 +159,7 @@ def dry_run(
         "-t",
         help="Type of action to simulate.",
     ),
-    output_dir: str | None = typer.Option(
+    output_dir: Optional[str] = typer.Option(
         None,
         "--output-dir",
         "-o",

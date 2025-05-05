@@ -8,6 +8,7 @@ import os
 import time
 from enum import Enum
 from pathlib import Path
+from typing import Optional
 
 import typer
 from rich.console import Console
@@ -34,8 +35,7 @@ from repo_organizer.cli.commands import (
 # Import needed for running the CLI without accessing it through the entry points
 # This prevents relative import errors when running the CLI directly
 from repo_organizer.infrastructure.config.settings import load_settings
-
-from .dev import dev_app
+from repo_organizer.cli.dev import dev_app
 
 
 # Define Enum for action types
@@ -130,14 +130,14 @@ def analyze(
         "-l",
         help="Maximum number of repositories to analyze.",
     ),
-    max_repos: int | None = typer.Option(
+    max_repos: int = typer.Option(
         None,
         "--max-repos",
         "-m",
         help="Maximum number of repositories to analyze (deprecated, use --limit).",
     ),
     owner: str = typer.Option(None, "--owner", help="GitHub owner/user to analyze."),
-    single_repo: str | None = typer.Option(
+    single_repo: str = typer.Option(
         None,
         "--single-repo",
         "-s",
@@ -145,7 +145,7 @@ def analyze(
     ),
     debug: bool = typer.Option(False, "--debug", "-d", help="Enable debug logging."),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize console output."),
-    username: str | None = None,  # Added by with_auth_option, manually included here for clarity
+    username: str = None,  # Added by with_auth_option, manually included here for clarity
 ):
     """Analyze GitHub repositories and generate detailed reports.
 
@@ -274,7 +274,6 @@ def analyze(
                 owner,
                 github,
                 llm,
-                limit=limit,
                 single_repo=settings.single_repo,
             )
             progress.update(
@@ -448,14 +447,14 @@ def cleanup(
         "-f",
         help="Force removal of all files without confirmation.",
     ),
-    output_dir: str | None = typer.Option(
+    output_dir: str = typer.Option(
         None,
         "--output-dir",
         "-o",
         help="Directory containing analysis results to clean up (default: .out/repos).",
     ),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize console output."),
-    username: str | None = None,  # Added by with_auth_option, manually included here for clarity
+    username: str = None,  # Added by with_auth_option, manually included here for clarity
 ):
     """Clean up generated repository analysis files."""
     # Get settings directly from the config module
@@ -524,7 +523,7 @@ def logs(
         "-a",
         help="Show a list of all available log files.",
     ),
-    log_file: str | None = typer.Option(
+    log_file: str = typer.Option(
         None,
         "--file",
         "-f",
@@ -640,7 +639,7 @@ def reports(
         "-s",
         help="Show the summary report of all repositories.",
     ),
-    repository: str | None = typer.Option(
+    repository: str = typer.Option(
         None,
         "--repo",
         "-r",
@@ -778,7 +777,7 @@ def reset(
         help="Force removal without confirmation.",
     ),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize console output."),
-    username: str | None = None,  # Added by with_auth_option, manually included here for clarity
+    username: str = None,  # Added by with_auth_option, manually included here for clarity
 ):
     """Reset and clean up all analysis files, removing reports that don't match your GitHub repositories."""
     # Get settings directly from the config module
@@ -931,13 +930,13 @@ def actions(
         "-f",
         help="Skip confirmation prompts.",
     ),
-    output_dir: str | None = typer.Option(
+    output_dir: str = typer.Option(
         None,
         "--output-dir",
         "-o",
         help="Override the output directory.",
     ),
-    username: str | None = None,  # Added by with_auth_option, manually included here for clarity
+    username: str = None,  # Added by with_auth_option, manually included here for clarity
 ):
     """Execute repository actions based on analysis results.
 

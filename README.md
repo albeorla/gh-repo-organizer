@@ -51,215 +51,82 @@ poetry run repo completion install
 
 The CLI provides a set of intuitive command groups for managing GitHub repositories:
 
-### Repository Management (`repo`)
+### Main Command
+
+```bash
+# The main command is 'repo'
+poetry run repo --version              # Display version information
+poetry run repo --help                 # Show help and command information
+```
+
+### Repository Management
 
 ```bash
 # Analyze repositories
-repo repo analyze                     # Analyze your repositories
-repo repo analyze --owner <username>  # Analyze specific user's repos
-repo repo analyze --single <name>     # Analyze a single repository
+poetry run repo analyze                          # Analyze repositories for current user
+poetry run repo analyze --owner <username>       # Analyze specific user's repositories
+poetry run repo analyze --single-repo <name>     # Analyze a single repository by name
+poetry run repo analyze --force --debug          # Force re-analysis with debug output
+poetry run repo analyze --output-dir ~/reports   # Specify output directory
 
 # Cleanup and maintenance
-repo repo cleanup                     # Clean up analysis files
-repo repo reset                       # Reset all analysis data
+poetry run repo cleanup                          # Clean up analysis files
+poetry run repo cleanup --force                  # Clean up without confirmation
+poetry run repo reset                            # Reset analysis data that doesn't match your repositories
 ```
 
-### Report Management (`reports`)
+### Report Commands
 
 ```bash
-# View and manage reports
-repo reports list                     # List available reports
-repo reports show <repository>        # Show specific report
-repo reports summary                  # Show analysis summary
+# View reports 
+poetry run repo reports                          # Show summary report
+poetry run repo reports --repo <repository>      # Show specific repository report
+poetry run repo reports --list                   # List all available repository reports
 ```
 
-### Log Management (`logs`)
+### Log Commands
 
 ```bash
-# Access and view logs
-repo logs latest                      # Show latest log file
-repo logs all                        # List all log files
-repo logs view <file>                # View specific log file
+# View logs
+poetry run repo logs                             # Show latest log file
+poetry run repo logs --all                       # List all available logs
+poetry run repo logs --file <filename>           # View specific log file
 ```
 
-### Action Management (`actions`)
+### Action Commands
 
 ```bash
 # Handle repository actions
-repo actions list                     # List pending actions
-repo actions execute                  # Execute pending actions
-repo actions dry-run                  # Simulate action execution
+poetry run repo actions --type all               # Execute all actions (dry run)
+poetry run repo actions --type delete            # Execute only delete actions
+poetry run repo actions --type archive           # Execute only archive actions
+poetry run repo actions --force                  # Execute without confirmation
+poetry run repo actions --no-dry-run             # Actually perform the operations
 ```
 
-### Command Aliases
-
-For convenience, you can use the shorter alias `ro` instead of `repo`:
+### Development Commands
 
 ```bash
-ro repo analyze      # Same as 'repo repo analyze'
-ro reports list     # Same as 'repo reports list'
-ro logs latest      # Same as 'repo logs latest'
+# Development utilities
+poetry run repo dev lint                         # Run linter
+poetry run repo dev format                       # Format code
+poetry run repo dev check                        # Run all checks
 ```
 
 ### Shell Completion
 
-The CLI supports shell completion for all commands and options:
-
 ```bash
-# Install shell completion (auto-detects shell)
-repo completion install
-
-# Or install for a specific shell
-repo completion install --shell bash  # For Bash
-repo completion install --shell zsh   # For Zsh
-repo completion install --shell fish  # For Fish
-
-# Remove shell completion
-repo completion uninstall
+# Set up shell completion
+poetry run repo completion install               # Install for detected shell
+poetry run repo completion install --shell zsh   # Install for specific shell
+poetry run repo completion bash                  # Output bash completion script
 ```
 
-### Repository Analysis Options
+### Command Aliases and Options
 
-The `repo analyze` command supports these options:
+The CLI features commonly used options across commands:
 
-- `--owner`, `-o`: GitHub owner/user to analyze (defaults to GITHUB_USERNAME)
-- `--limit`, `-l`: Maximum number of repositories to analyze
-- `--single`, `-s`: Analyze only the specified repository name
-- `--output-dir`, `-d`: Directory for output files
-- `--force`, `-f`: Force re-analysis of all repositories
-- `--debug`: Enable debug logging
+- `--force`, `-f`: Skip confirmation prompts
+- `--debug`, `-d`: Enable debug logging
 - `--quiet`, `-q`: Minimize console output
-
-## Configuration
-
-The tool can be configured via environment variables:
-
-### Required Settings
-- `GITHUB_USERNAME`: Your GitHub username
-- `GITHUB_TOKEN`: GitHub Personal Access Token
-- `ANTHROPIC_API_KEY`: API key for Claude AI
-
-### LLM Settings
-- `LLM_MODEL`: Claude model to use (default: "claude-3-7-sonnet-latest")
-- `LLM_TEMPERATURE`: Temperature for LLM (0.0-1.0, default: 0.2)
-- `LLM_THINKING_ENABLED`: Enable extended thinking ("true"/"false", default: "true")
-- `LLM_THINKING_BUDGET`: Token budget for thinking (default: 16000)
-
-### Advanced Configuration
-- `OUTPUT_DIR`: Directory for output files (default: ".out/repos")
-- `LOGS_DIR`: Directory for log files (default: ".logs")
-- `MAX_REPOS`: Maximum number of repositories to analyze (default: 100)
-- `MAX_WORKERS`: Number of parallel workers (default: 5)
-- `GITHUB_RATE_LIMIT`: GitHub API calls per minute (default: 30)
-- `LLM_RATE_LIMIT`: LLM API calls per minute (default: 10)
-- `DEBUG_LOGGING`: Enable debug logging ("true"/"false", default: "false")
-- `QUIET_MODE`: Minimize console output ("true"/"false", default: "false")
-
-## Example Output
-
-For each repository, the tool generates a detailed analysis like this:
-
-```markdown
-# youtube_playlist_organizer
-
-## Basic Information
-
-- **URL**: [https://github.com/username/youtube_playlist_organizer](https://github.com/username/youtube_playlist_organizer)
-- **Description**: A tool for organizing and managing YouTube playlists
-- **Last Updated**: 2025-04-06
-- **Archived**: False
-- **Stars**: 12
-- **Forks**: 3
-
-## Analysis Summary
-
-This repository contains a tool for organizing and managing YouTube playlists. It provides functionality to combine playlists, remove duplicate videos, sort videos by various criteria, export playlist data, and create smart playlists based on specific criteria.
-
-### Strengths
-
-- Provides a comprehensive set of playlist management features
-- Well-documented with clear installation and usage instructions
-- Implements both command-line and programmatic interfaces
-
-### Areas for Improvement
-
-- Limited community engagement based on the relatively low number of stars and forks
-- No mention of testing infrastructure or test coverage
-
-### Recommendations
-
-- **Add comprehensive test suite** (High Priority)  
-  *Reason: Ensuring reliability and preventing regressions is critical*
-- **Implement GitHub Actions for CI/CD** (Medium Priority)  
-  *Reason: Automating testing and deployment would improve code quality*
-
-### Assessment
-
-- **Activity Level**: Moderate
-- **Estimated Value**: Medium
-- **Tags**: youtube-api, playlist-management, python, data-organization
-```
-
-## Development
-
-```bash
-# Run tests
-poetry run pytest
-
-# Format code
-poetry run ruff format .
-
-# Lint code
-poetry run ruff check .
-
-# Or use the dev commands
-poetry run repo dev lint
-poetry run repo dev format
-poetry run repo dev check
-```
-
-## Single Repository Mode
-
-The tool supports analyzing a single repository instead of the complete set of repositories owned by a user. This feature is useful for:
-
-- **Testing and Debugging**: Focus on a specific repository to test changes or debug issues
-- **Targeted Analysis**: Get detailed analysis for a repository of interest
-- **Performance**: Significantly faster when you only need information about one repository
-- **CI/CD Integration**: Use in continuous integration pipelines to analyze specific repositories
-
-### Usage
-
-```bash
-# Analyze a single repository by name
-repo repo analyze --single repository-name
-
-# Combine with other options
-repo repo analyze --single repository-name --force --debug
-```
-
-### Considerations
-
-- The summary report will indicate it contains data for only one repository
-- All analysis features work the same as in multi-repository mode
-- Repository name must match exactly (case-sensitive)
-- If the specified repository doesn't exist, an error will be shown
-
-## Architecture
-
-This project follows Domain-Driven Design (DDD) principles with a hexagonal architecture:
-
-- **Domain Layer**: Core business logic and domain models
-- **Application Layer**: Use cases that orchestrate domain objects
-- **Infrastructure Layer**: External integrations (GitHub API, LLM)
-- **Interface Layer**: CLI commands and presentation logic
-
-For more details on the architecture and design decisions:
-
-- See [CLAUDE.md](CLAUDE.md) for design principles and implementation patterns
-- Check [docs/roadmap.md](docs/roadmap.md) for prioritized development tasks
-- Review Architecture Decision Records in [docs/adr](docs/adr)
-- Explore the full [documentation](docs/README.md)
-
-## License
-
-MIT License
+- `--output-dir`, `-o`: Specify custom output directory

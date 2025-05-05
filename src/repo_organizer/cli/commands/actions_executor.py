@@ -5,6 +5,7 @@ based on analysis results.
 """
 
 from pathlib import Path
+from typing import Optional
 
 import typer
 from rich.console import Console
@@ -97,11 +98,11 @@ def _load_analyses(settings: Settings) -> list[RepoAnalysis]:
 def execute_actions(
     dry_run: bool = True,
     force: bool = False,
-    output_dir: str | None = None,
-    github_token: str | None = None,
-    action_type: str | None = None,
-    username: str | None = None,  # Now required
-    github_username: str | None = None,  # Added for compatibility
+    output_dir: Optional[str] = None,
+    github_token: Optional[str] = None,
+    action_type: Optional[str] = None,
+    username: Optional[str] = None,  # Now required
+    github_username: Optional[str] = None,  # Added for compatibility
 ):
     """Execute repository actions based on analysis results.
 

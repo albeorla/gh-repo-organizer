@@ -158,12 +158,22 @@ def analyze_repositories(
             source_control,
         )
 
-        analysis = analyzer.analyze_repository(
-            repo=repo,
-            readme_content=readme_content,
-            recent_commits=commits_count,
-            activity_summary=activity_summary,
-        )
+        # Create a data dictionary for the analyzer
+        repo_data = {
+            "repo_name": repo.name,
+            "repo_desc": getattr(repo, "description", ""),
+            "repo_url": getattr(repo, "url", ""),
+            "updated_at": getattr(repo, "updated_at", ""),
+            "readme_excerpt": readme_content or "",
+            "stars": getattr(repo, "stars", 0),
+            "forks": getattr(repo, "forks", 0),
+            "is_archived": getattr(repo, "is_archived", False),
+            "recent_commits": commits_count,
+            "activity_summary": activity_summary,
+        }
+        
+        # Call the analyze method which follows the protocol
+        analysis = analyzer.analyze(repo_data)
         analyses.append(analysis)
 
     return analyses

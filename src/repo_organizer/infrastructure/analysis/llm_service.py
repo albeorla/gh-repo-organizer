@@ -260,7 +260,7 @@ class LLMService:
             [
                 HumanMessage(
                     content="""
-            You are an AI assistant specialized in analyzing GitHub repositories and generating detailed reports. Your task is to evaluate the repository named "{repo_name}" based on its README content and provide valuable insights, recommendations, and a decision on the repository's future.
+            You are an AI assistant specialized in analyzing GitHub repositories and generating detailed reports. Your task is to evaluate the repository based on its README content and provide valuable insights, recommendations, and a decision on the repository's future.
 
             First, carefully read and analyze the following repository information:
 
@@ -333,9 +333,9 @@ class LLMService:
             {format_instructions}
             - Ensure ALL required fields from the schema are present at the TOP LEVEL of the JSON object.
             - The `recommendations` field MUST be a JSON array, where EACH element is a JSON object with EXACTLY these keys: "recommendation", "reason", and "priority".
-            - Example for a single recommendation object: {{"recommendation": "Improve test coverage", "reason": "Current tests are insufficient", "priority": "High"}}
+            - Example for a single recommendation object: {"recommendation": "Improve test coverage", "reason": "Current tests are insufficient", "priority": "High"}
             - DO NOT nest fields like `summary`, `strengths`, etc., inside another key like "analysis". They must be top-level keys.
-            - Replace ALL placeholders like {{{{some_value}}}} with actual analysis content. Do not output the placeholders.
+            - Replace ALL placeholders with actual analysis content. Do not output any placeholders.
             - Generate ONLY the JSON object that matches the schema.
             """,
                 ),
@@ -348,11 +348,8 @@ class LLMService:
         # Add more validation and logging for the data being passed to the LLM
         if self.logger and self.logger.debug_enabled:
             self.logger.log("Building LLM chain with prompt parameters:", "debug")
-            # Log example of prepared data
-            example_data = prepare_input_data(
-                {"repo_name": "Example", "repo_desc": "Test repository"},
-            )
-            self.logger.log(f"Chain input keys: {list(example_data.keys())}", "debug")
+            # Just log the keys that will be used, don't create example data
+            self.logger.log(f"Chain input keys: ['repo_name', 'repo_desc', 'repo_url', 'updated_at', 'is_archived', 'stars', 'forks', 'languages', 'open_issues', 'closed_issues', 'activity_summary', 'recent_commits_count', 'contributor_summary', 'dependency_info', 'dependency_context', 'readme_excerpt', 'format_instructions']", "debug")
 
         # Define a log function to verify data at each stage
         def log_data_at_stage(prefix):
@@ -378,13 +375,13 @@ class LLMService:
                 return data_dict
 
             return _log_data
-
+            
         # Add debug logging at each stage and raw output logging before parsing
+        # Use standard LangChain prompt formatting which handles variable substitution automatically
         self._analysis_chain = (
             input_preprocessor
             | RunnablePassthrough(log_data_at_stage("After preprocessing"))
-            | prompt
-            | RunnablePassthrough(log_data_at_stage("After prompt formatting"))
+            | prompt  # Built-in formatting
             | self.llm
             | RunnablePassthrough(self._log_raw_output)
             | output_fixing_parser

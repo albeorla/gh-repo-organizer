@@ -5,7 +5,6 @@ before executing CLI commands.
 """
 
 from collections.abc import Callable
-from typing import Any
 
 import typer
 from rich.console import Console
@@ -55,7 +54,7 @@ def authenticate_command(
         # This is needed to preserve the Typer command's parameters and help text
         typer_callback = getattr(func, "__typer_callback__", None)
 
-        def wrapper(*args: list[Any], **kwargs: dict[str, Any]) -> Any:
+        def wrapper(*args, **kwargs):
             """Wrapper function that performs authentication validation.
 
             Args:
@@ -72,7 +71,7 @@ def authenticate_command(
             username = kwargs.get("username")
 
             # Validate the operation - ensure username is str or None
-            username_str: str | None = username if username is None else str(username)
+            username_str = username if username is None else str(username)
             is_valid, error_message = service.validate_operation(
                 operation_name,
                 username_str,
@@ -161,9 +160,9 @@ def with_auth_option(app: typer.Typer) -> None:
             # Create a new function with the username parameter
             # This uses Typer's standard approach for adding options to functions
             if hasattr(func, "__annotations__"):
-                func.__annotations__["username"] = str | None  # Make it optional for now
+                func.__annotations__["username"] = str  # Type as string
             else:
-                func.__annotations__ = {"username": str | None}
+                func.__annotations__ = {"username": str}
 
             # No default value since it's required
             # Store the option information for typer to use
@@ -186,7 +185,7 @@ def with_auth_option(app: typer.Typer) -> None:
 
 def validate_command_auth(
     command_name: str,
-    username: str | None = None,
+    username=None,
     exit_on_failure: bool = True,
     logger: Logger | None = None,
     auth_logger: AuthLogger | None = None,
@@ -213,7 +212,7 @@ def validate_command_auth(
     auth_log = auth_logger or AuthLogger(console=console, logger=logger)
 
     # Validate the operation - ensure username is str or None
-    username_str: str | None = username if username is None else str(username)
+    username_str = username if username is None else str(username)
     is_valid, error_message = service.validate_operation(command_name, username_str)
 
     # Log the authentication attempt
